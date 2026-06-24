@@ -1,0 +1,167 @@
+---
+title: "List Extracted Files in a Plangrep Project"
+sidebarTitle: "List Files"
+description: "GET /api/open/v1/projects/{projectId}/files — paginated list of extracted files with optional filtering by name, classification, and status."
+---
+
+Returns a paginated list of all extracted file entities belonging to a project. Each file represents a source document (PDF, drawing set, spec book, etc.) that Plangrep has ingested and processed. Use the filtering parameters to narrow results by name, classification, or processing status.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/files
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose files you want to list.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum number of records to return per page. Must be between **1** and **500**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned as `nextCursor` from a previous response. Omit to fetch the first page.
+</ParamField>
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from each entity, reducing payload size. Useful when you only need metadata.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs to restrict results to files that contain those sheets.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Filter to a specific file by its ID.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Case-insensitive substring match against the file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Filter by file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by processing status string (e.g. `complete`, `processing`, `failed`).
+</ParamField>
+
+## Response
+
+Returns a `ProjectFileEntityListResponse` object.
+
+### Pagination Fields
+
+<ResponseField name="total" type="integer">
+  Total number of files matching the current filters across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The page size limit that was applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this page (echoed back from the request).
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` to retrieve the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer">
+  Number of file entities actually returned in this response.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="pageInfo" type="object">
+  Relay-style page info object.
+
+  <Expandable title="pageInfo fields">
+    <ResponseField name="startCursor" type="string">
+      Cursor pointing to the first record in this page.
+    </ResponseField>
+    <ResponseField name="endCursor" type="string">
+      Cursor pointing to the last record in this page.
+    </ResponseField>
+    <ResponseField name="hasPreviousPage" type="boolean">
+      `true` if records exist before this page.
+    </ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">
+      `true` if records exist after this page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Data Fields
+
+<ResponseField name="files" type="ProjectFileEntity[]">
+  Array of extracted file entities.
+
+  <Expandable title="ProjectFileEntity fields">
+    <ResponseField name="fileId" type="string">
+      Unique identifier for this file.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Original name of the uploaded file.
+    </ResponseField>
+    <ResponseField name="classification" type="string">
+      Plangrep classification of the file: `plans`, `specifications`, `documents`, `addenda`, `mixed`, or `other`.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Current processing status of the file.
+    </ResponseField>
+    <ResponseField name="pageCount" type="integer">
+      Number of pages in the file.
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects containing URLs to derived outputs (e.g. thumbnails, extracted JSON). Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/files?limit=25&classification=plans&compact=false" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "total": 42,
+  "limit": 25,
+  "cursor": null,
+  "nextCursor": "eyJvZmZzZXQiOjI1fQ==",
+  "returnedCount": 25,
+  "hasMore": true,
+  "pageInfo": {
+    "startCursor": "eyJvZmZzZXQiOjB9",
+    "endCursor": "eyJvZmZzZXQiOjI0fQ==",
+    "hasPreviousPage": false,
+    "hasNextPage": true
+  },
+  "files": [
+    {
+      "fileId": "file_001",
+      "fileName": "Architectural_Plans_SetA.pdf",
+      "classification": "plans",
+      "status": "complete",
+      "pageCount": 48,
+      "artifacts": [
+        { "artifactType": "thumbnail", "url": "https://..." }
+      ]
+    }
+  ]
+}
+```

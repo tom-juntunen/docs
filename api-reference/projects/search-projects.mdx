@@ -1,0 +1,175 @@
+---
+title: "Search Projects by Name and Semantic Source Hits"
+sidebarTitle: "Search Projects"
+description: "POST /api/open/v1/projects/search — searches organization projects by name and semantic source content. Supports filtering and pagination."
+---
+
+Search across all projects in your organization using a combination of name matching and semantic similarity against ingested source content. Results include the matching project, the reasons it was matched, and the specific source hits that contributed to the match score. Supports rich filtering by entity type, drawing metadata, and file classification, as well as cursor-based pagination for large result sets.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/projects/search
+```
+
+## Request Body
+
+<ParamField body="query" type="string" required>
+  The search string. Must be at least 1 character. Used for both name matching and semantic similarity search across ingested source content.
+</ParamField>
+
+<ParamField body="projectIds" type="string[]">
+  An optional list of project IDs to restrict the semantic search to. When omitted, all projects in your organization are searched.
+</ParamField>
+
+<ParamField body="limit" type="integer">
+  Maximum number of projects to return per page. Accepted range: `1`–`100`. Defaults to `25`.
+</ParamField>
+
+<ParamField body="cursor" type="string">
+  Pagination cursor from a previous response's `nextCursor` field. Omit to start from the first page.
+</ParamField>
+
+<ParamField body="entityTypes" type="string[]">
+  Filter source matches to specific entity types (e.g., `["door", "window"]`).
+</ParamField>
+
+<ParamField body="regionType" type="string">
+  Filter source matches to a specific region type within drawings.
+</ParamField>
+
+<ParamField body="layoutType" type="string">
+  Filter source matches to a specific layout type.
+</ParamField>
+
+<ParamField body="drawingType" type="string">
+  Filter source matches to a specific drawing type (e.g., `"floor_plan"`).
+</ParamField>
+
+<ParamField body="sheetNumber" type="string">
+  Filter source matches to a specific sheet number.
+</ParamField>
+
+<ParamField body="fileName" type="string">
+  Filter source matches to a specific file name.
+</ParamField>
+
+<ParamField body="classification" type="enum">
+  Filter source matches by document classification. Accepted values: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField body="pageNumber" type="integer">
+  Filter source matches to a specific page number. Must be `1` or greater.
+</ParamField>
+
+## Example Request
+
+```bash
+curl --request POST \
+  --url https://plangrep.com/api/open/v1/projects/search \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --header "Accept: application/json" \
+  --data '{
+    "query": "fire-rated door assembly",
+    "classification": "plans",
+    "limit": 10
+  }'
+```
+
+## Response Fields
+
+<ResponseField name="query" type="string" required>
+  The search query string echoed back from the request.
+</ResponseField>
+
+<ResponseField name="projects" type="array" required>
+  Ordered array of matched projects with supporting evidence.
+
+  <Expandable title="Project match object fields">
+    <ResponseField name="project" type="Project" required>
+      The matched project object. See [Get Project](/api-reference/projects/get-project) for field definitions.
+    </ResponseField>
+
+    <ResponseField name="matchReasons" type="string[]" required>
+      Human-readable explanations of why this project was included in results (e.g., name match, semantic similarity).
+    </ResponseField>
+
+    <ResponseField name="sourceMatches" type="object[]" required>
+      Specific source content excerpts that contributed to the match score.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="integer" required>
+  Total number of matching projects across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer" required>
+  The page size limit applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string | null" required>
+  The cursor value that was used for this page, or `null` for the first page.
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string | null" required>
+  Cursor to pass in the next request to retrieve the following page. `null` when there are no further pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer" required>
+  Number of projects returned in this response page.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean" required>
+  `true` when additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="warnings" type="ProjectSearchWarning[]" required>
+  Array of non-fatal warning messages. Empty array when there are no warnings.
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "query": "fire-rated door assembly",
+  "projects": [
+    {
+      "project": {
+        "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+        "name": "Downtown Office Tower",
+        "projectKind": "open_api",
+        "status": "ready",
+        "runtime": { "status": "running", "upgradeStatus": "none" },
+        "createdAt": "2024-11-01T14:22:10.000Z",
+        "updatedAt": "2024-11-01T14:24:05.000Z"
+      },
+      "matchReasons": ["semantic similarity: fire-rated door assembly found on sheet A-201"],
+      "sourceMatches": [
+        {
+          "fileName": "drawings.pdf",
+          "sheetNumber": "A-201",
+          "pageNumber": 14,
+          "excerpt": "90-min fire-rated hollow metal door assembly, see detail 4/A-501"
+        }
+      ]
+    }
+  ],
+  "total": 1,
+  "limit": 10,
+  "cursor": null,
+  "nextCursor": null,
+  "returnedCount": 1,
+  "hasMore": false,
+  "warnings": []
+}
+```
+
+<Tip>
+  Use `projectIds` to scope expensive semantic searches to a known subset of projects. This significantly reduces latency when you already know which projects are candidates.
+</Tip>

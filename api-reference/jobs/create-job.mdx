@@ -1,0 +1,191 @@
+---
+title: "Create a Processing Job in a Plangrep Project"
+sidebarTitle: "Create Job"
+description: "POST /api/open/v1/projects/{projectId}/jobs — creates a new processing job. Pass a webhookUrl to receive push notifications on status changes."
+---
+
+Create a new processing job within an existing project. Once created, the job moves through a lifecycle from provisioning to awaiting uploads — at which point you can upload construction drawings, specifications, and other documents for normalization. Supply a `webhookUrl` to receive real-time push notifications on every status change, eliminating the need to poll.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/projects/{projectId}/jobs
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project in which to create the job. The project must have a `status` of `ready`.
+</ParamField>
+
+## Header Parameters
+
+<ParamField header="Idempotency-Key" type="string">
+  An optional client-generated key (max 256 characters) used to safely retry the request. If a job was already created with this key, the original job is returned with `idempotent: true` in the response body rather than creating a duplicate.
+</ParamField>
+
+## Request Body
+
+<ParamField body="externalId" type="string">
+  An optional identifier from your own system (max 180 characters) to correlate with this job. Stored and returned as-is — Plangrep does not validate uniqueness.
+</ParamField>
+
+<ParamField body="webhookUrl" type="string">
+  An optional publicly reachable HTTPS URL to receive job status push notifications. Must be a valid URI. Plangrep will `POST` a signed payload to this URL on every job status change.
+</ParamField>
+
+## Example Request
+
+```bash
+curl --request POST \
+  --url https://plangrep.com/api/open/v1/projects/proj_01hx9z4kqr8e7m3p5n6w2v0abc/jobs \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --header "Accept: application/json" \
+  --header "Idempotency-Key: my-unique-request-id-001" \
+  --data '{
+    "externalId": "order-7890",
+    "webhookUrl": "https://your-app.example.com/webhooks/plangrep"
+  }'
+```
+
+## Response Fields
+
+The endpoint returns `202 Accepted`.
+
+<ResponseField name="job" type="Job" required>
+  The newly created job object.
+
+  <Expandable title="Job object fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the job.
+    </ResponseField>
+
+    <ResponseField name="externalId" type="string | null">
+      The `externalId` you supplied, or `null` if omitted.
+    </ResponseField>
+
+    <ResponseField name="status" type="JobStatus" required>
+      Current status of the job. See the **Job Status Values** table below for all possible values.
+    </ResponseField>
+
+    <ResponseField name="projectId" type="string" required>
+      The ID of the parent project.
+    </ResponseField>
+
+    <ResponseField name="limits" type="object" required>
+      Processing limits applied to this job.
+
+      <Expandable title="limits fields">
+        <ResponseField name="maxDeclaredBytes" type="integer" required>
+          Maximum total bytes that may be uploaded to this job.
+        </ResponseField>
+
+        <ResponseField name="maxFiles" type="integer" required>
+          Maximum number of files that may be uploaded to this job.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="pageCount" type="integer" required>
+      Total number of pages submitted for processing.
+    </ResponseField>
+
+    <ResponseField name="successfulPageCount" type="integer" required>
+      Number of pages that were processed successfully.
+    </ResponseField>
+
+    <ResponseField name="billing" type="object" required>
+      Billing information for this job.
+    </ResponseField>
+
+    <ResponseField name="files" type="object[]" required>
+      Metadata for each file attached to the job.
+    </ResponseField>
+
+    <ResponseField name="resultUrl" type="string | null">
+      Pre-signed URL to the normalized result JSON, populated once the job reaches a completed terminal state.
+    </ResponseField>
+
+    <ResponseField name="error" type="object | null">
+      Error details if the job has failed, otherwise `null`.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of job creation.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of the most recent status update.
+    </ResponseField>
+
+    <ResponseField name="completedAt" type="string | null">
+      ISO 8601 timestamp of when the job reached a terminal state, or `null` if still in progress.
+    </ResponseField>
+
+    <ResponseField name="expiresAt" type="string | null">
+      ISO 8601 timestamp after which the job and its result are no longer accessible.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="idempotent" type="boolean">
+  Present and `true` when the response is a replay of a previously created job matched by `Idempotency-Key`.
+</ResponseField>
+
+<ResponseField name="webhookSigningSecret" type="string | null">
+  A secret string used to verify the authenticity of webhook payloads Plangrep sends to your `webhookUrl`. **Shown only in this response — it cannot be retrieved again.** Store it securely immediately.
+</ResponseField>
+
+## Job Status Values
+
+| Status | Terminal | Description |
+|---|---|---|
+| `provisioning` | No | Job infrastructure is being set up. |
+| `awaiting_uploads` | No | Ready to receive file uploads. |
+| `uploading` | No | Files are being uploaded. |
+| `preflighting` | No | Files are being validated before processing. |
+| `blocked_insufficient_credits` | No | Paused due to insufficient credits. |
+| `processing` | No | Plangrep is processing the uploaded documents. |
+| `completed` | Yes | All pages processed successfully. |
+| `completed_with_errors` | Yes | Processing finished with partial errors. |
+| `failed` | Yes | Processing failed. |
+| `cancelled` | Yes | Job was cancelled before completion. |
+| `expired` | Yes | Job expired before reaching a terminal state. |
+
+## Example Response
+
+```json
+{
+  "job": {
+    "id": "job_01hy3m8qtn2e5r7k9p0w4x1def",
+    "externalId": "order-7890",
+    "status": "awaiting_uploads",
+    "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "limits": {
+      "maxDeclaredBytes": 5368709120,
+      "maxFiles": 50
+    },
+    "pageCount": 0,
+    "successfulPageCount": 0,
+    "billing": {},
+    "files": [],
+    "resultUrl": null,
+    "error": null,
+    "createdAt": "2024-11-02T09:00:00.000Z",
+    "updatedAt": "2024-11-02T09:00:01.000Z",
+    "completedAt": null,
+    "expiresAt": "2024-11-09T09:00:00.000Z"
+  },
+  "idempotent": false,
+  "webhookSigningSecret": "whsec_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+}
+```
+
+<Tip>
+  **Save `webhookSigningSecret` immediately** — it is returned only in this response and cannot be retrieved later. Use it to verify the `X-Plangrep-Signature` header on every incoming webhook request to confirm the payload originated from Plangrep.
+</Tip>

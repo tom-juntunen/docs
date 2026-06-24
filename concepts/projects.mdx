@@ -1,0 +1,88 @@
+---
+title: "Projects: Persistent Containers for Processed Document Data"
+sidebarTitle: "Projects"
+description: "Learn how Plangrep projects store processed files, enable semantic search, and serve as the organizing unit for your construction documents."
+---
+
+A Plangrep project is a persistent, organization-scoped container that holds all the processed entities — sheets, regions, specifications, docs — extracted from your uploaded construction documents. Each project also powers semantic search across all its indexed sources.
+
+## Creating a Project
+
+Create a project by posting a `name` to the projects endpoint. The name can be up to 180 characters and should be descriptive enough to identify the building, bid package, or phase it represents. Every project created through the API sets `projectKind` to `open_api` automatically — you don't need to specify this value.
+
+```bash
+POST /api/open/v1/projects
+```
+
+```json
+{
+  "name": "123 Main Street — SD Package"
+}
+```
+
+## Project Status Lifecycle
+
+After creation, a project passes through a short provisioning phase before it is ready to accept jobs and file uploads.
+
+<Steps>
+  <Step title="Provisioning">
+    The project is being set up. `status` is `provisioning`. Do not create jobs or upload files yet.
+  </Step>
+  <Step title="Poll for Ready">
+    Poll GET `/api/open/v1/projects/{projectId}` every **10 seconds**. Continue polling for up to **5 minutes**. Give up and surface an error to your users if `status` has not become `ready` within that window.
+  </Step>
+  <Step title="Ready">
+    `status` is `ready`. You can now create jobs, upload files, and run queries against the project.
+  </Step>
+</Steps>
+
+<Warning>
+  Only create jobs and upload files after the project `status` is `ready`. Requests made against a project that is still `provisioning` will be rejected.
+</Warning>
+
+## Runtime State
+
+Beyond the top-level `status`, each project exposes a `runtime` object that reflects the state of the underlying compute runtime:
+
+- **`runtime.status`** — the current state of the runtime backing this project.
+- **`runtime.upgradeStatus`** — non-null when a runtime upgrade is in progress. Wait for the upgrade to complete before submitting new jobs.
+
+## What a Project Accumulates
+
+Projects are designed to grow over time. Each job you submit writes its extracted data back to the project, so the project becomes the authoritative store for:
+
+- **Files** — every uploaded source document
+- **Sheets** — individual drawing sheets parsed from plan sets
+- **Regions** — drawing regions and callouts detected on sheets
+- **Specifications** — parsed specification sections
+- **Docs** — parsed document sections from addenda and other documents
+
+Query all of these through the project entity endpoints (e.g., GET `/api/open/v1/projects/{projectId}/sheets`).
+
+## Semantic Search
+
+Projects support two search scopes:
+
+| Endpoint | Scope |
+|----------|-------|
+| GET `/api/open/v1/projects/{projectId}/source-search` | Searches sources indexed within this project |
+| GET `/api/open/v1/search` | Organization-wide search across all projects |
+
+Both endpoints accept a natural-language query and return ranked evidence records.
+
+## Project Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique project identifier |
+| `name` | string | Human-readable name (max 180 chars) |
+| `projectKind` | string | Always `open_api` for API-created projects |
+| `status` | string | `provisioning` or `ready` |
+| `runtime.status` | string | Underlying runtime state |
+| `runtime.upgradeStatus` | string \| null | Non-null when an upgrade is in progress |
+| `createdAt` | string (ISO 8601) | Timestamp when the project was created |
+| `updatedAt` | string (ISO 8601) | Timestamp of the most recent update |
+
+<Tip>
+  See the [Submit a Job guide](/guides/submit-a-job) for the full end-to-end workflow: creating a project, uploading files, polling for completion, and reading results.
+</Tip>

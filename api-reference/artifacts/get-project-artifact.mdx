@@ -1,0 +1,100 @@
+---
+title: "Fetch an Authenticated Project Entity Artifact"
+sidebarTitle: "Project Artifact"
+description: "GET /api/open/v1/projects/{projectId}/artifact — fetches artifact bytes exposed by project entity or source catalog responses for this project."
+---
+
+## Overview
+
+Fetch the raw bytes of an artifact associated with a project's entity data or source catalog. Artifact paths are embedded in the responses from project entity and source catalog endpoints. Pass the `path` value from those responses as the `path` query parameter to retrieve the corresponding file.
+
+<Note>
+  Only artifacts exposed by this project's entity and source catalog API responses are accessible through this endpoint. Cross-project artifact access is not permitted.
+</Note>
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/artifact
+```
+
+## Authentication
+
+All requests must include a Bearer token in the `Authorization` header.
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose artifact you want to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="path" type="string" required>
+  The artifact path as it appears in a project entity or source catalog response. This value is provided by the API — do not construct artifact paths manually.
+</ParamField>
+
+## Response
+
+**Status: `200 OK`**
+
+**Content-Type:** `application/octet-stream`
+
+The response body contains the raw binary artifact bytes. Images, PDFs, and other binary formats are returned as-is.
+
+## Example Request
+
+```bash
+curl "https://plangrep.com/api/open/v1/projects/PROJ_ID/artifact?path=ARTIFACT_PATH" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  --output artifact-file.png
+```
+
+### Saving with the server-suggested filename
+
+```bash
+curl -OJ "https://plangrep.com/api/open/v1/projects/PROJ_ID/artifact?path=ARTIFACT_PATH" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Inspecting headers before downloading
+
+```bash
+curl -I "https://plangrep.com/api/open/v1/projects/PROJ_ID/artifact?path=ARTIFACT_PATH" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Typical Workflow
+
+1. Fetch project entity or source catalog data for a project.
+2. Locate artifact URLs within the response — each includes a `path` value.
+3. Call this endpoint with the extracted `path` to download the artifact bytes.
+
+```json
+// Example: artifact URL in a project entity response
+{
+  "entities": [
+    {
+      "id": "entity_floor_plan_01",
+      "type": "floor_plan",
+      "artifacts": [
+        {
+          "path": "projects/proj_01/entities/entity_floor_plan_01/thumbnail.png",
+          "url": "/api/open/v1/projects/proj_01/artifact?path=projects%2Fproj_01%2Fentities%2Fentity_floor_plan_01%2Fthumbnail.png"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```bash
+# Fetch the thumbnail referenced above
+curl "https://plangrep.com/api/open/v1/projects/proj_01/artifact?path=projects%2Fproj_01%2Fentities%2Fentity_floor_plan_01%2Fthumbnail.png" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  --output thumbnail.png
+```

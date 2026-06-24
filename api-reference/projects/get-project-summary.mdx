@@ -1,0 +1,143 @@
+---
+title: "Get a Source-Ready Summary of a Plangrep Project"
+sidebarTitle: "Get Summary"
+description: "GET /api/open/v1/projects/{projectId}/summary — returns aliases, key files, detected disciplines, and entity counts for a project."
+---
+
+Returns a rich, pre-computed summary of a project's ingested content — including name aliases, title candidates, the most structurally significant source files, detected engineering disciplines, and aggregate entity counts. Use this endpoint to quickly understand what a project contains before querying it in depth.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/summary
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose summary you want to retrieve. Returned as `project.id` from [Create Project](/api-reference/projects/create-project) or [List Projects](/api-reference/projects/list-projects).
+</ParamField>
+
+## Example Request
+
+```bash
+curl --request GET \
+  --url https://plangrep.com/api/open/v1/projects/proj_01hx9z4kqr8e7m3p5n6w2v0abc/summary \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+## Response Fields
+
+<ResponseField name="project" type="Project" required>
+  The current state of the project. See [Get Project](/api-reference/projects/get-project) for field definitions.
+</ResponseField>
+
+<ResponseField name="projectSummary" type="ProjectSummary" required>
+  Computed summary data derived from all ingested sources in the project.
+
+  <Expandable title="ProjectSummary fields">
+    <ResponseField name="projectId" type="string" required>
+      The project ID this summary belongs to.
+    </ResponseField>
+
+    <ResponseField name="projectName" type="string" required>
+      The canonical name of the project as stored in Plangrep.
+    </ResponseField>
+
+    <ResponseField name="aliases" type="string[]" required>
+      Alternative names or identifiers for the project detected across ingested documents (e.g., short codes, owner references).
+    </ResponseField>
+
+    <ResponseField name="titleCandidates" type="string[]" required>
+      Full project title strings extracted from title blocks and cover sheets across source files.
+    </ResponseField>
+
+    <ResponseField name="keyFiles" type="ProjectSource[]" required>
+      Array of the most structurally significant source files, such as drawing sets and specification books. Each entry is a `ProjectSource` object describing the file's metadata and classification.
+    </ResponseField>
+
+    <ResponseField name="detectedDisciplines" type="string[]" required>
+      Engineering and design disciplines identified in the project's drawings and documents (e.g., `"architectural"`, `"structural"`, `"mechanical"`, `"electrical"`, `"plumbing"`).
+    </ResponseField>
+
+    <ResponseField name="counts" type="object" required>
+      Aggregate entity counts across all ingested sources.
+
+      <Expandable title="counts fields">
+        <ResponseField name="files" type="integer" required>
+          Total number of source files ingested.
+        </ResponseField>
+
+        <ResponseField name="sheets" type="integer" required>
+          Total number of drawing sheets processed.
+        </ResponseField>
+
+        <ResponseField name="regions" type="integer" required>
+          Total number of annotated regions extracted from drawings.
+        </ResponseField>
+
+        <ResponseField name="specifications" type="integer" required>
+          Total number of specification sections identified.
+        </ResponseField>
+
+        <ResponseField name="docs" type="integer" required>
+          Total number of document pages processed.
+        </ResponseField>
+
+        <ResponseField name="total" type="integer" required>
+          Sum of all counted entities across all categories.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "project": {
+    "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "name": "Downtown Office Tower",
+    "projectKind": "open_api",
+    "status": "ready",
+    "runtime": { "status": "running", "upgradeStatus": "none" },
+    "createdAt": "2024-11-01T14:22:10.000Z",
+    "updatedAt": "2024-11-01T14:24:05.000Z"
+  },
+  "projectSummary": {
+    "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "projectName": "Downtown Office Tower",
+    "aliases": ["DOT-2024", "Tower Block C"],
+    "titleCandidates": [
+      "Downtown Office Tower — 100 Main Street, Springfield",
+      "Office Tower at Main & 1st — Permit Set"
+    ],
+    "keyFiles": [
+      {
+        "id": "src_abc123",
+        "fileName": "architectural_drawings.pdf",
+        "classification": "plans"
+      }
+    ],
+    "detectedDisciplines": ["architectural", "structural", "mechanical", "electrical"],
+    "counts": {
+      "files": 12,
+      "sheets": 204,
+      "regions": 3812,
+      "specifications": 48,
+      "docs": 310,
+      "total": 4386
+    }
+  }
+}
+```
+
+<Note>
+  The summary is computed incrementally as jobs complete. For projects with ongoing jobs, counts and key files may not reflect the most recently uploaded documents until those jobs reach a terminal status.
+</Note>

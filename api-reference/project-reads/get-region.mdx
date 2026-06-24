@@ -1,0 +1,145 @@
+---
+title: "Get One Extracted Drawing Region from a Project"
+sidebarTitle: "Get Region"
+description: "GET /api/open/v1/projects/{projectId}/regions/{regionId} — retrieves a single drawing region with bounding box, extracted text, and artifacts."
+---
+
+Retrieves a single extracted drawing region by its ID. The response includes the region's bounding box (normalized coordinates), the text Plangrep extracted from within that area, its parent sheet and file references, and any artifact URLs generated during processing.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/regions/{regionId}
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project that owns the region.
+</ParamField>
+
+<ParamField path="regionId" type="string" required>
+  The unique identifier of the region to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from the response.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs. Can be used to validate that this region belongs to an expected set of sheets.
+</ParamField>
+
+<ParamField query="sheetId" type="string">
+  Optional filter — returns the region only if it belongs to this sheet.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Optional filter by parent file ID.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Optional case-insensitive substring match on the parent file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Optional filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="pageNumber" type="integer">
+  Optional filter — returns the region only if it is on this 1-based page number.
+</ParamField>
+
+<ParamField query="regionType" type="string">
+  Optional filter by detected region type.
+</ParamField>
+
+<ParamField query="drawingType" type="string">
+  Optional filter by drawing discipline or type.
+</ParamField>
+
+<ParamField query="layoutType" type="string">
+  Optional filter by layout classification of the region.
+</ParamField>
+
+## Response
+
+Returns an object containing the matching region entity.
+
+<ResponseField name="region" type="ProjectRegionEntity">
+  The requested drawing region entity.
+
+  <Expandable title="ProjectRegionEntity fields">
+    <ResponseField name="regionId" type="string">
+      Unique identifier for this region.
+    </ResponseField>
+    <ResponseField name="fileId" type="string">
+      ID of the parent file.
+    </ResponseField>
+    <ResponseField name="sheetId" type="string">
+      ID of the sheet this region was detected on.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Name of the parent file.
+    </ResponseField>
+    <ResponseField name="pageNumber" type="integer">
+      1-based page number within the source file.
+    </ResponseField>
+    <ResponseField name="sheetNumber" type="string">
+      Sheet number of the parent sheet.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Human-readable label assigned to this region.
+    </ResponseField>
+    <ResponseField name="text" type="string">
+      Text extracted from this region. Always present; returns an empty string `""` if no text was detected.
+    </ResponseField>
+    <ResponseField name="displayBox" type="object">
+      Normalized bounding box for the region (values in `[0, 1]` relative to page dimensions).
+
+      <Expandable title="displayBox fields">
+        <ResponseField name="left" type="number">Left edge, normalized to page width.</ResponseField>
+        <ResponseField name="top" type="number">Top edge, normalized to page height.</ResponseField>
+        <ResponseField name="right" type="number">Right edge, normalized to page width.</ResponseField>
+        <ResponseField name="bottom" type="number">Bottom edge, normalized to page height.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="titleDisplayBox" type="object">
+      Normalized bounding box for the region's title/label area. Same structure as `displayBox`. May be `null`.
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects with URLs to derived outputs. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions/region_001" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "region": {
+    "regionId": "region_001",
+    "fileId": "file_001",
+    "sheetId": "sheet_007",
+    "fileName": "Architectural_Plans_SetA.pdf",
+    "pageNumber": 12,
+    "sheetNumber": "A5.01",
+    "label": "DETAIL 3/A5.01",
+    "text": "CONT. BEAD OF SEALANT AT ALL EDGES. SEE SPEC 07900.",
+    "displayBox": { "left": 0.52, "top": 0.31, "right": 0.74, "bottom": 0.58 },
+    "titleDisplayBox": { "left": 0.52, "top": 0.58, "right": 0.74, "bottom": 0.62 },
+    "artifacts": [
+      { "artifactType": "region_crop", "url": "https://..." }
+    ]
+  }
+}
+```

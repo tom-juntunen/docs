@@ -1,0 +1,146 @@
+---
+title: "Submit a Processing Job to the Plangrep API"
+sidebarTitle: "Submit a Job"
+description: "A complete guide to creating a Plangrep project, uploading construction documents, and starting the processing pipeline."
+---
+
+This guide walks through the full job submission workflow: provisioning a project, creating a job, uploading files using multipart form data, and completing the upload to start processing. All requests use the base URL `https://plangrep.com`.
+
+<Steps>
+
+### Create a project (if you don't have one)
+
+Send a `POST` request to create a new project. Projects are the top-level container for all your jobs and processed documents.
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Construction Project"}'
+```
+
+The API responds with `202 Accepted` and a project object:
+
+```json
+{
+  "project": {
+    "id": "proj_abc123",
+    "name": "My Construction Project",
+    "projectKind": "open_api",
+    "status": "provisioning",
+    "runtime": { "status": "starting", "upgradeStatus": null },
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-15T10:00:00Z"
+  },
+  "billing": {
+    "availableCredits": 5000,
+    "creditsCharged": 0,
+    "requiredCredits": 0
+  }
+}
+```
+
+<Note>
+  The project starts in `provisioning` status. Poll `GET /api/open/v1/projects/{projectId}` every 10 seconds until `status === "ready"`. Give up after 5 minutes.
+</Note>
+
+### Poll until ready
+
+Call `GET /api/open/v1/projects/{projectId}` and wait until `project.status` is `"ready"` before proceeding.
+
+```bash
+curl https://plangrep.com/api/open/v1/projects/proj_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Only a project in `"ready"` status can accept new jobs. Attempting to create a job against a provisioning project will return an error.
+
+### Create a job
+
+Send a `POST` request to create a job under your project. A minimal request body is an empty object:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+To attach an external ID for correlation in your system and register a webhook URL for push notifications, include them in the body:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "externalId": "my-order-123",
+    "webhookUrl": "https://myapp.example.com/webhooks/plangrep"
+  }'
+```
+
+The API responds with `202 Accepted`:
+
+```json
+{
+  "job": {
+    "id": "job_xyz789",
+    "status": "awaiting_uploads",
+    "...": "..."
+  },
+  "webhookSigningSecret": "wss_..."
+}
+```
+
+<Warning>
+  Save the `webhookSigningSecret` immediately — it is shown only once at job creation time and is used to verify the authenticity of webhook payloads delivered to your endpoint.
+</Warning>
+
+### Upload files
+
+Submit your construction documents using `POST /api/open/v1/jobs/{jobId}/files` with `multipart/form-data`. Include a `metadata` part containing a JSON string that describes each file part, followed by the file parts themselves.
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/files \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F 'metadata={"files":[{"partName":"file0","fileName":"floor-plan.pdf","contentType":"application/pdf","classification":"plans"},{"partName":"file1","fileName":"spec-book.pdf","contentType":"application/pdf","classification":"specifications"}]}' \
+  -F 'file0=@floor-plan.pdf' \
+  -F 'file1=@spec-book.pdf'
+```
+
+The `classification` field tells Plangrep how to interpret each file. Supported values are:
+
+| Value | Description |
+|---|---|
+| `plans` | Construction drawings and floor plans |
+| `specifications` | Project specification books |
+| `documents` | General project documents |
+| `addenda` | Addenda and bulletins |
+| `mixed` | Files containing multiple content types |
+| `other` | Anything that does not fit the above |
+
+Omit `classification` to let Plangrep auto-classify the file based on its content.
+
+The response returns an `uploads` array with a `documentId` for each uploaded file. Store these IDs if you need to reference individual documents later.
+
+<Tip>
+  For files over 100 MB or programmatic uploads, see the signed upload registration workflow in [/concepts/uploads](/concepts/uploads).
+</Tip>
+
+### Complete uploads and start processing
+
+Once all files are uploaded, signal to Plangrep that the upload phase is finished:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads/complete \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+The job transitions first to `preflighting` (where Plangrep validates your files and checks credits) and then to `processing`. See [Polling & Webhooks](/guides/polling-and-webhooks) to track progress from here.
+
+</Steps>
+
+<Tip>
+  Use the `Idempotency-Key` header on both job creation and upload completion requests to safely retry on network errors without creating duplicate jobs.
+</Tip>

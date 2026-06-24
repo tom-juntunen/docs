@@ -1,0 +1,160 @@
+---
+title: "List Open API Keys for Your Workspace"
+sidebarTitle: "List Keys"
+description: "Returns all API keys for the current workspace along with the organization's API profile settings."
+---
+
+<Note>
+  This endpoint uses session cookie authentication (`plangrep_session`). It is used by the Plangrep app's API settings page and does **not** accept a bearer API key.
+</Note>
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open-api/keys
+```
+
+## Authentication
+
+| Method | Value |
+|--------|-------|
+| Cookie | `plangrep_session=YOUR_SESSION_COOKIE` |
+
+## Parameters
+
+No query or path parameters.
+
+---
+
+## Response
+
+**200 OK**
+
+Returns an `OpenApiKeyListResponse` object.
+
+<ResponseField name="keys" type="OpenApiKey[]" required>
+  All API keys belonging to the current workspace.
+
+  <Expandable title="OpenApiKey fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the API key.
+    </ResponseField>
+
+    <ResponseField name="label" type="string">
+      Human-readable name assigned to the key at creation.
+    </ResponseField>
+
+    <ResponseField name="keyPrefix" type="string">
+      The first few characters of the plaintext key, used for identification. The full key is never returned after creation.
+    </ResponseField>
+
+    <ResponseField name="scopes" type="OpenApiKeyScope[]">
+      Permissions granted to this key. Possible values: `jobs:read`, `jobs:write`, `artifacts:read`.
+    </ResponseField>
+
+    <ResponseField name="createdByUserId" type="string">
+      ID of the workspace user who created this key.
+    </ResponseField>
+
+    <ResponseField name="hashVersion" type="string">
+      Internal version of the hashing algorithm used to store this key.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of when the key was created.
+    </ResponseField>
+
+    <ResponseField name="expiresAt" type="string | null">
+      ISO 8601 timestamp of when the key expires, or `null` if it never expires.
+    </ResponseField>
+
+    <ResponseField name="lastUsedAt" type="string | null">
+      ISO 8601 timestamp of the most recent successful request made with this key, or `null` if it has never been used.
+    </ResponseField>
+
+    <ResponseField name="lastUsedIp" type="string | null">
+      IP address of the most recent request made with this key, or `null` if it has never been used.
+    </ResponseField>
+
+    <ResponseField name="revokedAt" type="string | null">
+      ISO 8601 timestamp of when the key was revoked, or `null` if it is still active.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="profile" type="OpenApiProfile" required>
+  Your organization's API configuration and credit rates.
+
+  <Expandable title="OpenApiProfile fields">
+    <ResponseField name="documentCreditsPerPage" type="integer">
+      Number of credits consumed per page when processing a **document** (e.g., a specification). Minimum: `1`.
+    </ResponseField>
+
+    <ResponseField name="drawingCreditsPerPage" type="integer">
+      Number of credits consumed per page when processing a **drawing**. Minimum: `1`.
+    </ResponseField>
+
+    <ResponseField name="enabled" type="boolean">
+      Whether the Open API is enabled for this organization. Keys cannot be used while this is `false`.
+    </ResponseField>
+
+    <ResponseField name="jobPageLimit" type="integer">
+      Maximum number of pages allowed in a single job submission. Minimum: `1`.
+    </ResponseField>
+
+    <ResponseField name="retentionDays" type="integer">
+      Number of days job results and artifacts are retained before automatic deletion. Minimum: `1`.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of the last time this profile was updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  Use the `profile` object to display current credit rates and limits to your users before they submit jobs. The `drawingCreditsPerPage` and `documentCreditsPerPage` fields let you estimate costs upfront.
+</Tip>
+
+---
+
+## Example
+
+<CodeGroup>
+
+```bash cURL
+curl https://plangrep.com/api/open-api/keys \
+  -H "Cookie: plangrep_session=YOUR_SESSION_COOKIE"
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "keys": [
+    {
+      "id": "key_01hx3z...",
+      "label": "Production Integration",
+      "keyPrefix": "pgk_live_abc1",
+      "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
+      "createdByUserId": "usr_01hx3y...",
+      "hashVersion": "v1",
+      "createdAt": "2024-11-01T10:00:00Z",
+      "expiresAt": null,
+      "lastUsedAt": "2025-01-15T08:42:00Z",
+      "lastUsedIp": "203.0.113.42",
+      "revokedAt": null
+    }
+  ],
+  "profile": {
+    "documentCreditsPerPage": 2,
+    "drawingCreditsPerPage": 5,
+    "enabled": true,
+    "jobPageLimit": 500,
+    "retentionDays": 30,
+    "updatedAt": "2024-10-15T12:00:00Z"
+  }
+}
+```

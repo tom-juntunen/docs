@@ -1,0 +1,119 @@
+---
+title: "Get One Extracted Sheet from a Plangrep Project"
+sidebarTitle: "Get Sheet"
+description: "GET /api/open/v1/projects/{projectId}/sheets/{sheetId} — retrieves a single extracted sheet entity including sheet number, display name, and artifacts."
+---
+
+Retrieves a single extracted sheet by its ID. The response includes the sheet's number, name, display name, parent file reference, page position, and any artifacts generated during extraction (e.g. sheet thumbnail, vector crop). Pass `compact=true` to omit artifact URLs when you only need metadata.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/sheets/{sheetId}
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project that owns the sheet.
+</ParamField>
+
+<ParamField path="sheetId" type="string" required>
+  The unique identifier of the sheet to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from the response.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs. Can be used to validate that this sheet is within an expected set.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Optional filter by parent file ID.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Optional case-insensitive substring match on the parent file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Optional filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Optional filter by parent file processing status.
+</ParamField>
+
+<ParamField query="pageNumber" type="integer">
+  Optional filter — returns the sheet only if it is located at this 1-based page number. Minimum: `1`.
+</ParamField>
+
+<ParamField query="sheetNumber" type="string">
+  Optional filter — returns the sheet only if it matches this sheet number exactly.
+</ParamField>
+
+## Response
+
+Returns an object containing the matching sheet entity.
+
+<ResponseField name="sheet" type="ProjectSheetEntity">
+  The requested sheet entity.
+
+  <Expandable title="ProjectSheetEntity fields">
+    <ResponseField name="sheetId" type="string">
+      Unique identifier for this sheet.
+    </ResponseField>
+    <ResponseField name="fileId" type="string">
+      ID of the parent file this sheet was extracted from.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Name of the parent file.
+    </ResponseField>
+    <ResponseField name="pageNumber" type="integer">
+      1-based page number within the source file.
+    </ResponseField>
+    <ResponseField name="sheetNumber" type="string">
+      Extracted sheet number (e.g. `A1.01`, `M-300`). May be `null` if not detected.
+    </ResponseField>
+    <ResponseField name="sheetName" type="string">
+      Extracted short sheet name or title block title.
+    </ResponseField>
+    <ResponseField name="sheetDisplayName" type="string">
+      Human-readable display name combining sheet number and title (e.g. `A1.01 – Floor Plan`).
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects containing URLs to derived outputs. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets/sheet_001" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "sheet": {
+    "sheetId": "sheet_001",
+    "fileId": "file_001",
+    "fileName": "Architectural_Plans_SetA.pdf",
+    "pageNumber": 3,
+    "sheetNumber": "A1.01",
+    "sheetName": "First Floor Plan",
+    "sheetDisplayName": "A1.01 – First Floor Plan",
+    "artifacts": [
+      { "artifactType": "thumbnail", "url": "https://..." },
+      { "artifactType": "vector_crop", "url": "https://..." }
+    ]
+  }
+}
+```

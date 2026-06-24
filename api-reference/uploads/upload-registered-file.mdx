@@ -1,0 +1,158 @@
+---
+title: "Upload Base64 Content for a Registered Direct PUT File"
+sidebarTitle: "Upload Content"
+description: "POST /api/open/v1/jobs/{jobId}/uploads/{documentId}/content — uploads base64-encoded bytes for a registered direct_put document. API compatibility helper."
+---
+
+## Overview
+
+Upload the binary content of a previously registered `direct_put` document by sending the file bytes as a base64-encoded string in a JSON request body. This is a convenience endpoint for API clients or environments where sending a raw `PUT` to a signed storage URL is not practical.
+
+<Note>
+  This endpoint only applies to files registered with `uploadMode: direct_put`. For `multipart` uploads, you must PUT each part's byte range directly to the signed part URLs returned during registration — there is no base64 equivalent for multipart.
+</Note>
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/jobs/{jobId}/uploads/{documentId}/content
+```
+
+## Authentication
+
+All requests must include a Bearer token in the `Authorization` header.
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the job the document belongs to.
+</ParamField>
+
+<ParamField path="documentId" type="string" required>
+  The document ID returned in the [Register Uploads](/api-reference/uploads/register-uploads) response for this file.
+</ParamField>
+
+## Request Body
+
+**Content-Type:** `application/json`
+
+<ParamField body="uploadToken" type="string" required>
+  The upload token returned for this document during registration (`uploads[].uploadToken`). This proves the content is associated with a valid registration.
+</ParamField>
+
+<ParamField body="contentBase64" type="string" required>
+  The file bytes encoded as a standard Base64 string. The decoded bytes must exactly match the `fileSize` and `sha256` values declared during registration.
+</ParamField>
+
+<ParamField body="sha256" type="string">
+  Optional SHA-256 digest of the **decoded** file bytes — a 64-character lowercase hex string. When provided, the server re-validates the digest against the value supplied at registration time.
+</ParamField>
+
+## Response
+
+**Status: `200 OK`**
+
+<ResponseField name="status" type="string">
+  Always `"uploaded"` on success.
+</ResponseField>
+
+<ResponseField name="documentId" type="string">
+  The document ID for the uploaded file.
+</ResponseField>
+
+<ResponseField name="fileName" type="string">
+  The filename as recorded at registration.
+</ResponseField>
+
+<ResponseField name="fileSize" type="integer">
+  Size of the uploaded file in bytes.
+</ResponseField>
+
+<ResponseField name="contentType" type="string">
+  MIME type of the uploaded file.
+</ResponseField>
+
+<ResponseField name="uploadMode" type="string">
+  Always `"direct_put"` for this endpoint.
+</ResponseField>
+
+<ResponseField name="directUpload" type="object">
+  A completion record to include in the `directUploads` array when calling [Complete Uploads](/api-reference/uploads/complete-uploads).
+
+  <ResponseField name="directUpload.documentId" type="string">
+    The document ID — same as the top-level `documentId`.
+  </ResponseField>
+
+  <ResponseField name="directUpload.uploadToken" type="string">
+    The upload token confirming the content was received. Pass this in the complete request.
+  </ResponseField>
+</ResponseField>
+
+## Full Upload Flow
+
+```
+1. POST /api/open/v1/jobs/{jobId}/uploads          → receive documentId + uploadToken
+2. POST /api/open/v1/jobs/{jobId}/uploads/{documentId}/content  → upload base64 bytes
+3. POST /api/open/v1/jobs/{jobId}/uploads/complete  → pass directUploads from step 2
+```
+
+## Example Request
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/DOC_ID/content \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uploadToken": "tok_abc123def456",
+    "contentBase64": "JVBERi0xLjQK...",
+    "sha256": "a3f1b2c4d5e6f7081920a1b2c3d4e5f6a7b8c9d0e1f2031415161718191a1b1c"
+  }'
+```
+
+### Encoding a file to Base64
+
+```bash
+# macOS / Linux
+base64 -i drawings.pdf | tr -d '\n'
+
+# Then embed the output in your JSON payload
+```
+
+## Example Response
+
+```json
+{
+  "status": "uploaded",
+  "documentId": "doc_01xyz789",
+  "fileName": "drawings.pdf",
+  "fileSize": 2048576,
+  "contentType": "application/pdf",
+  "uploadMode": "direct_put",
+  "directUpload": {
+    "documentId": "doc_01xyz789",
+    "uploadToken": "tok_abc123def456"
+  }
+}
+```
+
+## Completing the Upload
+
+Pass the `directUpload` object from this response into the `directUploads` array of the Complete Uploads call:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "directUploads": [
+      {
+        "documentId": "doc_01xyz789",
+        "uploadToken": "tok_abc123def456"
+      }
+    ]
+  }'
+```

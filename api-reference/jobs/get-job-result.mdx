@@ -1,0 +1,196 @@
+---
+title: "Get Normalized v1 Result JSON for a Job"
+sidebarTitle: "Get Result"
+description: "GET /api/open/v1/jobs/{jobId}/result — returns the immutable normalized v1 result JSON for a completed job, including documents, evidence, and usage."
+---
+
+Retrieve the normalized v1 result JSON for a job that has reached a completed terminal state. The result is immutable — its content never changes after the job finishes. It includes structured documents extracted from the source files, supporting evidence linking findings back to specific pages and regions, usage metrics, and any warnings or errors that arose during processing.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/jobs/{jobId}/result
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the job whose result you want to retrieve. The job must have a `status` of `completed` or `completed_with_errors`.
+</ParamField>
+
+## Example Request
+
+```bash
+curl --request GET \
+  --url https://plangrep.com/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+## Response Fields
+
+<ResponseField name="schemaVersion" type='"v1"' required>
+  Always `"v1"`. Used by consumers to select the correct parsing logic as the schema evolves over time.
+</ResponseField>
+
+<ResponseField name="job" type="ResultJob" required>
+  A concise snapshot of the job that produced this result.
+
+  <Expandable title="ResultJob fields">
+    <ResponseField name="id" type="string" required>
+      The job ID.
+    </ResponseField>
+
+    <ResponseField name="projectId" type="string" required>
+      The parent project ID.
+    </ResponseField>
+
+    <ResponseField name="status" type="string" required>
+      Terminal status of the job (`completed` or `completed_with_errors`).
+    </ResponseField>
+
+    <ResponseField name="externalId" type="string | null">
+      Client-supplied correlation ID.
+    </ResponseField>
+
+    <ResponseField name="completedAt" type="string" required>
+      ISO 8601 timestamp of when the job reached its terminal state.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="ResultUsage" required>
+  Aggregate processing metrics for the job.
+
+  <Expandable title="ResultUsage fields">
+    <ResponseField name="totalPages" type="integer" required>
+      Total pages submitted for processing.
+    </ResponseField>
+
+    <ResponseField name="successfulPages" type="integer" required>
+      Pages that were processed without errors.
+    </ResponseField>
+
+    <ResponseField name="creditsCharged" type="integer" required>
+      Total credits billed for this job.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="documents" type="ResultDocument[]" required>
+  Array of normalized document objects extracted from the uploaded source files. Each document represents a structured entity (e.g., a door schedule, a specification section, a room data sheet) identified by Plangrep during processing.
+
+  <Expandable title="ResultDocument fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for this document within the result.
+    </ResponseField>
+
+    <ResponseField name="type" type="string" required>
+      The document or entity type (e.g., `"door_schedule"`, `"spec_section"`, `"room"`).
+    </ResponseField>
+
+    <ResponseField name="data" type="object" required>
+      The normalized, structured data payload for this document. Shape varies by `type`.
+    </ResponseField>
+
+    <ResponseField name="evidenceIds" type="string[]" required>
+      IDs of `evidence` entries that support this document's extracted data.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="evidence" type="ResultEvidence[]" required>
+  Source-level evidence records linking extracted data back to specific locations in the uploaded files.
+
+  <Expandable title="ResultEvidence fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for this evidence record.
+    </ResponseField>
+
+    <ResponseField name="fileName" type="string" required>
+      The source file this evidence was found in.
+    </ResponseField>
+
+    <ResponseField name="pageNumber" type="integer" required>
+      The page number within the source file.
+    </ResponseField>
+
+    <ResponseField name="sheetNumber" type="string | null">
+      The sheet number if the source page is a drawing sheet, otherwise `null`.
+    </ResponseField>
+
+    <ResponseField name="boundingBox" type="object | null">
+      Pixel-coordinate bounding box of the region within the page, or `null` if not available.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="warnings" type="string[]" required>
+  Non-fatal warnings raised during processing (e.g., unreadable pages, unsupported file formats). Empty array when there are no warnings.
+</ResponseField>
+
+<ResponseField name="errors" type="object[]" required>
+  Page-level or file-level errors that prevented full processing. Present in `completed_with_errors` results. Empty array for fully `completed` jobs.
+</ResponseField>
+
+<ResponseField name="generatedAt" type="string" required>
+  ISO 8601 timestamp of when this result object was generated.
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "schemaVersion": "v1",
+  "job": {
+    "id": "job_01hy3m8qtn2e5r7k9p0w4x1def",
+    "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "status": "completed",
+    "externalId": "order-7890",
+    "completedAt": "2024-11-02T09:45:10.000Z"
+  },
+  "usage": {
+    "totalPages": 204,
+    "successfulPages": 204,
+    "creditsCharged": 204
+  },
+  "documents": [
+    {
+      "id": "doc_001",
+      "type": "door_schedule",
+      "data": {
+        "doors": [
+          {
+            "mark": "101A",
+            "width": 36,
+            "height": 84,
+            "material": "hollow_metal",
+            "fireRating": "90min"
+          }
+        ]
+      },
+      "evidenceIds": ["evd_001", "evd_002"]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evd_001",
+      "fileName": "architectural_drawings.pdf",
+      "pageNumber": 14,
+      "sheetNumber": "A-201",
+      "boundingBox": { "x": 120, "y": 340, "width": 800, "height": 240 }
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "generatedAt": "2024-11-02T09:45:15.000Z"
+}
+```
+
+<Note>
+  Results are only available for jobs with a status of `completed` or `completed_with_errors`. Calling this endpoint on a job in any other status — including `failed`, `cancelled`, or `expired` — will return a `404` or `409` error. Check `job.status` with [Get Job](/api-reference/jobs/get-job) before calling this endpoint.
+</Note>

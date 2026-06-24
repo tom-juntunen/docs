@@ -1,0 +1,174 @@
+---
+title: "Get Job State"
+sidebarTitle: "Get Job"
+description: "GET /api/open/v1/jobs/{jobId} — retrieves current job state. Use for polling job progress after upload completion."
+---
+
+Retrieve the current state of a processing job by its ID. Use this endpoint to poll job progress after completing file uploads, or at any point to inspect status, billing, file metadata, and error details. Once a job reaches a terminal status, its state is frozen.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/jobs/{jobId}
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the job to retrieve. Returned as `job.id` from [Create Job](/api-reference/jobs/create-job).
+</ParamField>
+
+## Example Request
+
+```bash
+curl --request GET \
+  --url https://plangrep.com/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+## Response Fields
+
+<ResponseField name="job" type="Job" required>
+  The current state of the requested job.
+
+  <Expandable title="Job object fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the job.
+    </ResponseField>
+
+    <ResponseField name="externalId" type="string | null">
+      Client-supplied correlation ID, or `null` if none was provided at creation.
+    </ResponseField>
+
+    <ResponseField name="status" type="JobStatus" required>
+      Current status of the job. See the **Job Status Reference** section below.
+    </ResponseField>
+
+    <ResponseField name="projectId" type="string" required>
+      The ID of the parent project.
+    </ResponseField>
+
+    <ResponseField name="limits" type="object" required>
+      Processing limits applied to this job.
+
+      <Expandable title="limits fields">
+        <ResponseField name="maxDeclaredBytes" type="integer" required>
+          Maximum total bytes that may be uploaded to this job.
+        </ResponseField>
+
+        <ResponseField name="maxFiles" type="integer" required>
+          Maximum number of files that may be uploaded to this job.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="pageCount" type="integer" required>
+      Total number of pages submitted for processing.
+    </ResponseField>
+
+    <ResponseField name="successfulPageCount" type="integer" required>
+      Number of pages processed without errors so far.
+    </ResponseField>
+
+    <ResponseField name="billing" type="object" required>
+      Billing snapshot for the job.
+    </ResponseField>
+
+    <ResponseField name="files" type="object[]" required>
+      Metadata for each file attached to the job.
+    </ResponseField>
+
+    <ResponseField name="resultUrl" type="string | null">
+      Pre-signed URL to the normalized result JSON. Populated once status is `completed` or `completed_with_errors`. Use [Get Job Result](/api-reference/jobs/get-job-result) to retrieve the structured result.
+    </ResponseField>
+
+    <ResponseField name="error" type="object | null">
+      Error details when status is `failed`, otherwise `null`.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of job creation.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of the most recent status update.
+    </ResponseField>
+
+    <ResponseField name="completedAt" type="string | null">
+      ISO 8601 timestamp of when the job reached a terminal state, or `null` if still in progress.
+    </ResponseField>
+
+    <ResponseField name="expiresAt" type="string | null">
+      ISO 8601 timestamp after which the job and its result are no longer accessible.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Job Status Reference
+
+### Non-Terminal Statuses
+Jobs in these states are still in progress and may change status with subsequent polling.
+
+| Status | Description |
+|---|---|
+| `provisioning` | Job infrastructure is being set up. |
+| `awaiting_uploads` | Job is ready to receive file uploads. |
+| `uploading` | Files are actively being uploaded. |
+| `preflighting` | Uploaded files are being validated before processing begins. |
+| `blocked_insufficient_credits` | Job is paused — add credits and call [Resume Job](/api-reference/jobs/resume-job). |
+| `processing` | Plangrep is actively processing uploaded documents. |
+
+### Terminal Statuses
+Jobs in these states will not change further. Results (if any) can be retrieved.
+
+| Status | Description |
+|---|---|
+| `completed` | All pages processed successfully. Result is available. |
+| `completed_with_errors` | Processing finished with partial page-level errors. Partial result is available. |
+| `failed` | Processing failed entirely. Check `job.error` for details. |
+| `cancelled` | Job was cancelled via the [Cancel Job](/api-reference/jobs/cancel-job) endpoint. |
+| `expired` | Job was not completed before its expiry time. |
+
+## Example Response
+
+```json
+{
+  "job": {
+    "id": "job_01hy3m8qtn2e5r7k9p0w4x1def",
+    "externalId": "order-7890",
+    "status": "processing",
+    "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "limits": {
+      "maxDeclaredBytes": 5368709120,
+      "maxFiles": 50
+    },
+    "pageCount": 204,
+    "successfulPageCount": 87,
+    "billing": {
+      "creditsCharged": 87
+    },
+    "files": [
+      {
+        "id": "file_xyz789",
+        "fileName": "architectural_drawings.pdf",
+        "status": "processing"
+      }
+    ],
+    "resultUrl": null,
+    "error": null,
+    "createdAt": "2024-11-02T09:00:00.000Z",
+    "updatedAt": "2024-11-02T09:07:35.000Z",
+    "completedAt": null,
+    "expiresAt": "2024-11-09T09:00:00.000Z"
+  }
+}
+```
+
+<Tip>
+  When polling for job completion, use an interval of **10–30 seconds**. For faster feedback with no polling overhead, supply a `webhookUrl` when calling [Create Job](/api-reference/jobs/create-job) to receive push notifications on every status change.
+</Tip>

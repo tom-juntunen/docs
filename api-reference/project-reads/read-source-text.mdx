@@ -1,0 +1,177 @@
+---
+title: "Read Bounded Source Text from a Project Entity"
+sidebarTitle: "Source Text"
+description: "POST /api/open/v1/projects/{projectId}/source-text — retrieves bounded text for a given sourceCatalogUri. Supports pagination and multiple text kinds."
+---
+
+Retrieves the bounded text content for a source entity identified by a `sourceCatalogUri`. The URI is obtained from a [Search Sources](/api-reference/project-reads/search-sources) hit or from a source catalog. Use `textKind` to control the format of the returned text—plain text, markdown, page regions, or facet-scoped views. Large sources are paginated via `cursor` and `nextCursor`.
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/projects/{projectId}/source-text
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project that owns the source entity.
+</ParamField>
+
+## Request Body
+
+Content-Type: `application/json`
+
+<ParamField body="sourceCatalogUri" type="string" required>
+  Opaque URI identifying the source entity whose text you want to retrieve. Obtain this value from a `sourceCatalogUri` field on a [search hit](/api-reference/project-reads/search-sources) or from the source catalog. Must be at least **1 character**.
+</ParamField>
+
+<ParamField body="cursor" type="string">
+  Pagination cursor. Pass the `nextCursor` value from a previous response to retrieve the next chunk of text. Omit to start from the beginning.
+</ParamField>
+
+<ParamField body="maxChars" type="integer">
+  Maximum number of characters to return in a single response. Must be between **1** and **50,000**. If the source text exceeds this limit, use `nextCursor` to retrieve the remainder.
+</ParamField>
+
+<ParamField body="facetId" type="string">
+  Optional. Scopes the text retrieval to a specific facet within the source (e.g. a particular specification part). Must be a valid `facetId` belonging to the referenced source entity.
+</ParamField>
+
+<ParamField body="textKind" type="string">
+  Controls the format and scope of returned text. One of:
+
+  | Value | Description |
+  |-------|-------------|
+  | `text` | Plain text extracted from the source (default). |
+  | `markdown` | Text formatted as Markdown, preserving structure where detected. |
+  | `page_regions` | Text organized by detected page regions. |
+  | `facet_source_text` | Raw source text scoped to the matched facet. |
+  | `facet_match_text` | Processed/normalized text for the matched facet, optimized for comparison. |
+</ParamField>
+
+## Response
+
+Returns a `SourceTextResponse` object.
+
+<ResponseField name="status" type="string">
+  Status of the text retrieval operation (e.g. `success`).
+</ResponseField>
+
+<ResponseField name="source" type="ProjectSource">
+  Structured object describing the source entity.
+
+  <Expandable title="ProjectSource fields">
+    <ResponseField name="type" type="string">
+      The entity type of this source (e.g. `region`, `specification`, `doc`, `sheet`).
+    </ResponseField>
+    <ResponseField name="id" type="string">
+      The unique ID of the source entity.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Human-readable label for this source.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="sourceCatalogUri" type="string">
+  The `sourceCatalogUri` from the request, echoed back.
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  The retrieved text content, up to `maxChars` characters (or the system default). Empty string if no text is available for the requested `textKind`.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this response (echoed from the request).
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` in the next request to continue reading. `null` when there is no more text.
+</ResponseField>
+
+<ResponseField name="returnedChars" type="integer">
+  Number of characters actually returned in `text` for this response.
+</ResponseField>
+
+<ResponseField name="textLength" type="integer">
+  Total character length of the full source text (across all pages). Useful for progress indication.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional text is available beyond what was returned in this response.
+</ResponseField>
+
+<ResponseField name="textKind" type="string">
+  The `textKind` that was applied, echoed back from the request (or the default if none was specified).
+</ResponseField>
+
+<ResponseField name="facet" type="object">
+  If a `facetId` was specified, this contains the facet metadata associated with the returned text. `null` if no facet was specified or found.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
+    "textKind": "text",
+    "maxChars": 5000
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "status": "success",
+  "source": {
+    "type": "specification",
+    "id": "spec_018",
+    "label": "Section 07 13 26 – Self-Adhering Sheet Waterproofing"
+  },
+  "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
+  "text": "PART 2 – PRODUCTS\n\n2.01 WATERPROOFING MEMBRANE\nA. Self-Adhering Sheet: ASTM D1970; SBS-modified bitumen; 40-mil minimum thickness...\n\n2.02 ACCESSORIES\nA. Primer: As recommended by membrane manufacturer...",
+  "cursor": null,
+  "nextCursor": "eyJvZmZzZXQiOjUwMDB9",
+  "returnedChars": 5000,
+  "textLength": 18340,
+  "hasMore": true,
+  "textKind": "text",
+  "facet": {
+    "facetId": "facet_003",
+    "facetKey": "part_2_products",
+    "facetKind": "part",
+    "facetLabel": "PART 2 – PRODUCTS"
+  }
+}
+```
+
+## Paginating Through Long Source Text
+
+When `hasMore` is `true`, pass `nextCursor` back as `cursor` in a subsequent request to read the next chunk:
+
+```bash
+curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
+    "textKind": "text",
+    "maxChars": 5000,
+    "cursor": "eyJvZmZzZXQiOjUwMDB9"
+  }'
+```
+
+Repeat until `hasMore` is `false`.
+
+## Error Responses
+
+| Status | Description |
+|--------|-------------|
+| `400`  | Invalid request body — `sourceCatalogUri` missing or empty, `maxChars` out of range. |
+| `401`  | Missing or invalid Bearer token. |
+| `404`  | Project or source entity not found. |

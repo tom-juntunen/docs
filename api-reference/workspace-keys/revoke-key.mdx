@@ -1,0 +1,130 @@
+---
+title: "Revoke One Open API Key for Your Workspace"
+sidebarTitle: "Revoke Key"
+description: "Immediately revokes a single API key. Revoked keys are rejected on all subsequent requests."
+---
+
+<Note>
+  This endpoint uses session cookie authentication (`plangrep_session`). It is used by the Plangrep app's API settings page and does **not** accept a bearer API key.
+</Note>
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open-api/keys/{keyId}/revoke
+```
+
+## Authentication
+
+| Method | Value |
+|--------|-------|
+| Cookie | `plangrep_session=YOUR_SESSION_COOKIE` |
+
+---
+
+## Path Parameters
+
+<ParamField path="keyId" type="string" required>
+  The unique identifier of the API key to revoke. You can find key IDs by calling [List Keys](/api-reference/workspace-keys/list-keys).
+</ParamField>
+
+---
+
+## Request Body
+
+No request body required.
+
+---
+
+## Response
+
+**200 OK**
+
+Returns an object with the revoked key record.
+
+<ResponseField name="key" type="OpenApiKey" required>
+  The updated key record. The `revokedAt` field will be set to the timestamp of revocation.
+
+  <Expandable title="OpenApiKey fields">
+    <ResponseField name="id" type="string">
+      Unique identifier of the revoked key.
+    </ResponseField>
+
+    <ResponseField name="label" type="string">
+      Human-readable name of the key.
+    </ResponseField>
+
+    <ResponseField name="keyPrefix" type="string">
+      The prefix used to identify the key.
+    </ResponseField>
+
+    <ResponseField name="scopes" type="OpenApiKeyScope[]">
+      The permission scopes that were granted to this key.
+    </ResponseField>
+
+    <ResponseField name="createdByUserId" type="string">
+      ID of the workspace user who originally created this key.
+    </ResponseField>
+
+    <ResponseField name="hashVersion" type="string">
+      Internal version of the hashing algorithm used to store this key.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of when the key was created.
+    </ResponseField>
+
+    <ResponseField name="expiresAt" type="string | null">
+      ISO 8601 expiration timestamp, or `null` if the key had no expiration.
+    </ResponseField>
+
+    <ResponseField name="lastUsedAt" type="string | null">
+      ISO 8601 timestamp of the key's most recent successful use before revocation, or `null` if it was never used.
+    </ResponseField>
+
+    <ResponseField name="lastUsedIp" type="string | null">
+      IP address of the most recent request before revocation, or `null` if the key was never used.
+    </ResponseField>
+
+    <ResponseField name="revokedAt" type="string">
+      ISO 8601 timestamp of when this revocation occurred. This field will be non-null on a successfully revoked key.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Warning>
+  **Revocation is immediate and permanent.** As soon as this request completes, any active integration or process authenticating with this key will receive `401 Unauthorized` on its next request. This action cannot be undone — you must [create a new key](/api-reference/workspace-keys/create-key) to restore access.
+</Warning>
+
+---
+
+## Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://plangrep.com/api/open-api/keys/KEY_ID/revoke \
+  -H "Cookie: plangrep_session=YOUR_SESSION_COOKIE"
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "key": {
+    "id": "key_01hx3z...",
+    "label": "Production Integration",
+    "keyPrefix": "pgk_live_abc1",
+    "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
+    "createdByUserId": "usr_01hx3y...",
+    "hashVersion": "v1",
+    "createdAt": "2024-11-01T10:00:00Z",
+    "expiresAt": null,
+    "lastUsedAt": "2025-01-15T08:42:00Z",
+    "lastUsedIp": "203.0.113.42",
+    "revokedAt": "2025-01-20T15:00:00Z"
+  }
+}
+```

@@ -1,0 +1,210 @@
+---
+title: "List Extracted Drawing Regions in a Plangrep Project"
+sidebarTitle: "List Regions"
+description: "GET /api/open/v1/projects/{projectId}/regions — paginated list of extracted drawing regions with filtering by region type, drawing type, layout, and more."
+---
+
+Returns a paginated list of extracted drawing regions within a project. A region is a bounding-box-delimited area detected on a sheet—such as a detail, plan view, section cut, or title block—along with any text extracted from that area. Filter by region type, drawing type, or layout type to focus on specific content patterns.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/regions
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose regions you want to list.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum number of records to return per page. Must be between **1** and **500**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned as `nextCursor` from a previous response. Omit to fetch the first page.
+</ParamField>
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from each entity, reducing payload size.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs to restrict results to regions on those sheets.
+</ParamField>
+
+<ParamField query="sheetId" type="string">
+  Restrict results to regions belonging to a single sheet.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Restrict results to regions belonging to a specific file.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Case-insensitive substring match on the parent file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="pageNumber" type="integer">
+  Filter to regions on this specific 1-based page number. Minimum: `1`.
+</ParamField>
+
+<ParamField query="regionType" type="string">
+  Filter by the detected region type (e.g. `detail`, `plan`, `section`, `elevation`, `schedule`, `title_block`).
+</ParamField>
+
+<ParamField query="drawingType" type="string">
+  Filter by drawing discipline or type (e.g. `architectural`, `structural`, `mechanical`).
+</ParamField>
+
+<ParamField query="layoutType" type="string">
+  Filter by layout classification of the region.
+</ParamField>
+
+## Response
+
+Returns a `ProjectRegionEntityListResponse` object.
+
+### Pagination Fields
+
+<ResponseField name="total" type="integer">
+  Total number of regions matching the current filters across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The page size limit that was applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this page (echoed back from the request).
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` to retrieve the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer">
+  Number of region entities actually returned in this response.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="pageInfo" type="object">
+  Relay-style page info object.
+
+  <Expandable title="pageInfo fields">
+    <ResponseField name="startCursor" type="string">
+      Cursor pointing to the first record in this page.
+    </ResponseField>
+    <ResponseField name="endCursor" type="string">
+      Cursor pointing to the last record in this page.
+    </ResponseField>
+    <ResponseField name="hasPreviousPage" type="boolean">
+      `true` if records exist before this page.
+    </ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">
+      `true` if records exist after this page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Data Fields
+
+<ResponseField name="regions" type="ProjectRegionEntity[]">
+  Array of extracted drawing region entities.
+
+  <Expandable title="ProjectRegionEntity fields">
+    <ResponseField name="regionId" type="string">
+      Unique identifier for this region.
+    </ResponseField>
+    <ResponseField name="fileId" type="string">
+      ID of the parent file.
+    </ResponseField>
+    <ResponseField name="sheetId" type="string">
+      ID of the sheet this region was detected on.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Name of the parent file.
+    </ResponseField>
+    <ResponseField name="pageNumber" type="integer">
+      1-based page number within the source file.
+    </ResponseField>
+    <ResponseField name="sheetNumber" type="string">
+      Sheet number of the parent sheet (e.g. `A1.01`).
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Human-readable label assigned to this region (e.g. `DETAIL 3/A5.01`).
+    </ResponseField>
+    <ResponseField name="text" type="string">
+      Text extracted from this region. Always present; returns an empty string `""` if no text was detected.
+    </ResponseField>
+    <ResponseField name="displayBox" type="object">
+      Normalized bounding box for the region (values in `[0, 1]` relative to page dimensions).
+
+      <Expandable title="displayBox fields">
+        <ResponseField name="left" type="number">Left edge, normalized to page width.</ResponseField>
+        <ResponseField name="top" type="number">Top edge, normalized to page height.</ResponseField>
+        <ResponseField name="right" type="number">Right edge, normalized to page width.</ResponseField>
+        <ResponseField name="bottom" type="number">Bottom edge, normalized to page height.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="titleDisplayBox" type="object">
+      Normalized bounding box for the region's title/label area. Same structure as `displayBox`. May be `null`.
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects containing URLs to derived outputs (e.g. cropped region image). Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions?limit=50&regionType=detail&classification=plans" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "total": 310,
+  "limit": 50,
+  "cursor": null,
+  "nextCursor": "eyJvZmZzZXQiOjUwfQ==",
+  "returnedCount": 50,
+  "hasMore": true,
+  "pageInfo": {
+    "startCursor": "eyJvZmZzZXQiOjB9",
+    "endCursor": "eyJvZmZzZXQiOjQ5fQ==",
+    "hasPreviousPage": false,
+    "hasNextPage": true
+  },
+  "regions": [
+    {
+      "regionId": "region_001",
+      "fileId": "file_001",
+      "sheetId": "sheet_007",
+      "fileName": "Architectural_Plans_SetA.pdf",
+      "pageNumber": 12,
+      "sheetNumber": "A5.01",
+      "label": "DETAIL 3/A5.01",
+      "text": "CONT. BEAD OF SEALANT AT ALL EDGES. SEE SPEC 07900.",
+      "displayBox": { "left": 0.52, "top": 0.31, "right": 0.74, "bottom": 0.58 },
+      "titleDisplayBox": { "left": 0.52, "top": 0.58, "right": 0.74, "bottom": 0.62 },
+      "artifacts": [
+        { "artifactType": "region_crop", "url": "https://..." }
+      ]
+    }
+  ]
+}
+```

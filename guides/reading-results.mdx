@@ -1,0 +1,134 @@
+---
+title: "Read and Interpret Plangrep Job Results"
+sidebarTitle: "Reading Results"
+description: "Learn how to fetch the normalized v1 result JSON, interpret extracted documents, sheets, regions, and evidence records, and download artifacts."
+---
+
+Once a Plangrep job completes, you can retrieve the full normalized result JSON and query the processed entities via the project endpoints. This guide shows how to fetch the result, traverse its structure, and download associated artifacts.
+
+## Fetch the result JSON
+
+Call `GET /api/open/v1/jobs/{jobId}/result` after the job reaches a terminal status:
+
+```bash
+curl https://plangrep.com/api/open/v1/jobs/job_xyz789/result \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+The response is a single normalized JSON object:
+
+```json
+{
+  "schemaVersion": "v1",
+  "job": { "id": "job_xyz789", "status": "completed", "...": "..." },
+  "usage": {
+    "pageCount": 42,
+    "drawingPageCount": 38,
+    "documentPageCount": 4,
+    "creditsDebited": 384
+  },
+  "documents": [
+    {
+      "documentId": "doc_111",
+      "fileName": "floor-plan.pdf",
+      "classification": "plans",
+      "sheets": ["..."],
+      "artifacts": ["..."]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_001",
+      "type": "region",
+      "regionType": "detail",
+      "text": "...",
+      "...": "..."
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "generatedAt": "2024-01-15T10:05:00Z"
+}
+```
+
+Check `errors` first. A `completed_with_errors` job may have partial results alongside per-document error entries describing what could not be processed.
+
+---
+
+## Iterate over documents and sheets
+
+Each entry in the `documents` array is a `ResultDocument` that maps back to a file you uploaded. Each document contains a `sheets` array with extracted sheet metadata:
+
+```python
+for doc in result["documents"]:
+    print(f"File: {doc['fileName']} ({doc['classification']})")
+    for sheet in doc.get("sheets", []):
+        print(
+            f"  Sheet {sheet['sheetNumber']}: "
+            f"{sheet['sheetName']} (page {sheet['pageNumber']})"
+        )
+```
+
+Sheet objects include fields such as `sheetNumber`, `sheetName`, `pageNumber`, `drawingType`, `discipline`, and `artifacts` for associated renderings.
+
+---
+
+## Use the evidence array
+
+The top-level `evidence` array aggregates all citable source records extracted from every processed file. Use it to build indexes, feed downstream AI pipelines, or power search UIs:
+
+```python
+for ev in result["evidence"]:
+    label = ev.get("label", "")
+    snippet = ev.get("text", "")[:100]
+    print(f"[{ev['type']}] {label} — {snippet}")
+```
+
+Evidence records carry a `type` field (for example `"region"` or `"specification"`) and additional type-specific fields. Each record also includes a `sourceCatalogUri` you can pass to the source-text endpoint to fetch the full content.
+
+---
+
+## Download artifacts
+
+Artifacts are authenticated URLs pointing to rendered outputs on your organization's result snapshot. Fetch an artifact by passing its `path` as a query parameter:
+
+```bash
+curl "https://plangrep.com/api/open/v1/jobs/job_xyz789/artifact?path=PATH_FROM_ARTIFACT_URL" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  --output result.pdf
+```
+
+Plangrep generates several artifact types for each document and sheet:
+
+| Type | Description |
+|---|---|
+| `file` | The original uploaded file |
+| `thumbnail` | Low-resolution preview image |
+| `viewer` | Interactive viewer URL |
+| `render` | Full-resolution page rendering |
+| `pdf` | Processed or normalized PDF |
+| `region_crop` | Cropped image of a specific region |
+| `region_text` | Extracted text for a region |
+| `region_ocr` | Raw OCR output for a region |
+
+---
+
+## Query project entities
+
+After processing completes, you can query individual entity types on the project using paginated list endpoints. These endpoints support filtering and are useful for ongoing workflows that span multiple jobs.
+
+```bash
+# List all sheets in a project
+curl "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets?limit=50" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# List regions of type 'detail'
+curl "https://plangrep.com/api/open/v1/projects/proj_abc123/regions?regionType=detail&limit=100" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Paginate through results using the `cursor` parameter returned in each response.
+
+<Tip>
+  Use `compact=true` on entity list endpoints to strip artifact URL fields and reduce response size for indexing workflows.
+</Tip>

@@ -1,0 +1,107 @@
+---
+title: "Get One Processed Document Entity from a Project"
+sidebarTitle: "Get Doc"
+description: "GET /api/open/v1/projects/{projectId}/docs/{docId} — retrieves a single processed document entity with type, status, and artifact links."
+---
+
+Retrieves a single processed document entity by its ID. The response includes the doc's type, current processing status, parent file reference, and any artifact URLs generated during processing. Pass `compact=true` to omit artifact URLs when you only need metadata.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/docs/{docId}
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project that owns the doc.
+</ParamField>
+
+<ParamField path="docId" type="string" required>
+  The unique identifier of the doc entity to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from the response.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs to narrow context.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Optional filter by parent file ID.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Optional case-insensitive substring match on the parent file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Optional filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="docType" type="string">
+  Optional filter — returns the doc only if it matches this document type.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Optional filter — returns the doc only if it matches this processing status.
+</ParamField>
+
+## Response
+
+Returns an object containing the matching doc entity.
+
+<ResponseField name="doc" type="ProjectDocEntity">
+  The requested document entity.
+
+  <Expandable title="ProjectDocEntity fields">
+    <ResponseField name="docId" type="string">
+      Unique identifier for this doc entity.
+    </ResponseField>
+    <ResponseField name="fileId" type="string">
+      ID of the parent file this doc was extracted from.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Name of the parent file.
+    </ResponseField>
+    <ResponseField name="docType" type="string">
+      Classification of the document type (e.g. `submittal`, `rfi`, `report`).
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Current processing status of this doc entity.
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects with URLs to derived outputs. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/docs/doc_001" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "doc": {
+    "docId": "doc_001",
+    "fileId": "file_003",
+    "fileName": "Submittals_Package_1.pdf",
+    "docType": "submittal",
+    "status": "complete",
+    "artifacts": [
+      { "artifactType": "extracted_json", "url": "https://..." },
+      { "artifactType": "thumbnail", "url": "https://..." }
+    ]
+  }
+}
+```

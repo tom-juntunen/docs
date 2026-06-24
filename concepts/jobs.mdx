@@ -1,0 +1,92 @@
+---
+title: "Jobs: Processing Units for Uploaded Document Files"
+sidebarTitle: "Jobs"
+description: "Understand how Plangrep jobs manage the lifecycle of file uploads and document processing, from upload through completion."
+---
+
+A job is a single processing unit within a project. You create a job, upload files to it, complete the upload window, and then Plangrep processes the files and writes the results back to the project.
+
+## Creating a Job
+
+```bash
+POST /api/open/v1/projects/{projectId}/jobs
+```
+
+```json
+{
+  "externalId": "your-internal-ref-456",
+  "webhookUrl": "https://your-app.example.com/webhooks/plangrep"
+}
+```
+
+Both fields are optional:
+
+- **`externalId`** (max 180 chars) — correlate this job with a record in your own system. Plangrep stores and returns this value but does not enforce uniqueness.
+- **`webhookUrl`** — Plangrep posts job status change notifications to this URL as the job progresses. Use this to avoid polling.
+
+### Idempotent Job Creation
+
+Pass an `Idempotency-Key` request header to make job creation idempotent. If you retry the same request with the same key, Plangrep returns the existing job instead of creating a duplicate.
+
+```bash
+Idempotency-Key: your-unique-key-here
+```
+
+## Job Status Reference
+
+| Status | Description |
+|--------|-------------|
+| `provisioning` | Job is being set up. |
+| `awaiting_uploads` | Job is ready to accept file uploads. |
+| `uploading` | Files are actively being transferred. |
+| `preflighting` | Files received; Plangrep is validating them before processing begins. |
+| `blocked_insufficient_credits` | Processing paused because your organization has insufficient credits. |
+| `processing` | Plangrep is actively extracting entities from your documents. |
+| `completed` | All pages processed successfully. Results are available. |
+| `completed_with_errors` | Some pages failed. Successful pages are in the result; check `errors` for details. |
+| `failed` | The job failed entirely. No result is available. |
+| `cancelled` | The job was cancelled by your request. |
+| `expired` | The job TTL elapsed before processing completed. |
+
+<Note>
+  If a job enters `blocked_insufficient_credits`, add credits to your account and call `POST /api/open/v1/jobs/{jobId}/resume` to continue processing.
+</Note>
+
+## Job Limits
+
+| Limit | Production Default |
+|-------|--------------------|
+| `limits.maxDeclaredBytes` | 10 GB total file size per job |
+| `limits.maxFiles` | 100 files per job |
+
+These limits are enforced at the time you register or upload files. Requests that would exceed either limit are rejected with a 4xx error.
+
+## Fetching Results
+
+Once a job reaches `completed` or `completed_with_errors`, the `resultUrl` field on the job object contains the URL to fetch the normalized result JSON. You can also use:
+
+```bash
+GET /api/open/v1/jobs/{jobId}/result
+```
+
+See [Results](/concepts/results) for a full breakdown of the result schema.
+
+## Result Retention
+
+The `expiresAt` field on a job shows when result data will be permanently deleted. Retention duration is controlled by your organization's configured `retentionDays` value. Download and store any artifacts or result JSON you need before this timestamp.
+
+## Job Fields Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique job identifier |
+| `projectId` | string | The project this job belongs to |
+| `externalId` | string \| null | Your correlation ID (max 180 chars) |
+| `webhookUrl` | string \| null | Webhook URL for status push notifications |
+| `status` | string | Current job status (see table above) |
+| `limits.maxDeclaredBytes` | number | Max total file size in bytes |
+| `limits.maxFiles` | number | Max number of files |
+| `resultUrl` | string \| null | URL to fetch result JSON once completed |
+| `expiresAt` | string \| null | ISO 8601 timestamp when result data expires |
+| `createdAt` | string | ISO 8601 timestamp when the job was created |
+| `updatedAt` | string | ISO 8601 timestamp of the most recent update |

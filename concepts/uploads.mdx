@@ -1,0 +1,206 @@
+---
+title: "Upload Files to Plangrep Jobs"
+sidebarTitle: "Uploads"
+description: "Learn the three upload paths Plangrep supports: multipart form upload, signed direct PUT, and signed multipart upload for large files."
+---
+
+Plangrep supports three upload modes so you can choose the right approach for your file sizes and client environment. All modes follow the same final step: call the complete endpoint to start processing.
+
+<Note>
+  Each job allows a maximum of **100 files** and a maximum total declared size of **10 GB**. Requests that exceed either limit are rejected before any bytes are transferred.
+</Note>
+
+## Upload Mode Comparison
+
+| Mode | Best for | Requires SHA-256 upfront? |
+|------|----------|--------------------------|
+| Multipart form upload | Most use cases; files under a few hundred MB | No |
+| Signed direct PUT | Large files; pre-hashed files; server-to-server | Yes |
+| Signed multipart upload | Files over 5 GB | Yes |
+
+---
+
+## 1. Multipart Form Upload
+
+**Recommended for most use cases.**
+
+```bash
+POST /api/open/v1/jobs/{jobId}/files
+Content-Type: multipart/form-data
+```
+
+Send a `multipart/form-data` request with:
+
+- A part named **`metadata`** — a JSON string describing the files you're uploading.
+- One or more file parts named **`file0`**, **`file1`**, **`file2`**, etc.
+
+### Metadata structure
+
+```json
+{
+  "clientUploadFlowId": "optional-client-trace-id",
+  "files": [
+    {
+      "partName": "file0",
+      "fileName": "A101-floor-plan.pdf",
+      "contentType": "application/pdf",
+      "classification": "plans",
+      "sha256": "optional-64-char-hex-digest"
+    },
+    {
+      "partName": "file1",
+      "fileName": "Division-03-concrete-spec.pdf",
+      "contentType": "application/pdf",
+      "classification": "specifications"
+    }
+  ]
+}
+```
+
+| Metadata field | Required | Description |
+|----------------|----------|-------------|
+| `clientUploadFlowId` | No | Client-generated trace ID for this upload flow |
+| `files[].partName` | Yes | Must match the form part name (`file0`, `file1`, …) |
+| `files[].fileName` | Yes | Original file name including extension |
+| `files[].contentType` | Yes | MIME type of the file |
+| `files[].classification` | No | See classification enum below. Omit to auto-classify. |
+| `files[].sha256` | No | 64-character lowercase hex SHA-256 digest for integrity verification |
+
+### File classification enum
+
+| Value | Use when |
+|-------|----------|
+| `plans` | Construction drawing sets |
+| `specifications` | Project specification books |
+| `documents` | General project documents |
+| `addenda` | Issued addenda |
+| `mixed` | A single file containing multiple document types |
+| `other` | Anything that doesn't fit another category |
+
+### Response
+
+The response includes an `uploads` array with a `documentId` for each uploaded file and the updated job state. You can call this endpoint multiple times to upload files in batches.
+
+<Warning>
+  Uploading files does **not** start processing. You must call the complete endpoint after your final upload batch.
+</Warning>
+
+---
+
+## 2. Signed Upload Registration
+
+Use this path when you want to upload directly from a client browser, when files are large, or when you already have a pre-computed SHA-256 hash.
+
+### Step 1 — Register files
+
+```bash
+POST /api/open/v1/jobs/{jobId}/uploads
+```
+
+```json
+{
+  "files": [
+    {
+      "fileName": "large-drawing-set.pdf",
+      "contentType": "application/pdf",
+      "fileSize": 2147483648,
+      "sha256": "a3f1...64-char-hex"
+    }
+  ]
+}
+```
+
+Each file requires `fileName`, `contentType`, `fileSize` (in bytes), and `sha256` (64-character hex digest).
+
+### Step 2 — Execute the upload
+
+The response `uploads` array contains an `UploadInstruction` per file:
+
+| Field | Description |
+|-------|-------------|
+| `documentId` | Unique ID assigned to this file |
+| `uploadMode` | `direct_put` or `multipart` |
+| `uploadToken` | Opaque token to include in the complete request |
+| `expiresAt` | Timestamp after which the signed URLs expire |
+
+**`direct_put` mode** — Plangrep returns a single `uploadUrl` and `uploadHeaders`. PUT the raw file bytes to that URL using exactly those headers:
+
+```bash
+PUT {uploadUrl}
+# Include all key-value pairs from uploadHeaders
+Content-Type: application/pdf
+# ...other headers as specified
+```
+
+**`multipart` mode** — Plangrep returns a `parts` array. Upload each part to its `uploadUrl` in order, and collect the `ETag` response header from each request.
+
+### Step 3 — Complete the upload
+
+Include the upload tokens and ETags in the complete request body (see [Completing Uploads](#completing-uploads) below).
+
+---
+
+## 3. Base64 Content Upload
+
+This path provides an API-compatibility helper for `direct_put` registered uploads when you cannot perform a raw PUT (e.g., some API gateway environments).
+
+```bash
+POST /api/open/v1/jobs/{jobId}/uploads/{documentId}/content
+```
+
+```json
+{
+  "uploadToken": "token-from-registration-response",
+  "contentBase64": "base64-encoded-file-bytes",
+  "sha256": "optional-64-char-hex"
+}
+```
+
+The response returns a `directUpload` token object. Use this token in the complete request body exactly as you would a `direct_put` token.
+
+---
+
+## Completing Uploads
+
+After all files are uploaded, call the complete endpoint to close the upload window and start processing:
+
+```bash
+POST /api/open/v1/jobs/{jobId}/uploads/complete
+Idempotency-Key: your-unique-completion-key
+```
+
+Pass the `Idempotency-Key` header to prevent duplicate completions if you need to retry.
+
+### For form-upload jobs
+
+Send an empty body or omit the body entirely:
+
+```json
+{}
+```
+
+### For signed upload jobs
+
+Include completion tokens so Plangrep can finalize the uploads:
+
+```json
+{
+  "directUploads": [
+    { "documentId": "doc_abc123", "uploadToken": "token-abc" }
+  ],
+  "multipartUploads": [
+    {
+      "documentId": "doc_def456",
+      "uploadToken": "token-def",
+      "parts": [
+        { "partNumber": 1, "etag": "\"etag-value-1\"" },
+        { "partNumber": 2, "etag": "\"etag-value-2\"" }
+      ]
+    }
+  ]
+}
+```
+
+### After completing
+
+The response includes the updated job state. The job transitions to `preflighting` while Plangrep validates the files, then moves to `processing`. Poll GET `/api/open/v1/jobs/{jobId}` or use your `webhookUrl` to track progress.

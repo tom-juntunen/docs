@@ -1,0 +1,245 @@
+---
+title: "Register Signed Upload Instructions for Large Files"
+sidebarTitle: "Register Uploads"
+description: "POST /api/open/v1/jobs/{jobId}/uploads — registers files and returns signed direct PUT or multipart upload instructions with upload tokens."
+---
+
+## Overview
+
+Register one or more files with a job to receive signed upload instructions. Plangrep inspects each file's declared size and SHA-256 digest and returns either a **direct PUT** URL (for smaller files) or **multipart** upload instructions (for large files). You then upload bytes directly to the signed storage URLs — bypassing Plangrep's servers — before calling [Complete Uploads](/api-reference/uploads/complete-uploads).
+
+This is the recommended path for large files (e.g. full drawing sets) where multipart upload and direct-to-storage delivery offer better performance and reliability.
+
+<Note>
+  The total declared file sizes across all registrations for a job must not exceed **10 GB**.
+</Note>
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/jobs/{jobId}/uploads
+```
+
+## Authentication
+
+All requests must include a Bearer token in the `Authorization` header.
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the job to register files against.
+</ParamField>
+
+## Request Body
+
+**Content-Type:** `application/json`
+
+<ParamField body="files" type="array" required>
+  List of files to register. Must contain between **1 and 100** items.
+
+  <ParamField body="files[].fileName" type="string" required>
+    The original filename, including extension (e.g. `large-drawings.pdf`).
+  </ParamField>
+
+  <ParamField body="files[].contentType" type="string" required>
+    MIME type of the file (e.g. `application/pdf`).
+  </ParamField>
+
+  <ParamField body="files[].fileSize" type="integer" required>
+    Exact size of the file in bytes. Must be `>= 0`. This value is used to determine upload mode and allocate storage.
+  </ParamField>
+
+  <ParamField body="files[].sha256" type="string" required>
+    A 64-character lowercase hex string — the SHA-256 digest of the **exact bytes** you will upload. Used for integrity verification and deduplication.
+  </ParamField>
+
+  <ParamField body="files[].classification" type="string">
+    Document classification hint. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`. Omit to allow Plangrep to auto-classify based on file content.
+  </ParamField>
+</ParamField>
+
+## Response
+
+**Status: `200 OK`**
+
+<ResponseField name="job" type="object">
+  The updated Job object.
+</ResponseField>
+
+<ResponseField name="uploads" type="array">
+  One `UploadInstruction` object per registered file.
+
+  <ResponseField name="uploads[].documentId" type="string">
+    The unique document ID assigned to this file. Reference this ID in the completion request.
+  </ResponseField>
+
+  <ResponseField name="uploads[].uploadMode" type="string">
+    The upload strategy Plangrep selected. Either `direct_put` (single PUT request) or `multipart` (multiple part uploads).
+  </ResponseField>
+
+  <ResponseField name="uploads[].uploadUrl" type="string">
+    **`direct_put` only.** The signed URL to PUT the full file bytes to. Valid until `expiresAt`.
+  </ResponseField>
+
+  <ResponseField name="uploads[].uploadHeaders" type="object">
+    **`direct_put` only.** A map of HTTP headers that **must** be included when uploading bytes to `uploadUrl` (e.g. `Content-Type`, `x-amz-checksum-sha256`). Omitting these headers will cause the upload to fail.
+  </ResponseField>
+
+  <ResponseField name="uploads[].uploadToken" type="string">
+    An opaque token proving upload completion. Include this in the [Complete Uploads](/api-reference/uploads/complete-uploads) request body.
+  </ResponseField>
+
+  <ResponseField name="uploads[].expiresAt" type="string">
+    ISO 8601 timestamp indicating when the signed upload URL(s) expire. Complete the upload before this time.
+  </ResponseField>
+
+  <ResponseField name="uploads[].multipartUploadId" type="string">
+    **`multipart` only.** The multipart upload session ID. Include this in the completion request.
+  </ResponseField>
+
+  <ResponseField name="uploads[].partSize" type="integer">
+    **`multipart` only.** The target size in bytes for each part. Use this to split the file when uploading parts.
+  </ResponseField>
+
+  <ResponseField name="uploads[].parts" type="array">
+    **`multipart` only.** One entry per part, describing the byte range and signed URL for that part.
+
+    <ResponseField name="parts[].partNumber" type="integer">
+      1-based part index. Include this in the completion request's `parts` array.
+    </ResponseField>
+
+    <ResponseField name="parts[].startByte" type="integer">
+      Inclusive start byte offset for this part within the full file.
+    </ResponseField>
+
+    <ResponseField name="parts[].endByteExclusive" type="integer">
+      Exclusive end byte offset for this part. Read bytes `[startByte, endByteExclusive)`.
+    </ResponseField>
+
+    <ResponseField name="parts[].uploadUrl" type="string">
+      Signed URL to PUT this part's bytes to.
+    </ResponseField>
+
+    <ResponseField name="parts[].uploadHeaders" type="object">
+      Required headers for the PUT request for this part.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="documents" type="array">
+  Additional document metadata objects associated with this registration.
+</ResponseField>
+
+## Upload Flow After Registration
+
+### Direct PUT
+
+```
+Register → PUT file bytes to uploadUrl (with uploadHeaders)
+         → Complete with directUploads: [{ documentId, uploadToken }]
+```
+
+1. Receive `uploadUrl` and `uploadHeaders` for the document.
+2. `PUT` the complete file bytes to `uploadUrl`, including every key-value pair from `uploadHeaders`.
+3. Include `{ documentId, uploadToken }` in the `directUploads` array of the [Complete Uploads](/api-reference/uploads/complete-uploads) request.
+
+### Multipart
+
+```
+Register → PUT each part byte range to its parts[n].uploadUrl
+         → Collect ETags from each response
+         → Complete with multipartUploads: [{ documentId, multipartUploadId, uploadToken, parts }]
+```
+
+1. For each entry in `parts`, `PUT` the corresponding byte range to `parts[n].uploadUrl` with `parts[n].uploadHeaders`.
+2. Capture the `ETag` response header from each part upload.
+3. Include the full `multipartUploads` record — with `parts[].partNumber` and `parts[].etag` — in the [Complete Uploads](/api-reference/uploads/complete-uploads) request.
+
+<Warning>
+  Signed upload URLs expire at `expiresAt`. If uploads are not completed before expiry, you must re-register the files to obtain fresh URLs. Do not store signed URLs for reuse.
+</Warning>
+
+## Example Request
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      {
+        "fileName": "large-drawings.pdf",
+        "contentType": "application/pdf",
+        "fileSize": 52428800,
+        "sha256": "a3f1b2c4d5e6f7081920a1b2c3d4e5f6a7b8c9d0e1f2031415161718191a1b1c"
+      }
+    ]
+  }'
+```
+
+## Example Response (direct_put)
+
+```json
+{
+  "job": {
+    "id": "job_01abc123",
+    "status": "uploading"
+  },
+  "uploads": [
+    {
+      "documentId": "doc_01xyz789",
+      "uploadMode": "direct_put",
+      "uploadUrl": "https://storage.example.com/uploads/doc_01xyz789?X-Signature=...",
+      "uploadHeaders": {
+        "Content-Type": "application/pdf",
+        "x-amz-checksum-sha256": "a3f1b2c4..."
+      },
+      "uploadToken": "tok_abc123def456",
+      "expiresAt": "2024-11-01T15:30:00Z"
+    }
+  ],
+  "documents": []
+}
+```
+
+## Example Response (multipart)
+
+```json
+{
+  "job": {
+    "id": "job_01abc123",
+    "status": "uploading"
+  },
+  "uploads": [
+    {
+      "documentId": "doc_01xyz789",
+      "uploadMode": "multipart",
+      "uploadToken": "tok_abc123def456",
+      "multipartUploadId": "mpu_def456ghi789",
+      "partSize": 10485760,
+      "expiresAt": "2024-11-01T15:30:00Z",
+      "parts": [
+        {
+          "partNumber": 1,
+          "startByte": 0,
+          "endByteExclusive": 10485760,
+          "uploadUrl": "https://storage.example.com/uploads/doc_01xyz789/part/1?X-Signature=...",
+          "uploadHeaders": { "Content-Type": "application/octet-stream" }
+        },
+        {
+          "partNumber": 2,
+          "startByte": 10485760,
+          "endByteExclusive": 20971520,
+          "uploadUrl": "https://storage.example.com/uploads/doc_01xyz789/part/2?X-Signature=...",
+          "uploadHeaders": { "Content-Type": "application/octet-stream" }
+        }
+      ]
+    }
+  ],
+  "documents": []
+}
+```

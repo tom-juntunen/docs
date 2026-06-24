@@ -1,0 +1,97 @@
+---
+title: "Plangrep Credits: How Processing Is Billed by Page"
+sidebarTitle: "Credits"
+description: "Learn how Plangrep credits work, how many are charged per drawing or document page, and what happens when credits run low during a job."
+---
+
+Plangrep uses a credit-based billing model. Credits are charged per page processed, with different rates for drawing pages (construction plan sheets) versus document pages (specifications, addenda, or other documents).
+
+## Credit Rates
+
+| Page type | Default credits per page |
+|-----------|--------------------------|
+| Drawing page | 10 credits |
+| Document page | 1 credit |
+
+Your organization's actual rates are shown in the `drawingCreditsPerPage` and `documentCreditsPerPage` fields of the `OpenApiProfile` object returned by the workspace keys endpoint. Use those values — not the defaults above — when estimating costs for your specific account.
+
+---
+
+## When Credits Are Charged
+
+Credits move through two stages during a job's lifecycle:
+
+<Steps>
+  <Step title="Reserved at preflight">
+    When a job transitions to `preflighting`, Plangrep estimates the total pages based on declared file sizes and **reserves** (`creditsReserved`) that amount from your balance. This prevents other jobs from over-drawing your account concurrently.
+  </Step>
+  <Step title="Debited on success">
+    As each page is successfully processed, credits are **debited** (`creditsDebited`) from your balance. Only successfully processed pages consume credits — failed pages are not charged.
+  </Step>
+  <Step title="Reservation released">
+    When the job completes, any difference between the reserved amount and the actual debited amount is released back to your available balance.
+  </Step>
+</Steps>
+
+---
+
+## Project Creation Billing
+
+Creating a project charges a small credit amount to provision the underlying runtime. The `ProjectCreateResponse` includes a `billing` object with:
+
+| Field | Description |
+|-------|-------------|
+| `creditsCharged` | Credits consumed to create this project |
+| `availableCredits` | Your organization's credit balance **before** the charge was applied |
+
+---
+
+## Blocked Jobs
+
+If your organization's credit balance is exhausted while a job is processing, the job transitions to `blocked_insufficient_credits` and pauses.
+
+<Steps>
+  <Step title="Add credits">
+    Purchase additional credits through your account dashboard or contact your account manager.
+  </Step>
+  <Step title="Resume the job">
+    Call the resume endpoint to continue processing from where it left off:
+
+    ```bash
+    POST /api/open/v1/jobs/{jobId}/resume
+    Authorization: Bearer {your_api_key}
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Jobs that remain in `blocked_insufficient_credits` until their TTL elapses will transition to `expired`. Add credits and resume promptly to avoid losing progress.
+</Warning>
+
+---
+
+## Credit Fields in API Responses
+
+### On every Job object (`Billing`)
+
+| Field | Description |
+|-------|-------------|
+| `creditsDebited` | Credits charged for successfully processed pages so far |
+| `creditsReserved` | Credits currently held in reserve for this job |
+| `drawingCreditsPerPage` | Rate applied to drawing pages for this job |
+| `documentCreditsPerPage` | Rate applied to document pages for this job |
+| `drawingPageCount` | Drawing pages processed so far |
+| `documentPageCount` | Document pages processed so far |
+| `successfulPageCount` | Total pages that completed without error |
+
+### On every Result object (`ResultUsage`)
+
+The `usage` field in the result JSON contains the same breakdown, frozen at the time the result was generated. This is the immutable record of what was charged for this job.
+
+See [Results](/concepts/results) for the full `ResultUsage` schema.
+
+---
+
+<Info>
+  Contact your account manager or the Plangrep support team for questions about credit packages, bulk pricing, and organization-level limits.
+</Info>

@@ -1,0 +1,173 @@
+---
+title: "Search Sources Within a Plangrep Project"
+sidebarTitle: "Search Sources"
+description: "POST /api/open/v1/projects/{projectId}/source-search — semantic and keyword search across all indexed sources in a project. Returns hits with snippets."
+---
+
+Performs semantic and keyword search across all indexed sources within a project—including drawing regions, specification sections, and document entities. Returns ranked hits, each with a relevance score, a text snippet, a `sourceCatalogUri` you can pass to [Read Source Text](/api-reference/project-reads/read-source-text), and a structured `source` object describing the matched entity.
+
+<Warning>
+  **409 — Vector index not ready.** If the project has searchable sources but the vector index has not finished building, the API returns `409 Conflict`. Retry the request after a short wait (e.g. 5–10 seconds). This typically occurs immediately after a large batch of files finishes processing.
+</Warning>
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/projects/{projectId}/source-search
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project to search within.
+</ParamField>
+
+## Request Body
+
+Content-Type: `application/json`
+
+<ParamField body="query" type="string" required>
+  The search query string. Must be at least **1 character**. Supports natural language and keyword queries (e.g. `"waterproofing membrane below grade"`, `"fire rating corridor"`).
+</ParamField>
+
+<ParamField body="entityTypes" type="string[]">
+  Optional list of entity type strings to restrict the search to specific source kinds (e.g. `["region", "specification", "doc"]`).
+</ParamField>
+
+<ParamField body="maxHits" type="integer">
+  Maximum number of search hits to return. Must be between **1** and **50**. Defaults to a system value if omitted.
+</ParamField>
+
+<ParamField body="regionType" type="string">
+  Filter hits to regions of this type (e.g. `detail`, `plan`, `section`).
+</ParamField>
+
+<ParamField body="layoutType" type="string">
+  Filter hits to sources with this layout type.
+</ParamField>
+
+<ParamField body="drawingType" type="string">
+  Filter hits to sources associated with this drawing discipline (e.g. `architectural`, `structural`).
+</ParamField>
+
+<ParamField body="sheetNumber" type="string">
+  Filter hits to sources located on this sheet number.
+</ParamField>
+
+<ParamField body="fileName" type="string">
+  Filter hits to sources from files whose name contains this substring (case-insensitive).
+</ParamField>
+
+<ParamField body="pageNumber" type="integer">
+  Filter hits to sources on this specific 1-based page number.
+</ParamField>
+
+<ParamField body="classification" type="string">
+  Filter hits to sources from files with this classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+## Response
+
+Returns a `SourceSearchResponse` object.
+
+<ResponseField name="status" type="string">
+  Status of the search operation (e.g. `success`).
+</ResponseField>
+
+<ResponseField name="query" type="string">
+  The query string echoed back from the request.
+</ResponseField>
+
+<ResponseField name="hitCount" type="integer">
+  Number of hits returned in this response.
+</ResponseField>
+
+<ResponseField name="searchedChunkCount" type="integer">
+  Total number of indexed content chunks that were searched.
+</ResponseField>
+
+<ResponseField name="hits" type="object[]">
+  Array of search hit objects, ordered by descending relevance score.
+
+  <Expandable title="Hit fields">
+    <ResponseField name="score" type="number">
+      Relevance score for this hit. Higher is more relevant.
+    </ResponseField>
+    <ResponseField name="snippet" type="string">
+      A short excerpt of text from the matched source, suitable for display in a results list.
+    </ResponseField>
+    <ResponseField name="sourceCatalogUri" type="string">
+      Opaque URI that uniquely identifies this source. Pass this to [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve the full text of the matched entity.
+    </ResponseField>
+    <ResponseField name="source" type="ProjectSource">
+      Structured object describing the matched source entity.
+
+      <Expandable title="ProjectSource fields">
+        <ResponseField name="type" type="string">
+          The entity type of this source (e.g. `region`, `specification`, `doc`, `sheet`).
+        </ResponseField>
+        <ResponseField name="id" type="string">
+          The unique ID of the matched entity.
+        </ResponseField>
+        <ResponseField name="label" type="string">
+          Human-readable label for this source (e.g. `DETAIL 3/A5.01`, `Section 03 30 00`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-search" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "waterproofing membrane below grade",
+    "maxHits": 5,
+    "classification": "specifications"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "status": "success",
+  "query": "waterproofing membrane below grade",
+  "hitCount": 3,
+  "searchedChunkCount": 4812,
+  "hits": [
+    {
+      "score": 0.941,
+      "snippet": "...self-adhering sheet waterproofing membrane applied to all below-grade foundation walls per ASTM D1970...",
+      "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
+      "source": {
+        "type": "specification",
+        "id": "spec_018",
+        "label": "Section 07 13 26 – Self-Adhering Sheet Waterproofing"
+      }
+    },
+    {
+      "score": 0.887,
+      "snippet": "...apply waterproofing membrane to exterior face of below-grade concrete walls. See Detail 4/A8.02...",
+      "sourceCatalogUri": "plangrep://projects/proj_abc123/regions/region_204",
+      "source": {
+        "type": "region",
+        "id": "region_204",
+        "label": "DETAIL 4/A8.02"
+      }
+    }
+  ]
+}
+```
+
+## Error Responses
+
+| Status | Description |
+|--------|-------------|
+| `400`  | Invalid request body — `query` missing or empty, `maxHits` out of range, etc. |
+| `401`  | Missing or invalid Bearer token. |
+| `404`  | Project not found. |
+| `409`  | Searchable sources exist but the vector index is not ready yet. Retry after a short wait. |

@@ -1,0 +1,99 @@
+---
+title: "List API Projects for Your Organization"
+sidebarTitle: "List Projects"
+description: "GET /api/open/v1/projects — returns all API projects visible to the authenticated organization key."
+---
+
+Retrieve every API project that belongs to your organization. The response includes each project's current status, runtime health, and timestamps, giving you a full snapshot of your project inventory in a single call.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects
+```
+
+This endpoint accepts no path parameters, query parameters, or request body.
+
+## Example Request
+
+```bash
+curl --request GET \
+  --url https://plangrep.com/api/open/v1/projects \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+## Response Fields
+
+<ResponseField name="projects" type="Project[]" required>
+  Array of all API projects visible to the authenticated organization.
+
+  <Expandable title="Project object fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the project.
+    </ResponseField>
+
+    <ResponseField name="name" type="string" required>
+      Human-readable display name for the project.
+    </ResponseField>
+
+    <ResponseField name="projectKind" type='"open_api"' required>
+      Always `"open_api"` for projects created through the API.
+    </ResponseField>
+
+    <ResponseField name="status" type="string" required>
+      Current lifecycle status of the project (e.g., `provisioning`, `ready`, `error`).
+    </ResponseField>
+
+    <ResponseField name="runtime" type="object" required>
+      Runtime health information for the project.
+
+      <Expandable title="runtime fields">
+        <ResponseField name="status" type="string" required>
+          Current runtime status.
+        </ResponseField>
+
+        <ResponseField name="upgradeStatus" type="string" required>
+          Indicates whether the project runtime is pending an upgrade.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the project was created.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of the most recent update to the project.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "projects": [
+    {
+      "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+      "name": "Downtown Office Tower",
+      "projectKind": "open_api",
+      "status": "ready",
+      "runtime": {
+        "status": "running",
+        "upgradeStatus": "none"
+      },
+      "createdAt": "2024-11-01T14:22:10.000Z",
+      "updatedAt": "2024-11-01T14:24:05.000Z"
+    }
+  ]
+}
+```
+
+<Note>
+  Only projects associated with the organization that owns the API key are returned. Projects from other organizations are never included, even if you have been granted access through other Plangrep interfaces.
+</Note>

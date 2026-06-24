@@ -1,0 +1,153 @@
+---
+title: "Cancel a Non-Terminal Plangrep Job"
+sidebarTitle: "Cancel Job"
+description: "POST /api/open/v1/jobs/{jobId}/cancel — cancels a job that has not yet reached a terminal state. Processed pages may still be billed."
+---
+
+Cancel a processing job that has not yet reached a terminal state. Once cancelled, the job transitions to `cancelled` status and no further processing occurs. Use this endpoint to stop a job that was created in error, is no longer needed, or needs to be restarted with different files.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/jobs/{jobId}/cancel
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the job to cancel. The job must not already be in a terminal state (`completed`, `completed_with_errors`, `failed`, `cancelled`, or `expired`).
+</ParamField>
+
+## Request Body
+
+This endpoint takes no request body.
+
+## Example Request
+
+```bash
+curl --request POST \
+  --url https://plangrep.com/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/cancel \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+## Response Fields
+
+<ResponseField name="job" type="Job" required>
+  The updated job object reflecting the cancelled state.
+
+  <Expandable title="Job object fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the job.
+    </ResponseField>
+
+    <ResponseField name="externalId" type="string | null">
+      Client-supplied correlation ID, or `null` if none was provided at creation.
+    </ResponseField>
+
+    <ResponseField name="status" type="JobStatus" required>
+      Will be `"cancelled"` upon a successful response.
+    </ResponseField>
+
+    <ResponseField name="projectId" type="string" required>
+      The ID of the parent project.
+    </ResponseField>
+
+    <ResponseField name="limits" type="object" required>
+      Processing limits that were applied to this job.
+
+      <Expandable title="limits fields">
+        <ResponseField name="maxDeclaredBytes" type="integer" required>
+          Maximum total bytes that could be uploaded to this job.
+        </ResponseField>
+
+        <ResponseField name="maxFiles" type="integer" required>
+          Maximum number of files that could be uploaded to this job.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="pageCount" type="integer" required>
+      Total number of pages that had been submitted for processing at the time of cancellation.
+    </ResponseField>
+
+    <ResponseField name="successfulPageCount" type="integer" required>
+      Number of pages successfully processed before cancellation.
+    </ResponseField>
+
+    <ResponseField name="billing" type="object" required>
+      Final billing snapshot. Pages processed before cancellation may have been charged.
+    </ResponseField>
+
+    <ResponseField name="files" type="object[]" required>
+      Metadata for each file that was attached to the job.
+    </ResponseField>
+
+    <ResponseField name="resultUrl" type="string | null">
+      Always `null` for cancelled jobs — no result is generated.
+    </ResponseField>
+
+    <ResponseField name="error" type="object | null">
+      `null` for cancellations initiated by the user.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of job creation.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of the cancellation event.
+    </ResponseField>
+
+    <ResponseField name="completedAt" type="string | null">
+      ISO 8601 timestamp of when the job was cancelled.
+    </ResponseField>
+
+    <ResponseField name="expiresAt" type="string | null">
+      ISO 8601 expiry timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "job": {
+    "id": "job_01hy3m8qtn2e5r7k9p0w4x1def",
+    "externalId": "order-7890",
+    "status": "cancelled",
+    "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "limits": {
+      "maxDeclaredBytes": 5368709120,
+      "maxFiles": 50
+    },
+    "pageCount": 204,
+    "successfulPageCount": 63,
+    "billing": {
+      "creditsCharged": 63
+    },
+    "files": [
+      {
+        "id": "file_xyz789",
+        "fileName": "architectural_drawings.pdf",
+        "status": "cancelled"
+      }
+    ],
+    "resultUrl": null,
+    "error": null,
+    "createdAt": "2024-11-02T09:00:00.000Z",
+    "updatedAt": "2024-11-02T09:22:17.000Z",
+    "completedAt": "2024-11-02T09:22:17.000Z",
+    "expiresAt": "2024-11-09T09:00:00.000Z"
+  }
+}
+```
+
+<Warning>
+  Cancellation only applies to **non-terminal jobs**. Calling this endpoint on a job that is already `completed`, `completed_with_errors`, `failed`, `cancelled`, or `expired` will return an error. Additionally, any pages that Plangrep had already processed at the time of cancellation **may still be billed** — cancellation does not reverse charges for work already performed.
+</Warning>

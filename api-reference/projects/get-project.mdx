@@ -1,0 +1,104 @@
+---
+title: "Get API Project State"
+sidebarTitle: "Get Project"
+description: "GET /api/open/v1/projects/{projectId} — retrieves current project state. Use for polling project readiness after creation."
+---
+
+Fetch the current state of a single API project by its ID. This is the primary endpoint for polling a project after creation — call it repeatedly until `status` transitions to `ready` before submitting jobs.
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project to retrieve. Returned as `project.id` from [Create Project](/api-reference/projects/create-project) or [List Projects](/api-reference/projects/list-projects).
+</ParamField>
+
+## Example Request
+
+```bash
+curl --request GET \
+  --url https://plangrep.com/api/open/v1/projects/proj_01hx9z4kqr8e7m3p5n6w2v0abc \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+## Response Fields
+
+<ResponseField name="project" type="Project" required>
+  The current state of the requested project.
+
+  <Expandable title="Project object fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the project.
+    </ResponseField>
+
+    <ResponseField name="name" type="string" required>
+      Human-readable display name for the project.
+    </ResponseField>
+
+    <ResponseField name="projectKind" type='"open_api"' required>
+      Always `"open_api"` for API-created projects.
+    </ResponseField>
+
+    <ResponseField name="status" type="string" required>
+      Current lifecycle status of the project. Key values:
+      - `provisioning` — setup is in progress; do not create jobs yet.
+      - `ready` — project is fully provisioned; jobs may be submitted.
+      - `error` — provisioning failed; contact support.
+    </ResponseField>
+
+    <ResponseField name="runtime" type="object" required>
+      Runtime health information.
+
+      <Expandable title="runtime fields">
+        <ResponseField name="status" type="string" required>
+          Current runtime status.
+        </ResponseField>
+
+        <ResponseField name="upgradeStatus" type="string" required>
+          Indicates whether the runtime is pending an upgrade.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of project creation.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of the most recent update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "project": {
+    "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "name": "Downtown Office Tower",
+    "projectKind": "open_api",
+    "status": "ready",
+    "runtime": {
+      "status": "running",
+      "upgradeStatus": "none"
+    },
+    "createdAt": "2024-11-01T14:22:10.000Z",
+    "updatedAt": "2024-11-01T14:24:05.000Z"
+  }
+}
+```
+
+<Tip>
+  When polling after project creation, use an interval of **10 seconds** and a maximum wait of **5 minutes**. Once `status` is `"ready"` you can immediately proceed to create jobs — no additional delay is needed.
+</Tip>

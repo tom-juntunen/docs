@@ -1,0 +1,166 @@
+---
+title: "Create a Scoped Open API Key for Your Workspace"
+sidebarTitle: "Create Key"
+description: "Creates a new API key with selected scopes and an optional expiration date. The plaintext key is returned only once."
+---
+
+<Note>
+  This endpoint uses session cookie authentication (`plangrep_session`). It is used by the Plangrep app's API settings page and does **not** accept a bearer API key.
+</Note>
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open-api/keys
+```
+
+## Authentication
+
+| Method | Value |
+|--------|-------|
+| Cookie | `plangrep_session=YOUR_SESSION_COOKIE` |
+
+---
+
+## Request Body
+
+<ParamField body="label" type="string" required>
+  A human-readable name for the key (e.g., `"CI Pipeline"` or `"Acme Corp Integration"`). Maximum 120 characters.
+</ParamField>
+
+<ParamField body="scopes" type="OpenApiKeyScope[]" required>
+  One or more permission scopes to grant this key. At least one scope is required.
+
+  | Scope | Access Granted |
+  |-------|----------------|
+  | `jobs:read` | Read job state and results |
+  | `jobs:write` | Create jobs, upload files, complete uploads, resume and cancel jobs |
+  | `artifacts:read` | Fetch authenticated artifact download URLs |
+</ParamField>
+
+<ParamField body="expiresAt" type="string">
+  Optional expiration timestamp in ISO 8601 format (e.g., `"2025-12-31T23:59:59Z"`). Must be a future date. If omitted, the key never expires.
+</ParamField>
+
+---
+
+## Response
+
+**201 Created**
+
+Returns an `OpenApiKeyCreateResponse` object.
+
+<ResponseField name="key" type="OpenApiKey" required>
+  Metadata for the newly created key.
+
+  <Expandable title="OpenApiKey fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the API key.
+    </ResponseField>
+
+    <ResponseField name="label" type="string">
+      The human-readable name assigned at creation.
+    </ResponseField>
+
+    <ResponseField name="keyPrefix" type="string">
+      The first few characters of the plaintext key, used for identification in list views. The full key is only available in the `plaintextKey` field on this response.
+    </ResponseField>
+
+    <ResponseField name="scopes" type="OpenApiKeyScope[]">
+      The permission scopes granted to this key.
+    </ResponseField>
+
+    <ResponseField name="createdByUserId" type="string">
+      ID of the workspace user who created this key.
+    </ResponseField>
+
+    <ResponseField name="hashVersion" type="string">
+      Internal version of the hashing algorithm used to store this key.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of when the key was created.
+    </ResponseField>
+
+    <ResponseField name="expiresAt" type="string | null">
+      ISO 8601 expiration timestamp, or `null` if the key never expires.
+    </ResponseField>
+
+    <ResponseField name="lastUsedAt" type="string | null">
+      Always `null` on a newly created key.
+    </ResponseField>
+
+    <ResponseField name="lastUsedIp" type="string | null">
+      Always `null` on a newly created key.
+    </ResponseField>
+
+    <ResponseField name="revokedAt" type="string | null">
+      Always `null` on a newly created key.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="plaintextKey" type="string" required>
+  The full bearer token to use in API requests. **This value is shown exactly once and is not stored by Plangrep.** Copy it immediately and store it in a secure secrets manager.
+</ResponseField>
+
+<Warning>
+  **Save your key before navigating away.** The `plaintextKey` is returned only on this response. Plangrep stores only a secure hash and cannot recover or redisplay the full key. If you lose it, you must revoke the key and create a new one.
+</Warning>
+
+---
+
+## Scope Reference
+
+| Scope | Access Granted |
+|-------|----------------|
+| `jobs:read` | Read job state, status, and results |
+| `jobs:write` | Create jobs, upload files, complete uploads, resume and cancel jobs |
+| `artifacts:read` | Fetch authenticated artifact download URLs |
+
+<Tip>
+  Follow the principle of least privilege — only grant the scopes your integration actually needs. For a read-only reporting integration, `jobs:read` alone is sufficient.
+</Tip>
+
+---
+
+## Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://plangrep.com/api/open-api/keys \
+  -H "Cookie: plangrep_session=YOUR_SESSION_COOKIE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "label": "My Integration Key",
+    "scopes": ["jobs:read", "jobs:write", "artifacts:read"]
+  }'
+```
+
+</CodeGroup>
+
+### Example Response
+
+```json
+{
+  "key": {
+    "id": "key_01hx3z...",
+    "label": "My Integration Key",
+    "keyPrefix": "pgk_live_abc1",
+    "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
+    "createdByUserId": "usr_01hx3y...",
+    "hashVersion": "v1",
+    "createdAt": "2025-01-20T14:30:00Z",
+    "expiresAt": null,
+    "lastUsedAt": null,
+    "lastUsedIp": null,
+    "revokedAt": null
+  },
+  "plaintextKey": "pgk_live_abc1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}
+```
+
+<Warning>
+  The `plaintextKey` in the response above is your only opportunity to copy this value. It will not appear again.
+</Warning>

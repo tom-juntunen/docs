@@ -1,0 +1,154 @@
+---
+title: "Plangrep Result JSON: Schema and Extracted Entities"
+sidebarTitle: "Results"
+description: "Understand the normalized v1 result JSON returned by Plangrep jobs, including documents, sheets, regions, specifications, and evidence records."
+---
+
+When a job completes, Plangrep produces a normalized JSON result (schema version `v1`) accessible at the job's `resultUrl` or via GET `/api/open/v1/jobs/{jobId}/result`. This result is the authoritative, immutable snapshot of everything extracted from the uploaded files.
+
+## Fetching the Result
+
+```bash
+GET /api/open/v1/jobs/{jobId}/result
+Authorization: Bearer {your_api_key}
+```
+
+The response is a single JSON object. For large result sets, consider streaming or paginating document sections in your own code after downloading.
+
+---
+
+## Top-Level Result Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schemaVersion` | string | Always `v1` |
+| `job` | object | Summary of the job that produced this result |
+| `usage` | object | Credit and page counts for this job (see [Usage](#usage)) |
+| `documents` | array | One `ResultDocument` per uploaded file (see [Documents](#documents)) |
+| `evidence` | array | Flat array of all extracted evidence records (see [Evidence](#evidence)) |
+| `warnings` | array | Non-fatal issues encountered during processing |
+| `errors` | array | Fatal errors for specific pages or files |
+| `generatedAt` | string | ISO 8601 timestamp when this result snapshot was produced |
+
+---
+
+## Documents
+
+Each entry in the `documents` array is a `ResultDocument` representing one uploaded file.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `documentId` | string | Unique identifier matching the upload registration |
+| `fileName` | string | Original file name as provided at upload |
+| `classification` | string | `plans`, `specifications`, `documents`, `addenda`, `mixed`, or `other` |
+| `contentType` | string | MIME type of the file |
+| `fileSize` | number | File size in bytes |
+| `status` | string | Processing status for this document |
+| `pageCount` | number | Total pages in the file |
+| `successfulPageCount` | number | Pages that processed without error |
+| `failedPageCount` | number | Pages that encountered a processing error |
+| `error` | object \| null | Document-level error, if any |
+| `artifacts` | array | Authenticated links to derived file assets (see [Artifacts](#artifacts)) |
+| `sheets` | array | Drawing sheets extracted from this document (see [Sheets](#sheets)) |
+| `specifications` | array \| null | Specification sections, present when `classification` is `specifications` or `mixed` |
+| `docs` | array \| null | Document sections, present when `classification` is `documents`, `addenda`, or `mixed` |
+
+---
+
+## Sheets
+
+Each `ResultSheet` inside a document's `sheets` array represents a single drawing sheet parsed from a plan set.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sheetId` | string | Unique identifier for this sheet |
+| `sheetNumber` | string | Sheet number as read from the title block (e.g., `A101`) |
+| `sheetName` | string | Sheet name or title (e.g., `FIRST FLOOR PLAN`) |
+| `pageNumber` | number | 1-based page number within the source document |
+| `status` | string | Processing status for this sheet |
+| `artifacts` | array | Authenticated links scoped to this sheet (thumbnails, renders, etc.) |
+
+---
+
+## Evidence
+
+The top-level `evidence` array is a flat, deduplicated collection of all extracted evidence records across the entire job. Each `ResultEvidence` record links an extracted piece of information back to its source location.
+
+### Common fields (all evidence types)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique evidence record identifier |
+| `type` | string | Evidence type: `sheet`, `drawing_region`, `specification_section`, `document_section` |
+| `label` | string | Human-readable label for this evidence item |
+| `documentId` | string | Source document identifier |
+| `fileName` | string | Source file name |
+| `classification` | string | Source document classification |
+| `sourceRef` | object | Structured reference to the source location (page, section, etc.) |
+| `text` | string \| null | Inline extracted text when available |
+
+### Type-specific fields
+
+| Evidence type | Additional fields |
+|---------------|-------------------|
+| `sheet` | `sheetId`, `sheetNumber`, `sheetName` |
+| `drawing_region` | `regionId`, `sheetId`, `regionType`, `drawingType`, `layoutType` |
+| `specification_section` | `sectionNumber`, `sectionTitle` |
+| `document_section` | `sectionTitle`, `pageNumber` |
+
+Drawing regions include three classification dimensions:
+
+- **`regionType`** — the kind of region (e.g., keynote legend, detail, plan view)
+- **`drawingType`** — the drawing discipline (e.g., architectural, structural, mechanical)
+- **`layoutType`** — how the region is laid out on the sheet
+
+---
+
+## Usage
+
+The `usage` object (type `ResultUsage`) provides an immutable breakdown of how credits were consumed by this job.
+
+| Field | Description |
+|-------|-------------|
+| `drawingPageCount` | Number of drawing pages processed |
+| `documentPageCount` | Number of document pages processed |
+| `successfulPageCount` | Total pages that completed without error |
+| `creditsDebited` | Total credits charged for this job |
+| `drawingCreditsPerPage` | Rate applied to drawing pages (default: 10) |
+| `documentCreditsPerPage` | Rate applied to document pages (default: 1) |
+
+See [Credits](/concepts/credits) for a full explanation of the billing model.
+
+---
+
+## Artifacts
+
+Artifacts are authenticated links to derived assets Plangrep generates during processing. They appear in both `ResultDocument.artifacts` and `ResultSheet.artifacts`.
+
+| Artifact type | Description |
+|---------------|-------------|
+| `file` | The original uploaded file |
+| `thumbnail` | Low-resolution preview image |
+| `viewer` | Interactive viewer URL for the sheet or document |
+| `render` | Full-resolution rendered image of a sheet |
+| `pdf` | Extracted single-page PDF |
+| `region_crop` | Cropped image of a specific drawing region |
+| `region_text` | Plain-text extraction of a region |
+| `region_ocr` | Raw OCR output for a region |
+
+### Fetching artifact content
+
+Use the same bearer token to fetch artifact content:
+
+```bash
+GET /api/open/v1/jobs/{jobId}/artifact?path={artifact_path}
+Authorization: Bearer {your_api_key}
+```
+
+For short-lived unauthenticated downloads — for example, to pass a URL to a browser or third-party service — use the download token endpoints to generate a time-limited URL.
+
+---
+
+<Tip>
+  See the [Get Job Result API reference](/api-reference/jobs/get-job-result) for the full response schema, and the [Reading Results guide](/guides/reading-results) for a worked example of parsing and using result data.
+</Tip>

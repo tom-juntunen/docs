@@ -1,0 +1,171 @@
+---
+title: "List Processed Document Entities in a Project"
+sidebarTitle: "List Docs"
+description: "GET /api/open/v1/projects/{projectId}/docs — paginated list of processed doc entities with filtering by doc type, status, and classification."
+---
+
+Returns a paginated list of processed document entities (docs) within a project. A doc is a structured entity extracted from an ingested file—such as a submittal, RFI, report, or other document type—that Plangrep has classified and normalized. Filter by `docType`, `status`, or `classification` to locate specific document categories.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/docs
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose docs you want to list.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum number of records to return per page. Must be between **1** and **500**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned as `nextCursor` from a previous response. Omit to fetch the first page.
+</ParamField>
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from each entity, reducing payload size.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs to narrow results.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Restrict results to docs extracted from a specific file.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Case-insensitive substring match on the parent file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="docType" type="string">
+  Filter by the type of document entity (e.g. `submittal`, `rfi`, `report`, `schedule`).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by processing status string (e.g. `complete`, `processing`, `failed`).
+</ParamField>
+
+## Response
+
+Returns a `ProjectDocEntityListResponse` object.
+
+### Pagination Fields
+
+<ResponseField name="total" type="integer">
+  Total number of doc entities matching the current filters across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The page size limit that was applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this page (echoed back from the request).
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` to retrieve the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer">
+  Number of doc entities actually returned in this response.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="pageInfo" type="object">
+  Relay-style page info object.
+
+  <Expandable title="pageInfo fields">
+    <ResponseField name="startCursor" type="string">
+      Cursor pointing to the first record in this page.
+    </ResponseField>
+    <ResponseField name="endCursor" type="string">
+      Cursor pointing to the last record in this page.
+    </ResponseField>
+    <ResponseField name="hasPreviousPage" type="boolean">
+      `true` if records exist before this page.
+    </ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">
+      `true` if records exist after this page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Data Fields
+
+<ResponseField name="docs" type="ProjectDocEntity[]">
+  Array of processed document entities.
+
+  <Expandable title="ProjectDocEntity fields">
+    <ResponseField name="docId" type="string">
+      Unique identifier for this doc entity.
+    </ResponseField>
+    <ResponseField name="fileId" type="string">
+      ID of the parent file this doc was extracted from.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Name of the parent file.
+    </ResponseField>
+    <ResponseField name="docType" type="string">
+      Classification of the document type (e.g. `submittal`, `rfi`, `report`).
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Current processing status of this doc entity.
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects containing URLs to derived outputs. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/docs?limit=50&docType=submittal&status=complete" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "total": 34,
+  "limit": 50,
+  "cursor": null,
+  "nextCursor": null,
+  "returnedCount": 34,
+  "hasMore": false,
+  "pageInfo": {
+    "startCursor": "eyJvZmZzZXQiOjB9",
+    "endCursor": "eyJvZmZzZXQiOjMzfQ==",
+    "hasPreviousPage": false,
+    "hasNextPage": false
+  },
+  "docs": [
+    {
+      "docId": "doc_001",
+      "fileId": "file_003",
+      "fileName": "Submittals_Package_1.pdf",
+      "docType": "submittal",
+      "status": "complete",
+      "artifacts": [
+        { "artifactType": "extracted_json", "url": "https://..." }
+      ]
+    }
+  ]
+}
+```

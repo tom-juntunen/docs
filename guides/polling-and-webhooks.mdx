@@ -1,0 +1,117 @@
+---
+title: "Poll for Job Status or Receive Webhook Notifications"
+sidebarTitle: "Polling & Webhooks"
+description: "Learn how to track Plangrep job progress by polling the job endpoint or by subscribing to webhook push notifications."
+---
+
+After completing uploads, Plangrep processes your files asynchronously. You can track progress by polling the job state endpoint or by receiving push notifications via a webhook URL you configure when creating the job.
+
+## Polling
+
+Call `GET /api/open/v1/jobs/{jobId}` at a regular interval and inspect the `job.status` field in the response:
+
+```bash
+curl https://plangrep.com/api/open/v1/jobs/job_xyz789 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Job status reference
+
+| Status | Terminal? | Description |
+|---|---|---|
+| `provisioning` | No | Project runtime is starting up |
+| `awaiting_uploads` | No | Job created; waiting for file uploads |
+| `uploading` | No | Files are being received |
+| `preflighting` | No | Validating files and checking credits |
+| `blocked_insufficient_credits` | No | Processing paused; add credits to resume |
+| `processing` | No | Active processing underway |
+| `completed` | **Yes** | All files processed successfully |
+| `completed_with_errors` | **Yes** | Processing finished with non-fatal errors |
+| `failed` | **Yes** | Processing failed; check `errors` in the result |
+| `cancelled` | **Yes** | Job was cancelled by request |
+| `expired` | **Yes** | Job expired before processing completed |
+
+Stop polling when you reach any terminal status. Continue polling for all non-terminal statuses.
+
+<Note>
+  Poll no faster than every 5 seconds. A recommended interval is every 10–30 seconds to stay well within rate limits.
+</Note>
+
+### Polling loop example
+
+```python
+import time
+import requests
+
+def poll_job(job_id, api_key, timeout=600):
+    terminal = {"completed", "completed_with_errors", "failed", "cancelled", "expired"}
+    url = f"https://plangrep.com/api/open/v1/jobs/{job_id}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    start = time.time()
+
+    while time.time() - start < timeout:
+        resp = requests.get(url, headers=headers).json()
+        status = resp["job"]["status"]
+        print(f"Job status: {status}")
+        if status in terminal:
+            return resp["job"]
+        time.sleep(15)
+
+    raise TimeoutError("Job did not complete in time")
+```
+
+---
+
+## Webhooks
+
+Register a webhook URL at job creation time to receive push notifications instead of polling:
+
+```json
+{
+  "webhookUrl": "https://myapp.example.com/webhooks/plangrep"
+}
+```
+
+Plangrep sends an HTTP `POST` request to your URL whenever the job status changes. The request body contains the current job object at each status transition.
+
+The `webhookSigningSecret` returned at job creation time lets you verify that the request originated from Plangrep. Verify the signature on every incoming request before processing it.
+
+<Warning>
+  Your webhook endpoint must respond with a `2xx` status code within a reasonable timeout. Failed deliveries may not be retried — use polling as a fallback for critical workflows.
+</Warning>
+
+<Note>
+  The webhook payload delivers the current job state at each transition. Treat each delivery as an update snapshot and use the `status` field to drive your application logic.
+</Note>
+
+---
+
+## Handling blocked jobs
+
+If a job enters `blocked_insufficient_credits`, processing is paused until you add credits to your account. Once credits are available, resume the job:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/resume \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+The job will re-enter `preflighting` and then `processing` after a successful resume.
+
+---
+
+## Cancelling a job
+
+To cancel a job that is still in progress, send a cancellation request:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/cancel \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+Only jobs in a non-terminal status can be cancelled. The response contains the updated job object with `status` set to `"cancelled"`.
+
+<Note>
+  Cancellation may not be immediate if processing is already underway. Poll the job status to confirm the transition to `"cancelled"`.
+</Note>

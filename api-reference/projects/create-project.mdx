@@ -1,0 +1,130 @@
+---
+title: "Create an API Project in Plangrep"
+sidebarTitle: "Create Project"
+description: "POST /api/open/v1/projects — provisions a new API project. Returns 202; poll for ready status before creating jobs."
+---
+
+Provision a new API project under your organization. The response is returned immediately with HTTP `202 Accepted` while Plangrep completes the underlying infrastructure setup in the background. **Do not create jobs against a project until its status is `ready`.**
+
+## Authentication
+
+Include your API key as `Authorization: Bearer YOUR_API_KEY` in the request headers.
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/projects
+```
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  A human-readable name for the project. Maximum 180 characters. Must be unique within your organization.
+</ParamField>
+
+## Example Request
+
+```bash
+curl --request POST \
+  --url https://plangrep.com/api/open/v1/projects \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --header "Accept: application/json" \
+  --data '{
+    "name": "My Project"
+  }'
+```
+
+## Response Fields
+
+The endpoint returns `202 Accepted` with the following body.
+
+<ResponseField name="project" type="Project" required>
+  The newly created project object.
+
+  <Expandable title="Project object fields">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the project. Use this as `projectId` in subsequent calls.
+    </ResponseField>
+
+    <ResponseField name="name" type="string" required>
+      The name you supplied in the request body.
+    </ResponseField>
+
+    <ResponseField name="projectKind" type='"open_api"' required>
+      Always `"open_api"` for API-created projects.
+    </ResponseField>
+
+    <ResponseField name="status" type="string" required>
+      Initial status after creation. Will be `provisioning` until setup completes, then transitions to `ready`.
+    </ResponseField>
+
+    <ResponseField name="runtime" type="object" required>
+      Runtime health information.
+
+      <Expandable title="runtime fields">
+        <ResponseField name="status" type="string" required>
+          Current runtime status.
+        </ResponseField>
+
+        <ResponseField name="upgradeStatus" type="string" required>
+          Indicates whether the runtime is pending an upgrade.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of project creation.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of the most recent update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="billing" type="object" required>
+  Billing summary for the project provisioning operation.
+
+  <Expandable title="billing fields">
+    <ResponseField name="availableCredits" type="integer | null" required>
+      Credits currently available to your organization, or `null` if unlimited.
+    </ResponseField>
+
+    <ResponseField name="creditsCharged" type="integer" required>
+      Credits charged for this provisioning operation.
+    </ResponseField>
+
+    <ResponseField name="requiredCredits" type="integer" required>
+      Minimum credits required to provision a project.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "project": {
+    "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "name": "My Project",
+    "projectKind": "open_api",
+    "status": "provisioning",
+    "runtime": {
+      "status": "starting",
+      "upgradeStatus": "none"
+    },
+    "createdAt": "2024-11-01T14:22:10.000Z",
+    "updatedAt": "2024-11-01T14:22:10.000Z"
+  },
+  "billing": {
+    "availableCredits": 950,
+    "creditsCharged": 50,
+    "requiredCredits": 50
+  }
+}
+```
+
+<Note>
+  **Project creation takes 1–2 minutes.** After receiving the `202` response, poll `GET /api/open/v1/projects/{projectId}` every **10 seconds** until `status` equals `"ready"`. If the project has not reached `ready` after **5 minutes**, treat it as a provisioning failure and contact support. Only create jobs once the project status is `ready`.
+</Note>

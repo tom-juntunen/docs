@@ -1,0 +1,88 @@
+---
+title: "Validate an Artifact Download Token Without Consuming It"
+sidebarTitle: "Validate Download"
+description: "HEAD /api/open/v1/artifact-downloads/{token} — validates a download token and returns artifact headers without consuming the token or streaming bytes."
+---
+
+## Overview
+
+Validate a download token and inspect artifact metadata — such as content type and file size — without consuming the token or transferring any bytes. This is useful for confirming token validity before initiating a download, or for retrieving `Content-Length` and `Content-Type` to set up progress indicators in your UI.
+
+<Note>
+  Unlike `GET`, `HEAD` does **not** consume the token. The token remains valid and can still be used for a subsequent `GET` request to stream the artifact bytes.
+</Note>
+
+## Endpoint
+
+```
+HEAD https://plangrep.com/api/open/v1/artifact-downloads/{token}
+```
+
+## Security
+
+**This route is unauthenticated.** Do not include an `Authorization` header — it is neither required nor accepted. The download token is the sole credential.
+
+## Path Parameters
+
+<ParamField path="token" type="string" required>
+  The short-lived download token to validate.
+</ParamField>
+
+## Response
+
+**Status: `200 OK`**
+
+The response contains headers describing the artifact but **no response body**. Relevant headers include:
+
+| Header | Description |
+|---|---|
+| `Content-Type` | MIME type of the artifact (e.g. `application/pdf`, `image/png`) |
+| `Content-Length` | Size of the artifact in bytes |
+| `Content-Disposition` | Suggested filename for the download |
+
+A `200` response confirms the token is valid and has not yet been consumed.
+
+A `4xx` response indicates the token is invalid, expired, or already consumed.
+
+## Example Request
+
+```bash
+curl -I "https://plangrep.com/api/open/v1/artifact-downloads/DOWNLOAD_TOKEN"
+```
+
+### Example response headers
+
+```
+HTTP/2 200
+content-type: application/pdf
+content-length: 2048576
+content-disposition: attachment; filename="drawings.pdf"
+```
+
+## Checking Token Validity in Scripts
+
+```bash
+STATUS=$(curl -o /dev/null -s -w "%{http_code}" \
+  -I "https://plangrep.com/api/open/v1/artifact-downloads/DOWNLOAD_TOKEN")
+
+if [ "$STATUS" -eq 200 ]; then
+  echo "Token is valid — proceeding with download"
+  curl "https://plangrep.com/api/open/v1/artifact-downloads/DOWNLOAD_TOKEN" \
+    --output artifact.pdf
+else
+  echo "Token is invalid or expired (HTTP $STATUS)"
+fi
+```
+
+## HEAD vs GET Comparison
+
+| | `HEAD` | `GET` |
+|---|---|---|
+| Streams artifact bytes | ❌ | ✅ |
+| Consumes the token | ❌ | ✅ |
+| Returns artifact headers | ✅ | ✅ |
+| Useful for validity checks | ✅ | ❌ |
+
+<Tip>
+  Use `HEAD` before `GET` when you want to display a file size or confirm a token is still valid before presenting a download button to the user.
+</Tip>

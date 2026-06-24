@@ -1,0 +1,83 @@
+---
+title: "Stream a Short-Lived Artifact via Download Token"
+sidebarTitle: "Download Artifact"
+description: "GET /api/open/v1/artifact-downloads/{token} — streams a scoped artifact using a one-time download token. No authentication required; token is consumed on success."
+---
+
+## Overview
+
+Stream a single artifact using a short-lived, scoped download token. This endpoint is unauthenticated — the token itself acts as the credential and is consumed on a successful response. Use this route to generate shareable, time-limited download links or to hand off artifact delivery to a browser or third-party client without exposing your API key.
+
+<Warning>
+  A successful `GET` request **consumes the token** — it cannot be used again. If you need to inspect artifact metadata (content type, size) without consuming the token, use [`HEAD /api/open/v1/artifact-downloads/{token}`](/api-reference/artifacts/head-artifact-download) first.
+</Warning>
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/artifact-downloads/{token}
+```
+
+## Security
+
+**This route is unauthenticated.** Do not include an `Authorization` header — it is neither required nor accepted.
+
+The download token serves as the sole credential. It is:
+- **Short-lived** — expires within a limited time window after issuance.
+- **Single-use** — consumed on a successful `200` response.
+- **Scoped** — grants access to exactly one artifact.
+
+## Path Parameters
+
+<ParamField path="token" type="string" required>
+  The short-lived download token issued by a prior API call. Tokens are opaque strings — do not parse or manipulate them.
+</ParamField>
+
+## Response
+
+**Status: `200 OK`**
+
+**Content-Type:** `application/octet-stream`
+
+The response body streams the raw binary artifact bytes. The token is consumed upon this response being sent.
+
+## Token Lifecycle
+
+```
+Issue token (via another API call)
+        ↓
+HEAD /artifact-downloads/{token}   ← optional: inspect headers, token NOT consumed
+        ↓
+GET  /artifact-downloads/{token}   ← streams bytes, token IS consumed
+        ↓
+Token is now invalid — any further requests return 4xx
+```
+
+## Example Requests
+
+### Download to a file
+
+```bash
+curl "https://plangrep.com/api/open/v1/artifact-downloads/DOWNLOAD_TOKEN" \
+  --output artifact.pdf
+```
+
+### Save with server-suggested filename
+
+```bash
+curl -OJ "https://plangrep.com/api/open/v1/artifact-downloads/DOWNLOAD_TOKEN"
+```
+
+### Use in a browser
+
+Download tokens can be embedded directly in an `<a href>` or `<img src>` to deliver artifacts to end users without exposing API credentials:
+
+```html
+<a href="https://plangrep.com/api/open/v1/artifact-downloads/DOWNLOAD_TOKEN" download>
+  Download Drawing Set
+</a>
+```
+
+<Tip>
+  If you need to check whether a token is still valid before streaming — for example after a page reload — use `HEAD /api/open/v1/artifact-downloads/{token}`. A `200` response confirms the token is valid and has not yet been consumed. See [Validate Download Token](/api-reference/artifacts/head-artifact-download).
+</Tip>

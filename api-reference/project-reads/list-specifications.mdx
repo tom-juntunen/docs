@@ -1,0 +1,223 @@
+---
+title: "List Extracted Specification Sections in a Project"
+sidebarTitle: "List Specs"
+description: "GET /api/open/v1/projects/{projectId}/specifications — paginated list of extracted specification sections with filtering by section number and page range."
+---
+
+Returns a paginated list of extracted specification sections within a project. Each entity represents a discrete CSI-formatted (or similar) specification section, including its section number, title, page range, and structured facets that break the section into labeled sub-components. Filter by section number or page range to zero in on specific content.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose specification sections you want to list.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum number of records to return per page. Must be between **1** and **500**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned as `nextCursor` from a previous response. Omit to fetch the first page.
+</ParamField>
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from each entity, reducing payload size.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs to narrow results.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Restrict results to specification sections from a specific file.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Case-insensitive substring match on the parent file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="sectionNumber" type="string">
+  Filter to sections with this exact section number (e.g. `03 30 00`, `09 90 00`).
+</ParamField>
+
+<ParamField query="pageStart" type="integer">
+  Filter to sections whose content starts at or after this 1-based page number. Minimum: `1`.
+</ParamField>
+
+<ParamField query="pageEnd" type="integer">
+  Filter to sections whose content ends at or before this 1-based page number. Minimum: `1`.
+</ParamField>
+
+## Response
+
+Returns a `ProjectSpecificationEntityListResponse` object.
+
+### Pagination Fields
+
+<ResponseField name="total" type="integer">
+  Total number of specification sections matching the current filters across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The page size limit that was applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this page (echoed back from the request).
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` to retrieve the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer">
+  Number of specification entities actually returned in this response.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="pageInfo" type="object">
+  Relay-style page info object.
+
+  <Expandable title="pageInfo fields">
+    <ResponseField name="startCursor" type="string">
+      Cursor pointing to the first record in this page.
+    </ResponseField>
+    <ResponseField name="endCursor" type="string">
+      Cursor pointing to the last record in this page.
+    </ResponseField>
+    <ResponseField name="hasPreviousPage" type="boolean">
+      `true` if records exist before this page.
+    </ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">
+      `true` if records exist after this page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Data Fields
+
+<ResponseField name="specifications" type="ProjectSpecificationEntity[]">
+  Array of extracted specification section entities.
+
+  <Expandable title="ProjectSpecificationEntity fields">
+    <ResponseField name="specificationId" type="string">
+      Unique identifier for this specification section.
+    </ResponseField>
+    <ResponseField name="fileId" type="string">
+      ID of the parent file this section was extracted from.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Name of the parent file.
+    </ResponseField>
+    <ResponseField name="sectionNumber" type="string">
+      Specification section number (e.g. `03 30 00`).
+    </ResponseField>
+    <ResponseField name="sectionTitle" type="string">
+      Full title of the specification section (e.g. `Cast-In-Place Concrete`).
+    </ResponseField>
+    <ResponseField name="pageStart" type="integer">
+      1-based page number where this section begins in the source file.
+    </ResponseField>
+    <ResponseField name="pageEnd" type="integer">
+      1-based page number where this section ends in the source file.
+    </ResponseField>
+    <ResponseField name="facets" type="ProjectSpecificationFacetEntity[]">
+      Structured sub-components of the section (e.g. Part 1 General, Part 2 Products). See facet fields below.
+
+      <Expandable title="ProjectSpecificationFacetEntity fields">
+        <ResponseField name="facetId" type="string">
+          Unique identifier for this facet.
+        </ResponseField>
+        <ResponseField name="facetKey" type="string">
+          Machine-readable key identifying the facet type.
+        </ResponseField>
+        <ResponseField name="facetKind" type="string">
+          Category of the facet (e.g. `part`, `article`, `paragraph`).
+        </ResponseField>
+        <ResponseField name="facetLabel" type="string">
+          Human-readable label for this facet (e.g. `PART 1 – GENERAL`).
+        </ResponseField>
+        <ResponseField name="coverageKind" type="string">
+          Describes how completely this facet covers its source content.
+        </ResponseField>
+        <ResponseField name="facetText" type="string">
+          Raw source text for this facet, up to **50,000 characters**.
+        </ResponseField>
+        <ResponseField name="pageStart" type="integer">
+          1-based page number where this facet begins.
+        </ResponseField>
+        <ResponseField name="pageEnd" type="integer">
+          1-based page number where this facet ends.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects with URLs to derived outputs. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/specifications?limit=20&sectionNumber=03%2030%2000" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "total": 85,
+  "limit": 20,
+  "cursor": null,
+  "nextCursor": "eyJvZmZzZXQiOjIwfQ==",
+  "returnedCount": 20,
+  "hasMore": true,
+  "pageInfo": {
+    "startCursor": "eyJvZmZzZXQiOjB9",
+    "endCursor": "eyJvZmZzZXQiOjE5fQ==",
+    "hasPreviousPage": false,
+    "hasNextPage": true
+  },
+  "specifications": [
+    {
+      "specificationId": "spec_001",
+      "fileId": "file_002",
+      "fileName": "Project_Specifications.pdf",
+      "sectionNumber": "03 30 00",
+      "sectionTitle": "Cast-In-Place Concrete",
+      "pageStart": 45,
+      "pageEnd": 62,
+      "facets": [
+        {
+          "facetId": "facet_001",
+          "facetKey": "part_1_general",
+          "facetKind": "part",
+          "facetLabel": "PART 1 – GENERAL",
+          "coverageKind": "full",
+          "facetText": "1.01 SUMMARY\nA. Section includes cast-in-place concrete...",
+          "pageStart": 45,
+          "pageEnd": 48
+        }
+      ],
+      "artifacts": []
+    }
+  ]
+}
+```

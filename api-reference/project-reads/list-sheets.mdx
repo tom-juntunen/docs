@@ -1,0 +1,183 @@
+---
+title: "List Extracted Sheets in a Plangrep Project"
+sidebarTitle: "List Sheets"
+description: "GET /api/open/v1/projects/{projectId}/sheets — paginated list of extracted sheets with filtering by sheet number, file, classification, and more."
+---
+
+Returns a paginated list of extracted sheet entities within a project. A sheet corresponds to a single page from an ingested file that Plangrep has identified as a distinct drawing or document sheet—complete with a sheet number, display name, and associated artifacts. Filter by sheet number, source file, classification, or page number to narrow results.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/sheets
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose sheets you want to list.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum number of records to return per page. Must be between **1** and **500**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned as `nextCursor` from a previous response. Omit to fetch the first page.
+</ParamField>
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from each entity, reducing payload size.
+</ParamField>
+
+<ParamField query="sheets" type="string">
+  Comma-separated list of sheet IDs to include. Acts as an allowlist filter.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Restrict results to sheets that belong to this file.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Case-insensitive substring match on the parent file's name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by processing status of the parent file.
+</ParamField>
+
+<ParamField query="pageNumber" type="integer">
+  Filter to sheets located at this specific 1-based page number within their source file. Minimum: `1`.
+</ParamField>
+
+<ParamField query="sheetNumber" type="string">
+  Filter to sheets with this exact sheet number (e.g. `A1.01`, `S-200`).
+</ParamField>
+
+## Response
+
+Returns a `ProjectSheetEntityListResponse` object.
+
+### Pagination Fields
+
+<ResponseField name="total" type="integer">
+  Total number of sheets matching the current filters across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The page size limit that was applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this page (echoed back from the request).
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` to retrieve the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer">
+  Number of sheet entities actually returned in this response.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="pageInfo" type="object">
+  Relay-style page info object.
+
+  <Expandable title="pageInfo fields">
+    <ResponseField name="startCursor" type="string">
+      Cursor pointing to the first record in this page.
+    </ResponseField>
+    <ResponseField name="endCursor" type="string">
+      Cursor pointing to the last record in this page.
+    </ResponseField>
+    <ResponseField name="hasPreviousPage" type="boolean">
+      `true` if records exist before this page.
+    </ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">
+      `true` if records exist after this page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Data Fields
+
+<ResponseField name="sheets" type="ProjectSheetEntity[]">
+  Array of extracted sheet entities.
+
+  <Expandable title="ProjectSheetEntity fields">
+    <ResponseField name="sheetId" type="string">
+      Unique identifier for this sheet.
+    </ResponseField>
+    <ResponseField name="fileId" type="string">
+      ID of the parent file this sheet was extracted from.
+    </ResponseField>
+    <ResponseField name="fileName" type="string">
+      Name of the parent file.
+    </ResponseField>
+    <ResponseField name="pageNumber" type="integer">
+      1-based page number within the source file.
+    </ResponseField>
+    <ResponseField name="sheetNumber" type="string">
+      Extracted sheet number (e.g. `A1.01`, `M-300`). May be `null` if not detected.
+    </ResponseField>
+    <ResponseField name="sheetName" type="string">
+      Extracted short sheet name or title block title.
+    </ResponseField>
+    <ResponseField name="sheetDisplayName" type="string">
+      Human-readable display name combining sheet number and title (e.g. `A1.01 – Floor Plan`).
+    </ResponseField>
+    <ResponseField name="artifacts" type="array">
+      Array of artifact objects containing URLs to derived outputs. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets?limit=50&classification=plans&sheetNumber=A1.01" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "total": 120,
+  "limit": 50,
+  "cursor": null,
+  "nextCursor": "eyJvZmZzZXQiOjUwfQ==",
+  "returnedCount": 50,
+  "hasMore": true,
+  "pageInfo": {
+    "startCursor": "eyJvZmZzZXQiOjB9",
+    "endCursor": "eyJvZmZzZXQiOjQ5fQ==",
+    "hasPreviousPage": false,
+    "hasNextPage": true
+  },
+  "sheets": [
+    {
+      "sheetId": "sheet_001",
+      "fileId": "file_001",
+      "fileName": "Architectural_Plans_SetA.pdf",
+      "pageNumber": 3,
+      "sheetNumber": "A1.01",
+      "sheetName": "First Floor Plan",
+      "sheetDisplayName": "A1.01 – First Floor Plan",
+      "artifacts": [
+        { "artifactType": "thumbnail", "url": "https://..." }
+      ]
+    }
+  ]
+}
+```

@@ -1,0 +1,207 @@
+---
+title: "Upload Files to a Plangrep Job"
+sidebarTitle: "Upload Files"
+description: "POST /api/open/v1/jobs/{jobId}/files — default batch upload path. Send multipart/form-data with metadata and file parts to store files on the job."
+---
+
+## Overview
+
+Upload one or more files to a Plangrep job using multipart form data. This is the default upload path for most use cases. Files are attached to the job but processing does **not** start automatically — you must call [Complete Uploads](/api-reference/uploads/complete-uploads) after all files have been sent.
+
+<Note>
+  This endpoint stores files on the job but does **not** start processing. After all uploads are done, call `POST /api/open/v1/jobs/{jobId}/uploads/complete` to close the upload window and begin ingestion.
+</Note>
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/jobs/{jobId}/files
+```
+
+## Authentication
+
+All requests must include a Bearer token in the `Authorization` header.
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the job to upload files to.
+</ParamField>
+
+## Request
+
+**Content-Type:** `multipart/form-data`
+
+The request body is a multipart form with a required `metadata` part and one or more binary file parts.
+
+### metadata Part
+
+<ParamField body="metadata" type="string" required>
+  A JSON string describing the files being uploaded. Supports the following top-level fields:
+
+  - **`clientUploadFlowId`** (string, optional): A client-defined identifier for this upload flow, useful for correlating uploads across retries.
+  - **`files`** (array, optional): Metadata for each file part. Each entry may include:
+
+  <ParamField body="partName" type="string">
+    The name of the corresponding form part (e.g. `file0`, `file1`). Used to associate metadata with its binary part.
+  </ParamField>
+
+  <ParamField body="fileName" type="string">
+    The original filename (e.g. `drawings.pdf`).
+  </ParamField>
+
+  <ParamField body="contentType" type="string">
+    MIME type of the file (e.g. `application/pdf`).
+  </ParamField>
+
+  <ParamField body="classification" type="string">
+    Document classification hint. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`. Omit to allow Plangrep to auto-classify.
+  </ParamField>
+
+  <ParamField body="sha256" type="string">
+    Optional SHA-256 integrity checksum of the file bytes — a 64-character lowercase hex string. When provided, the server verifies the digest after upload.
+  </ParamField>
+</ParamField>
+
+### File Parts
+
+<ParamField body="file0" type="binary" required>
+  The binary content of the first file. Name this part `file0`.
+</ParamField>
+
+<ParamField body="file1, file2, ..." type="binary">
+  Additional files. Name subsequent parts `file1`, `file2`, and so on. Reference each part name in the `metadata.files` array via `partName`.
+</ParamField>
+
+### Example metadata JSON
+
+```json
+{
+  "clientUploadFlowId": "flow-abc-123",
+  "files": [
+    {
+      "partName": "file0",
+      "fileName": "drawings.pdf",
+      "contentType": "application/pdf",
+      "classification": "plans"
+    },
+    {
+      "partName": "file1",
+      "fileName": "specs.pdf",
+      "contentType": "application/pdf",
+      "classification": "specifications"
+    }
+  ]
+}
+```
+
+## Response
+
+**Status: `200 OK`**
+
+<ResponseField name="job" type="object">
+  The updated Job object reflecting the current state of the job after upload.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Overall upload batch status. One of:
+
+  - `uploaded` — files were accepted and stored successfully.
+  - `skipped` — files were not stored (e.g. duplicates detected via SHA-256).
+</ResponseField>
+
+<ResponseField name="ingestionStatus" type="string">
+  Current ingestion pipeline status for the job.
+</ResponseField>
+
+<ResponseField name="preflightStatus" type="string">
+  Current preflight validation status for the job.
+</ResponseField>
+
+<ResponseField name="uploads" type="array">
+  One entry per uploaded file.
+
+  <ResponseField name="uploads[].documentId" type="string">
+    Unique identifier for the stored document.
+  </ResponseField>
+
+  <ResponseField name="uploads[].fileName" type="string">
+    Stored filename as recorded by the server.
+  </ResponseField>
+
+  <ResponseField name="uploads[].contentType" type="string">
+    Detected or declared MIME type.
+  </ResponseField>
+
+  <ResponseField name="uploads[].fileSize" type="integer">
+    File size in bytes.
+  </ResponseField>
+
+  <ResponseField name="uploads[].classification" type="string">
+    Document classification applied to this file.
+  </ResponseField>
+
+  <ResponseField name="uploads[].status" type="string">
+    Per-file upload status: `uploaded` or `skipped`.
+  </ResponseField>
+
+  <ResponseField name="uploads[].skippedReason" type="string">
+    If `status` is `skipped`, a human-readable reason explaining why the file was not stored.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="documents" type="array">
+  Additional document metadata objects associated with this upload batch.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/files \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F 'metadata={"files":[{"partName":"file0","fileName":"drawings.pdf","contentType":"application/pdf","classification":"plans"}]}' \
+  -F 'file0=@drawings.pdf'
+```
+
+## Example Response
+
+```json
+{
+  "job": {
+    "id": "job_01abc123",
+    "status": "uploading"
+  },
+  "status": "uploaded",
+  "ingestionStatus": "pending",
+  "preflightStatus": "pending",
+  "uploads": [
+    {
+      "documentId": "doc_01xyz789",
+      "fileName": "drawings.pdf",
+      "contentType": "application/pdf",
+      "fileSize": 2048576,
+      "classification": "plans",
+      "status": "uploaded",
+      "skippedReason": null
+    }
+  ],
+  "documents": []
+}
+```
+
+## Next Step
+
+Once all files have been uploaded, close the upload window and start processing:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+See [Complete Uploads](/api-reference/uploads/complete-uploads) for full details.

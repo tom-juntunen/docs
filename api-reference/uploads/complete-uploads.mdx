@@ -1,0 +1,192 @@
+---
+title: "Complete Uploads and Start Plangrep Processing"
+sidebarTitle: "Complete Uploads"
+description: "POST /api/open/v1/jobs/{jobId}/uploads/complete — closes the upload window and starts processing. Supports idempotency for safe retries."
+---
+
+## Overview
+
+After all files have been uploaded to a job, call this endpoint to close the upload window and trigger Plangrep processing. The job transitions through `preflighting` and then into `processing`.
+
+This endpoint is safe to call multiple times with the same `Idempotency-Key` — duplicate calls within the idempotency window return the original response without re-triggering processing.
+
+<Tip>
+  Always supply an `Idempotency-Key` header when calling this endpoint. If the network request fails or times out, you can safely retry with the same key without risk of double-processing the job.
+</Tip>
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/jobs/{jobId}/uploads/complete
+```
+
+## Authentication
+
+All requests must include a Bearer token in the `Authorization` header.
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the job whose uploads you are completing.
+</ParamField>
+
+## Request Headers
+
+<ParamField header="Idempotency-Key" type="string">
+  An optional client-generated idempotency key (max 256 characters). If a request with this key has already succeeded, the server returns the original response and sets `idempotent: true` in the body. Use a UUID or other unique value per completion attempt.
+</ParamField>
+
+## Request Body
+
+**Content-Type:** `application/json` (optional)
+
+The request body is optional. For jobs where files were uploaded via `POST /api/open/v1/jobs/{jobId}/files`, send an empty object `{}` or omit the body entirely.
+
+For jobs using [registered uploads](/api-reference/uploads/register-uploads), the body carries completion payloads for each upload mode.
+
+<ParamField body="documentIds" type="string[]">
+  An explicit list of document IDs to include in this completion. When omitted, all documents uploaded to the job are included.
+</ParamField>
+
+<ParamField body="directUploads" type="array">
+  Completion records for files uploaded via the `direct_put` flow (registered uploads). Each entry must include:
+
+  <ParamField body="directUploads[].documentId" type="string" required>
+    The document ID returned during registration.
+  </ParamField>
+
+  <ParamField body="directUploads[].uploadToken" type="string" required>
+    The upload token returned during registration. Proves the direct PUT was performed.
+  </ParamField>
+</ParamField>
+
+<ParamField body="multipartUploads" type="array">
+  Completion records for files uploaded via the `multipart` flow (registered uploads). Each entry must include:
+
+  <ParamField body="multipartUploads[].documentId" type="string" required>
+    The document ID returned during registration.
+  </ParamField>
+
+  <ParamField body="multipartUploads[].multipartUploadId" type="string" required>
+    The multipart upload ID returned during registration.
+  </ParamField>
+
+  <ParamField body="multipartUploads[].uploadToken" type="string" required>
+    The upload token returned during registration.
+  </ParamField>
+
+  <ParamField body="multipartUploads[].parts" type="array" required>
+    The list of uploaded parts. Each part must include:
+
+    <ParamField body="parts[].partNumber" type="integer" required>
+      The 1-based part number matching the registration instructions.
+    </ParamField>
+
+    <ParamField body="parts[].etag" type="string" required>
+      The ETag value returned by the storage provider when the part was uploaded.
+    </ParamField>
+  </ParamField>
+</ParamField>
+
+<ParamField body="failedUploads" type="array">
+  Records of uploads that failed on the client side. Reporting these allows Plangrep to mark the corresponding documents and surface errors in the job result rather than waiting for a timeout.
+</ParamField>
+
+## Response
+
+**Status: `202 Accepted`**
+
+<ResponseField name="job" type="object">
+  The updated Job object. Immediately after this call the job status will begin transitioning to `preflighting`, then `processing`.
+</ResponseField>
+
+<ResponseField name="idempotent" type="boolean">
+  Present and `true` when the response was served from a previously completed idempotent request. Absent on first-time completions.
+</ResponseField>
+
+## Job Status Transitions
+
+```
+uploading → preflighting → processing → complete
+                                      ↘ failed
+```
+
+After this endpoint returns `202`, poll the job status or use webhooks to detect when processing finishes.
+
+## Example Requests
+
+### Form Upload Completion (most common)
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  -d '{}'
+```
+
+### Direct PUT Completion
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  -d '{
+    "directUploads": [
+      {
+        "documentId": "doc_01xyz789",
+        "uploadToken": "tok_abc123"
+      }
+    ]
+  }'
+```
+
+### Multipart Completion
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  -d '{
+    "multipartUploads": [
+      {
+        "documentId": "doc_01xyz789",
+        "multipartUploadId": "mpu_def456",
+        "uploadToken": "tok_abc123",
+        "parts": [
+          { "partNumber": 1, "etag": "\"d41d8cd98f00b204e9800998ecf8427e\"" },
+          { "partNumber": 2, "etag": "\"7215ee9c7d9dc229d2921a40e899ec5f\"" }
+        ]
+      }
+    ]
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "job": {
+    "id": "job_01abc123",
+    "status": "preflighting"
+  }
+}
+```
+
+### Idempotent Repeat Response
+
+```json
+{
+  "job": {
+    "id": "job_01abc123",
+    "status": "processing"
+  },
+  "idempotent": true
+}
+```

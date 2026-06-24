@@ -1,0 +1,102 @@
+---
+title: "Authenticate with the Plangrep API Using Bearer Tokens"
+sidebarTitle: "Authentication"
+description: "Learn how to create a scoped API key in Plangrep and pass it as a bearer token on every API request."
+---
+
+Plangrep uses bearer token authentication for all Open API routes. You create API keys from the Plangrep app's API settings page and pass them in the `Authorization` header of every request. Each key carries one or more scopes that limit exactly which actions it can perform.
+
+## Authentication scheme
+
+Every endpoint under `/api/open/v1/...` requires a bearer token in the `Authorization` header:
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+**Example request**
+
+```bash
+curl https://plangrep.com/api/open/v1/projects \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+<Note>
+  The Workspace API Keys endpoints (`/api/open-api/keys`) use cookie/session authentication from the Plangrep app itself. They are **not** accessible with a bearer API key.
+</Note>
+
+## Key scopes
+
+When you create an API key, select the minimum set of scopes your integration requires.
+
+| Scope | Access granted |
+|---|---|
+| `jobs:read` | Read job state and results |
+| `jobs:write` | Create jobs, upload files, complete uploads, resume and cancel jobs |
+| `artifacts:read` | Fetch authenticated artifact URLs |
+
+<Note>
+  Always create keys with the minimum scopes your integration needs. Narrowly scoped keys limit the blast radius if a key is ever leaked or compromised.
+</Note>
+
+## Creating an API key
+
+<Steps>
+
+### Sign in to the Plangrep app
+
+Go to [plangrep.com](https://plangrep.com) and sign in to your account.
+
+### Open API settings
+
+Navigate to **Settings → API** to reach the API keys management page.
+
+### Create a new key
+
+Click **Create API key**.
+
+### Configure the key
+
+Enter a descriptive label so you can identify the key later. Select the scopes your integration needs. Optionally set an expiration date to auto-expire the key after a fixed period.
+
+### Copy the plaintext key
+
+After creation, copy the `plaintextKey` value displayed on screen.
+
+<Warning>
+  The plaintext key is shown **only once** at creation time. Store it securely in a secrets manager or environment variable immediately — you cannot retrieve it again after you close this screen.
+</Warning>
+
+</Steps>
+
+## Key lifecycle
+
+- **Revocation** — Revoke individual keys from the API settings page, or revoke all keys at once. Revoked keys are rejected immediately on the next request.
+- **Audit fields** — Every key records `lastUsedAt` and `lastUsedIp` so you can audit usage and detect unexpected access.
+- **Expiration** — Set `expiresAt` during creation to auto-expire keys on a schedule. Expired keys behave identically to revoked keys.
+
+## Error responses
+
+Requests with a missing, invalid, or revoked bearer token receive a `401 Unauthorized` response:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "..."
+  }
+}
+```
+
+All Plangrep API errors follow the same `ErrorEnvelope` shape:
+
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string"
+  }
+}
+```
+
+Check the `code` field to distinguish error types programmatically — the `message` field is human-readable and subject to change.

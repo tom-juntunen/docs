@@ -1,30 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "projectType": "api-service",
+  "projectName": "Plangrep",
+  "projectDescription": "Async API for processing construction drawings, specifications, and supported document files into normalized JSON.",
   "theme": "luma",
-  "name": "Plangrep",
-  "colors": {
-    "primary": "#ef7025",
-    "light": "#eec9bc",
-    "dark": "#4fa1ab"
-  },
-  "favicon": "/favicon.svg",
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:support@plangrep.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://plangrep.com"
-    }
-  },
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
   "navigation": {
     "tabs": [
       {
@@ -130,9 +111,52 @@
       }
     ]
   },
-  "footer": {
-    "socials": {
-      "website": "https://plangrep.com"
-    }
-  }
+  "keyFeatures": [
+    "Async document processing pipeline for construction drawings, specs, and documents",
+    "Normalized JSON output with structured sheets, regions, specifications, and docs",
+    "Semantic source search across projects and individual project sources",
+    "Multi-mode file upload: multipart form, signed direct PUT, and multipart signed",
+    "Per-page credit billing with separate rates for drawings and documents",
+    "Webhook notifications and idempotent job creation",
+    "Short-lived unauthenticated artifact download tokens",
+    "Workspace API key management with scoped permissions"
+  ],
+  "publicApiSurface": [
+    "GET /api/open/v1/projects",
+    "POST /api/open/v1/projects",
+    "POST /api/open/v1/projects/search",
+    "GET /api/open/v1/projects/{projectId}",
+    "GET /api/open/v1/projects/{projectId}/summary",
+    "POST /api/open/v1/projects/{projectId}/source-search",
+    "POST /api/open/v1/projects/{projectId}/source-text",
+    "GET /api/open/v1/projects/{projectId}/jobs",
+    "POST /api/open/v1/projects/{projectId}/jobs",
+    "GET /api/open/v1/projects/{projectId}/files",
+    "GET /api/open/v1/projects/{projectId}/files/{fileId}",
+    "GET /api/open/v1/projects/{projectId}/sheets",
+    "GET /api/open/v1/projects/{projectId}/sheets/{sheetId}",
+    "GET /api/open/v1/projects/{projectId}/regions",
+    "GET /api/open/v1/projects/{projectId}/regions/{regionId}",
+    "GET /api/open/v1/projects/{projectId}/sheets/{sheetId}/regions",
+    "GET /api/open/v1/projects/{projectId}/specifications",
+    "GET /api/open/v1/projects/{projectId}/specifications/{specificationId}",
+    "GET /api/open/v1/projects/{projectId}/docs",
+    "GET /api/open/v1/projects/{projectId}/docs/{docId}",
+    "GET /api/open/v1/projects/{projectId}/artifact",
+    "GET /api/open/v1/jobs/{jobId}",
+    "POST /api/open/v1/jobs/{jobId}/uploads",
+    "POST /api/open/v1/jobs/{jobId}/files",
+    "POST /api/open/v1/jobs/{jobId}/uploads/{documentId}/content",
+    "POST /api/open/v1/jobs/{jobId}/uploads/complete",
+    "POST /api/open/v1/jobs/{jobId}/resume",
+    "POST /api/open/v1/jobs/{jobId}/cancel",
+    "GET /api/open/v1/jobs/{jobId}/result",
+    "GET /api/open/v1/jobs/{jobId}/artifact",
+    "GET /api/open/v1/artifact-downloads/{token}",
+    "HEAD /api/open/v1/artifact-downloads/{token}",
+    "GET /api/open-api/keys",
+    "POST /api/open-api/keys",
+    "POST /api/open-api/keys/revoke-all",
+    "POST /api/open-api/keys/{keyId}/revoke"
+  ]
 }

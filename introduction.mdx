@@ -1,0 +1,56 @@
+---
+title: "Plangrep: Process Construction Documents into Normalized JSON"
+sidebarTitle: "Introduction"
+description: "Plangrep is an async API that processes construction drawings, specifications, and documents into structured, searchable JSON. Get started in minutes."
+---
+
+Plangrep is an async document processing API designed for construction workflows. Upload PDF drawings, specification books, addenda, or any supported document file and receive normalized JSON output — including extracted sheets, drawing regions, specification sections, and structured artifacts — ready to integrate with your application.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Make your first API call and process a document in minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Create an API key and authenticate every request.
+  </Card>
+  <Card title="Submit a Job" icon="upload" href="/guides/submit-a-job">
+    Step-by-step guide to uploading files and starting processing.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/projects/list-projects">
+    Full endpoint reference for every resource.
+  </Card>
+</CardGroup>
+
+## How it works
+
+<Steps>
+  <Step title="Create a project">
+    A project is a persistent container for processed results and semantic search. Provision one via `POST /api/open/v1/projects` and wait for its `status` to become `ready` (typically 1–2 minutes).
+  </Step>
+  <Step title="Create a job and upload files">
+    Create a processing job inside your project, upload your PDF or document files, then call the complete endpoint to kick off processing.
+  </Step>
+  <Step title="Poll for completion">
+    Poll `GET /api/open/v1/jobs/{jobId}` until the job `status` reaches `completed` or `completed_with_errors`. Subscribe to a webhook URL on job creation to receive push notifications instead.
+  </Step>
+  <Step title="Retrieve results">
+    Fetch the normalized JSON result from `GET /api/open/v1/jobs/{jobId}/result`. Query extracted sheets, regions, specifications, and docs through the project entity endpoints, and run semantic search across all processed sources.
+  </Step>
+</Steps>
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Drawings & Specs" icon="file-lines">
+    Extracts sheets, drawing regions, and specification sections from PDFs — with bounding boxes, labels, and raw text.
+  </Card>
+  <Card title="Semantic Search" icon="magnifying-glass">
+    Run natural-language queries across all project sources or search globally across your organization's projects.
+  </Card>
+  <Card title="Flexible Uploads" icon="cloud-arrow-up">
+    Choose multipart form upload for simplicity or signed direct/multipart uploads for large files and API clients.
+  </Card>
+  <Card title="Scoped API Keys" icon="shield-halved">
+    Create keys with granular scopes (`jobs:read`, `jobs:write`, `artifacts:read`) and optional expiration dates.
+  </Card>
+</CardGroup>

@@ -1,0 +1,96 @@
+---
+title: "Fetch an Authenticated Result Artifact for a Job"
+sidebarTitle: "Job Artifact"
+description: "GET /api/open/v1/jobs/{jobId}/artifact — fetches artifact bytes from the immutable result snapshot. Only artifacts from that job's result are accessible."
+---
+
+## Overview
+
+Fetch the raw bytes of an artifact from a completed job's immutable result snapshot. Artifact paths are returned as part of the job result object once processing finishes. Pass the `path` value from those result URLs as the `path` query parameter to retrieve the corresponding file.
+
+<Note>
+  Only artifacts explicitly referenced in the job's result snapshot are accessible through this endpoint. Attempting to fetch an arbitrary path that is not part of the result will return an error.
+</Note>
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/jobs/{jobId}/artifact
+```
+
+## Authentication
+
+All requests must include a Bearer token in the `Authorization` header.
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+  The unique identifier of the completed job whose artifact you want to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="path" type="string" required>
+  The artifact path as it appears in the job result's artifact URL. This value is provided by the API — do not construct artifact paths manually.
+</ParamField>
+
+## Response
+
+**Status: `200 OK`**
+
+**Content-Type:** `application/octet-stream`
+
+The response body contains the raw binary artifact bytes. Use the `Content-Disposition` header in the response to determine a suggested filename, if present.
+
+## Example Request
+
+```bash
+curl "https://plangrep.com/api/open/v1/jobs/JOB_ID/artifact?path=ARTIFACT_PATH" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  --output artifact.pdf
+```
+
+### Saving with the server-suggested filename
+
+```bash
+curl -OJ "https://plangrep.com/api/open/v1/jobs/JOB_ID/artifact?path=ARTIFACT_PATH" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Inspecting headers before downloading
+
+```bash
+curl -I "https://plangrep.com/api/open/v1/jobs/JOB_ID/artifact?path=ARTIFACT_PATH" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Typical Workflow
+
+1. Poll or receive a webhook for job completion.
+2. Retrieve the job result — it includes artifact URLs with embedded `path` values.
+3. Call this endpoint with each `path` to download the corresponding artifact bytes.
+
+```json
+// Example: artifact URL in a job result
+{
+  "result": {
+    "artifacts": [
+      {
+        "path": "results/job_01abc123/normalized-output.json",
+        "url": "/api/open/v1/jobs/job_01abc123/artifact?path=results%2Fjob_01abc123%2Fnormalized-output.json"
+      }
+    ]
+  }
+}
+```
+
+```bash
+# Fetch the artifact referenced above
+curl "https://plangrep.com/api/open/v1/jobs/job_01abc123/artifact?path=results%2Fjob_01abc123%2Fnormalized-output.json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  --output normalized-output.json
+```

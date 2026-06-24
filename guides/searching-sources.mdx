@@ -1,0 +1,151 @@
+---
+title: "Search Construction Document Sources with Plangrep"
+sidebarTitle: "Searching Sources"
+description: "Learn how to run semantic and keyword searches across processed project sources using Plangrep's source search and project search endpoints."
+---
+
+After Plangrep processes your files, you can search the extracted content semantically. Use the per-project source search for targeted queries within a single project, or use the organization-wide project search to find relevant projects and sources across your entire library.
+
+## Search within a project
+
+Send a `POST` request to `/api/open/v1/projects/{projectId}/source-search` with a natural-language query:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/source-search \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "exterior wall insulation R-value",
+    "maxHits": 10,
+    "classification": "specifications"
+  }'
+```
+
+The response includes a ranked list of matching source records:
+
+```json
+{
+  "status": "ok",
+  "query": "exterior wall insulation R-value",
+  "hitCount": 3,
+  "hits": [
+    {
+      "score": 0.92,
+      "snippet": "Exterior walls shall have minimum R-19 insulation...",
+      "sourceCatalogUri": "pgcat://proj_abc123/spec/07210/...",
+      "source": {
+        "type": "specification",
+        "sectionNumber": "07210",
+        "sectionTitle": "Building Insulation",
+        "...": "..."
+      }
+    }
+  ]
+}
+```
+
+Each hit includes a relevance `score`, a `snippet` of matching text, and a `sourceCatalogUri` you can use to retrieve the full source content (see [Reading bounded source text](#reading-bounded-source-text) below).
+
+<Note>
+  If the vector index is not yet ready, the endpoint returns a `409 Conflict`. Wait a moment and retry — indexing typically completes within seconds of job completion.
+</Note>
+
+### Source search filters
+
+Narrow your search using any combination of these optional filter fields in the request body:
+
+| Filter | Description |
+|---|---|
+| `classification` | Restrict to `plans`, `specifications`, `documents`, `addenda`, `mixed`, or `other` |
+| `entityTypes` | Limit results to specific entity types |
+| `regionType` | Filter regions by type (for example `detail`, `note`, `schedule`) |
+| `drawingType` | Filter by drawing type |
+| `layoutType` | Filter by layout type |
+| `fileName` | Case-insensitive substring match against the original file name |
+| `sheetNumber` | Exact sheet number match |
+| `pageNumber` | Exact page number match |
+| `maxHits` | Maximum number of hits to return (1–50) |
+
+---
+
+## Search across all organization projects
+
+Use `POST /api/open/v1/projects/search` to run a query across every project in your organization at once:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/search \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "concrete mix design 5000 psi",
+    "limit": 10
+  }'
+```
+
+Pass a `projectIds` array to restrict the search to a specific subset of projects:
+
+```json
+{
+  "query": "concrete mix design 5000 psi",
+  "limit": 10,
+  "projectIds": ["proj_abc123", "proj_def456"]
+}
+```
+
+The response contains a `projects` array. Each entry includes:
+
+- `project` — the matched project object
+- `matchReasons` — an explanation of why this project was surfaced
+- `sourceMatches` — the specific source records within the project that matched your query
+
+The response also includes a top-level `warnings` array listing any projects that could not be searched (for example because the index is not yet ready).
+
+---
+
+## Read bounded source text
+
+To retrieve the full text of a specific source record, pass its `sourceCatalogUri` (returned by any search hit) to the source-text endpoint:
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/source-text \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sourceCatalogUri": "pgcat://proj_abc123/spec/07210/...",
+    "maxChars": 10000,
+    "textKind": "text"
+  }'
+```
+
+The response includes paginated `text` content. Use `nextCursor` to fetch subsequent pages for long sources.
+
+### `textKind` options
+
+| Value | Description |
+|---|---|
+| `text` | Plain extracted text |
+| `markdown` | Text formatted as Markdown |
+| `page_regions` | Structured region data for the page |
+| `facet_source_text` | Source text grouped by facet |
+| `facet_match_text` | Matched text grouped by facet |
+
+---
+
+## Get a project summary
+
+`GET /api/open/v1/projects/{projectId}/summary` returns a high-level snapshot of a project, ideal for displaying project context in dashboards or AI prompts:
+
+```bash
+curl https://plangrep.com/api/open/v1/projects/proj_abc123/summary \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+The response includes:
+
+| Field | Description |
+|---|---|
+| `aliases` | Alternative project names detected in the documents |
+| `titleCandidates` | Candidate project title strings |
+| `keyFiles` | Most significant files identified in the project |
+| `detectedDisciplines` | Engineering and architectural disciplines present |
+| `counts` | Totals for files, sheets, regions, specifications, docs, and overall |
