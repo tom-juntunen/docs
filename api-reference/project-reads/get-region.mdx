@@ -1,7 +1,7 @@
 ---
 title: "Retrieve a Single Drawing Region from a Plangrep Project"
 sidebarTitle: "Get Region"
-description: "GET /api/open/v1/projects/{projectId}/regions/{regionId} — retrieves a single drawing region with bounding box, extracted text, and artifacts."
+description: "GET /api/open/v1/projects/:projectId/regions/:regionId — retrieves a single drawing region with bounding box, extracted text, and artifacts."
 ---
 
 Retrieves a single extracted drawing region by its ID. The response includes the region's bounding box (normalized coordinates), the text Plangrep extracted from within that area, its parent sheet and file references, and any artifact URLs generated during processing.

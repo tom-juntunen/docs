@@ -1,7 +1,7 @@
 ---
 title: "Get One Processed Document Entity from a Plangrep Project"
 sidebarTitle: "Get Doc"
-description: "GET /api/open/v1/projects/{projectId}/docs/{docId} — retrieves a single processed document entity with type, status, and artifact links."
+description: "GET /api/open/v1/projects/:projectId/docs/:docId — retrieves a single processed document entity with type, status, and artifact links."
 ---
 
 Retrieves a single processed document entity by its ID. The response includes the doc's type, current processing status, parent file reference, and any artifact URLs generated during processing. Pass `compact=true` to omit artifact URLs when you only need metadata.

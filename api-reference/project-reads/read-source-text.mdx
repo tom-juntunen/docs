@@ -1,7 +1,7 @@
 ---
 title: "Read Paginated Source Text for a Plangrep Project Entity"
 sidebarTitle: "Source Text"
-description: "POST /api/open/v1/projects/{projectId}/source-text — retrieves bounded text for a given sourceCatalogUri. Supports pagination and multiple text kinds."
+description: "POST /api/open/v1/projects/:projectId/source-text — retrieves bounded text for a given sourceCatalogUri. Supports pagination and multiple text kinds."
 ---
 
 Retrieves the bounded text content for a source entity identified by a `sourceCatalogUri`. The URI is obtained from a [Search Sources](/api-reference/project-reads/search-sources) hit or from a source catalog. Use `textKind` to control the format of the returned text—plain text, markdown, page regions, or facet-scoped views. Large sources are paginated via `cursor` and `nextCursor`.

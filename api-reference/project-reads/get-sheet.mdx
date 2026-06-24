@@ -1,7 +1,7 @@
 ---
 title: "Retrieve a Single Drawing Sheet from a Plangrep Project"
 sidebarTitle: "Get Sheet"
-description: "GET /api/open/v1/projects/{projectId}/sheets/{sheetId} — retrieves a single extracted sheet entity including sheet number, display name, and artifacts."
+description: "GET /api/open/v1/projects/:projectId/sheets/:sheetId — retrieves a single extracted sheet entity including sheet number, display name, and artifacts."
 ---
 
 Retrieves a single extracted sheet by its ID. The response includes the sheet's number, name, display name, parent file reference, page position, and any artifacts generated during extraction (e.g. sheet thumbnail, vector crop). Pass `compact=true` to omit artifact URLs when you only need metadata.

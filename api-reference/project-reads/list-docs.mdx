@@ -1,7 +1,7 @@
 ---
 title: "List Processed Document Entities in a Plangrep Project"
 sidebarTitle: "List Docs"
-description: "GET /api/open/v1/projects/{projectId}/docs — paginated list of processed doc entities with filtering by doc type, status, and classification."
+description: "GET /api/open/v1/projects/:projectId/docs — paginated list of processed doc entities with filtering by doc type, status, and classification."
 ---
 
 Returns a paginated list of processed document entities (docs) within a project. A doc is a structured entity extracted from an ingested file—such as a submittal, RFI, report, or other document type—that Plangrep has classified and normalized. Filter by `docType`, `status`, or `classification` to locate specific document categories.

@@ -1,7 +1,7 @@
 ---
 title: "Retrieve a Single Extracted File from a Plangrep Project"
 sidebarTitle: "Get File"
-description: "GET /api/open/v1/projects/{projectId}/files/{fileId} — retrieves a single extracted file entity with full metadata, artifact URLs, and processing status."
+description: "GET /api/open/v1/projects/:projectId/files/:fileId — retrieves a single extracted file entity with full metadata, artifact URLs, and processing status."
 ---
 
 Retrieves a single extracted file entity by its ID. The response includes full metadata—classification, processing status, page count—and any artifact URLs generated during extraction. Pass `compact=true` to omit artifact URLs when you only need metadata.

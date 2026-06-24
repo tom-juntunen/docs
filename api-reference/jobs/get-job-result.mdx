@@ -1,7 +1,7 @@
 ---
 title: "Get Normalized Result JSON for a Plangrep Job"
 sidebarTitle: "Get Result"
-description: "GET /api/open/v1/jobs/{jobId}/result — returns the immutable normalized v1 result JSON for a completed job, including documents, evidence, and usage."
+description: "GET /api/open/v1/jobs/:jobId/result — returns the immutable normalized v1 result JSON for a completed job, including documents, evidence, and usage."
 ---
 
 Retrieve the normalized v1 result JSON for a job that has reached a completed terminal state. The result is immutable — its content never changes after the job finishes. It includes structured documents extracted from the source files, supporting evidence linking findings back to specific pages and regions, usage metrics, and any warnings or errors that arose during processing.

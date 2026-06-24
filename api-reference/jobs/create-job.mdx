@@ -1,7 +1,7 @@
 ---
 title: "Create a Processing Job in a Plangrep Project"
 sidebarTitle: "Create Job"
-description: "POST /api/open/v1/projects/{projectId}/jobs — creates a new processing job. Pass a webhookUrl to receive push notifications on status changes."
+description: "POST /api/open/v1/projects/:projectId/jobs — creates a new processing job. Pass a webhookUrl to receive push notifications on status changes."
 ---
 
 Create a new processing job within an existing project. Once created, the job moves through a lifecycle from provisioning to awaiting uploads — at which point you can upload construction drawings, specifications, and other documents for normalization. Supply a `webhookUrl` to receive real-time push notifications on every status change, eliminating the need to poll.

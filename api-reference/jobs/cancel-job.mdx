@@ -1,7 +1,7 @@
 ---
 title: "Cancel a Non-Terminal Plangrep Job"
 sidebarTitle: "Cancel Job"
-description: "POST /api/open/v1/jobs/{jobId}/cancel — cancels a job that has not yet reached a terminal state. Processed pages may still be billed."
+description: "POST /api/open/v1/jobs/:jobId/cancel — cancels a job that has not yet reached a terminal state. Processed pages may still be billed."
 ---
 
 Cancel a processing job that has not yet reached a terminal state. Once cancelled, the job transitions to `cancelled` status and no further processing occurs. Use this endpoint to stop a job that was created in error, is no longer needed, or needs to be restarted with different files.

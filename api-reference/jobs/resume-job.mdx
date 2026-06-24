@@ -1,7 +1,7 @@
 ---
 title: "Resume a Job Blocked by Insufficient Credits"
 sidebarTitle: "Resume Job"
-description: "POST /api/open/v1/jobs/{jobId}/resume — resumes a job paused due to insufficient credits. Add credits to your account before calling this endpoint."
+description: "POST /api/open/v1/jobs/:jobId/resume — resumes a job paused due to insufficient credits. Add credits to your account before calling this endpoint."
 ---
 
 Resume a job that has been paused with a `blocked_insufficient_credits` status. Plangrep automatically pauses processing when your organization runs out of credits mid-job. After adding credits to your account, call this endpoint to restart processing from where it left off — no re-upload is required.

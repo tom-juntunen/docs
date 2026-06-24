@@ -1,7 +1,7 @@
 ---
 title: "Get Job State"
 sidebarTitle: "Get Job"
-description: "GET /api/open/v1/jobs/{jobId} — retrieves the current state of a processing job, including status, billing, file metadata, and any error details."
+description: "GET /api/open/v1/jobs/:jobId — retrieves the current state of a processing job, including status, billing, file metadata, and any error details."
 ---
 
 Retrieve the current state of a processing job by its ID. Use this endpoint to poll job progress after completing file uploads, or at any point to inspect status, billing, file metadata, and error details. Once a job reaches a terminal status, its state is frozen.

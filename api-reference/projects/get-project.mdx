@@ -1,7 +1,7 @@
 ---
 title: "Get API Project State"
 sidebarTitle: "Get Project"
-description: "GET /api/open/v1/projects/{projectId} — retrieves the current state of a single project. Use for polling readiness after creation before submitting jobs."
+description: "GET /api/open/v1/projects/:projectId — retrieves the current state of a single project. Use for polling readiness after creation before submitting jobs."
 ---
 
 Fetch the current state of a single API project by its ID. This is the primary endpoint for polling a project after creation — call it repeatedly until `status` transitions to `ready` before submitting jobs.

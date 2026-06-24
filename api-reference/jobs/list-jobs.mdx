@@ -1,7 +1,7 @@
 ---
 title: "List Jobs for a Plangrep API Project"
 sidebarTitle: "List Jobs"
-description: "GET /api/open/v1/projects/{projectId}/jobs — returns all processing jobs for an API project, ordered by creation time, newest first."
+description: "GET /api/open/v1/projects/:projectId/jobs — returns all processing jobs for an API project, ordered by creation time, newest first."
 ---
 
 Retrieve all processing jobs associated with a specific project. The response is an array of Job objects ordered by creation time, newest first. Use this endpoint to audit job history, reconcile billing, or surface the current in-progress job for a project.
