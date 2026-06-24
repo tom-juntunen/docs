@@ -1,7 +1,7 @@
 ---
-title: "Submit a Processing Job to the Plangrep API"
+title: "Upload Construction Files and Submit a Processing Job"
 sidebarTitle: "Submit a Job"
-description: "A complete guide to creating a Plangrep project, uploading construction documents, and starting the processing pipeline."
+description: "Learn how to create a Plangrep project, upload construction drawings and specification documents, and start the async processing pipeline."
 ---
 
 This guide walks through the full job submission workflow: provisioning a project, creating a job, uploading files using multipart form data, and completing the upload to start processing. All requests use the base URL `https://plangrep.com`.
@@ -84,8 +84,10 @@ The API responds with `202 Accepted`:
 {
   "job": {
     "id": "job_xyz789",
+    "projectId": "proj_abc123",
     "status": "awaiting_uploads",
-    "...": "..."
+    "createdAt": "2024-01-15T10:01:00Z",
+    "updatedAt": "2024-01-15T10:01:00Z"
   },
   "webhookSigningSecret": "wss_..."
 }

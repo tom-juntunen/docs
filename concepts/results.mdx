@@ -25,7 +25,7 @@ The response is a single JSON object. For large result sets, consider streaming 
 | `job` | object | Summary of the job that produced this result |
 | `usage` | object | Credit and page counts for this job (see [Usage](#usage)) |
 | `documents` | array | One `ResultDocument` per uploaded file (see [Documents](#documents)) |
-| `evidence` | array | Flat array of all extracted evidence records (see [Evidence](#evidence)) |
+| `evidence` | array | Citable source records extracted from submitted job files (see [Evidence](#evidence)) |
 | `warnings` | array | Non-fatal issues encountered during processing |
 | `errors` | array | Fatal errors for specific pages or files |
 | `generatedAt` | string | ISO 8601 timestamp when this result snapshot was produced |

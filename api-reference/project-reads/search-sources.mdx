@@ -1,5 +1,5 @@
 ---
-title: "Search Sources Within a Plangrep Project"
+title: "Search Project Sources Using Semantic and Keyword Queries"
 sidebarTitle: "Search Sources"
 description: "POST /api/open/v1/projects/{projectId}/source-search — semantic and keyword search across all indexed sources in a project. Returns hits with snippets."
 ---
@@ -28,6 +28,10 @@ Content-Type: `application/json`
 
 <ParamField body="query" type="string" required>
   The search query string. Must be at least **1 character**. Supports natural language and keyword queries (e.g. `"waterproofing membrane below grade"`, `"fire rating corridor"`).
+</ParamField>
+
+<ParamField body="reviewId" type="string">
+  Optional review context identifier. When provided, scopes the search to sources associated with a specific review.
 </ParamField>
 
 <ParamField body="entityTypes" type="string[]">
@@ -170,4 +174,4 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
 | `400`  | Invalid request body — `query` missing or empty, `maxHits` out of range, etc. |
 | `401`  | Missing or invalid Bearer token. |
 | `404`  | Project not found. |
-| `409`  | Searchable sources exist but the vector index is not ready yet. Retry after a short wait. |
+| `409`  | Searchable sources exist but the vector index is not ready yet. Retry after a short wait. Response body: `{ "error": { "code": "<string>", "message": "<string>" } }` |

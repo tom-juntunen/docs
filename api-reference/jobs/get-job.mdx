@@ -1,7 +1,7 @@
 ---
 title: "Get Job State"
 sidebarTitle: "Get Job"
-description: "GET /api/open/v1/jobs/{jobId} — retrieves current job state. Use for polling job progress after upload completion."
+description: "GET /api/open/v1/jobs/{jobId} — retrieves the current state of a processing job, including status, billing, file metadata, and any error details."
 ---
 
 Retrieve the current state of a processing job by its ID. Use this endpoint to poll job progress after completing file uploads, or at any point to inspect status, billing, file metadata, and error details. Once a job reaches a terminal status, its state is frozen.
@@ -103,7 +103,7 @@ curl --request GET \
       ISO 8601 timestamp of when the job reached a terminal state, or `null` if still in progress.
     </ResponseField>
 
-    <ResponseField name="expiresAt" type="string | null">
+    <ResponseField name="expiresAt" type="string" required>
       ISO 8601 timestamp after which the job and its result are no longer accessible.
     </ResponseField>
   </Expandable>
@@ -144,13 +144,13 @@ Jobs in these states will not change further. Results (if any) can be retrieved.
     "status": "processing",
     "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
     "limits": {
-      "maxDeclaredBytes": 5368709120,
-      "maxFiles": 50
+      "maxDeclaredBytes": 10000000000,
+      "maxFiles": 100
     },
     "pageCount": 204,
     "successfulPageCount": 87,
     "billing": {
-      "creditsCharged": 87
+      "creditsDebited": 87
     },
     "files": [
       {

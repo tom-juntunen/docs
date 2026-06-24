@@ -1,7 +1,7 @@
 ---
 title: "Create an API Project in Plangrep"
 sidebarTitle: "Create Project"
-description: "POST /api/open/v1/projects — provisions a new API project. Returns 202; poll for ready status before creating jobs."
+description: "POST /api/open/v1/projects — provisions a new API project under your organization. Returns 202 immediately; poll for ready status before submitting jobs."
 ---
 
 Provision a new API project under your organization. The response is returned immediately with HTTP `202 Accepted` while Plangrep completes the underlying infrastructure setup in the background. **Do not create jobs against a project until its status is `ready`.**
@@ -67,8 +67,8 @@ The endpoint returns `202 Accepted` with the following body.
           Current runtime status.
         </ResponseField>
 
-        <ResponseField name="upgradeStatus" type="string" required>
-          Indicates whether the runtime is pending an upgrade.
+        <ResponseField name="upgradeStatus" type="string | null" required>
+          Indicates whether the runtime is pending an upgrade, or `null` if no upgrade information is available.
         </ResponseField>
       </Expandable>
     </ResponseField>

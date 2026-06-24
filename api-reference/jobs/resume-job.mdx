@@ -1,7 +1,7 @@
 ---
 title: "Resume a Job Blocked by Insufficient Credits"
 sidebarTitle: "Resume Job"
-description: "POST /api/open/v1/jobs/{jobId}/resume — resumes a job paused due to insufficient credits after credits have been added."
+description: "POST /api/open/v1/jobs/{jobId}/resume — resumes a job paused due to insufficient credits. Add credits to your account before calling this endpoint."
 ---
 
 Resume a job that has been paused with a `blocked_insufficient_credits` status. Plangrep automatically pauses processing when your organization runs out of credits mid-job. After adding credits to your account, call this endpoint to restart processing from where it left off — no re-upload is required.
@@ -107,7 +107,7 @@ curl --request POST \
       ISO 8601 timestamp of when the job reached a terminal state, or `null` if still in progress.
     </ResponseField>
 
-    <ResponseField name="expiresAt" type="string | null">
+    <ResponseField name="expiresAt" type="string" required>
       ISO 8601 timestamp after which the job and its result are no longer accessible.
     </ResponseField>
   </Expandable>
@@ -123,13 +123,13 @@ curl --request POST \
     "status": "processing",
     "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
     "limits": {
-      "maxDeclaredBytes": 5368709120,
-      "maxFiles": 50
+      "maxDeclaredBytes": 10000000000,
+      "maxFiles": 100
     },
     "pageCount": 204,
     "successfulPageCount": 112,
     "billing": {
-      "creditsCharged": 112
+      "creditsDebited": 112
     },
     "files": [
       {

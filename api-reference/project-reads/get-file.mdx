@@ -1,7 +1,7 @@
 ---
-title: "Get One Extracted File from a Project"
+title: "Retrieve a Single Extracted File from a Plangrep Project"
 sidebarTitle: "Get File"
-description: "GET /api/open/v1/projects/{projectId}/files/{fileId} — retrieves a single extracted file entity with artifacts and metadata."
+description: "GET /api/open/v1/projects/{projectId}/files/{fileId} — retrieves a single extracted file entity with full metadata, artifact URLs, and processing status."
 ---
 
 Retrieves a single extracted file entity by its ID. The response includes full metadata—classification, processing status, page count—and any artifact URLs generated during extraction. Pass `compact=true` to omit artifact URLs when you only need metadata.
@@ -91,8 +91,8 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/files/file_00
     "status": "complete",
     "pageCount": 48,
     "artifacts": [
-      { "artifactType": "thumbnail", "url": "https://..." },
-      { "artifactType": "extracted_json", "url": "https://..." }
+      { "type": "thumbnail", "url": "https://..." },
+      { "type": "extracted_json", "url": "https://..." }
     ]
   }
 }

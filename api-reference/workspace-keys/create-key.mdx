@@ -1,8 +1,10 @@
 ---
-title: "Create a Scoped Open API Key for Your Workspace"
+title: "Create a New Scoped Open API Key for the Workspace"
 sidebarTitle: "Create Key"
-description: "Creates a new API key with selected scopes and an optional expiration date. The plaintext key is returned only once."
+description: "Creates a new scoped Open API key with an optional expiration date. The plaintext key is returned in this response only and cannot be retrieved again."
 ---
+
+Use this endpoint to generate a new Open API key with one or more permission scopes and an optional expiry date. After creation, the full plaintext key is shown exactly once — copy it immediately into a secure secrets manager.
 
 <Note>
   This endpoint uses session cookie authentication (`plangrep_session`). It is used by the Plangrep app's API settings page and does **not** accept a bearer API key.
@@ -67,7 +69,7 @@ Returns an `OpenApiKeyCreateResponse` object.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
-      The permission scopes granted to this key.
+      The permission scopes granted to this key. Possible values: `jobs:read`, `jobs:write`, `artifacts:read`.
     </ResponseField>
 
     <ResponseField name="createdByUserId" type="string">
@@ -101,7 +103,7 @@ Returns an `OpenApiKeyCreateResponse` object.
 </ResponseField>
 
 <ResponseField name="plaintextKey" type="string" required>
-  The full bearer token to use in API requests. **This value is shown exactly once and is not stored by Plangrep.** Copy it immediately and store it in a secure secrets manager.
+  The full plaintext key to use in API requests. **This value is shown exactly once and is not stored by Plangrep.** Copy it immediately and store it in a secure secrets manager.
 </ResponseField>
 
 <Warning>

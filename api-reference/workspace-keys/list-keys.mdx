@@ -1,8 +1,10 @@
 ---
-title: "List Open API Keys for Your Workspace"
+title: "List All Open API Keys and Profile for Your Workspace"
 sidebarTitle: "List Keys"
-description: "Returns all API keys for the current workspace along with the organization's API profile settings."
+description: "Returns all API keys belonging to the current workspace along with the organization's Open API profile settings, including credit rates and limits."
 ---
+
+Use this endpoint to retrieve every Open API key in your workspace alongside the organization's API profile. The profile includes credit rates and usage limits that apply to all jobs submitted through the API.
 
 <Note>
   This endpoint uses session cookie authentication (`plangrep_session`). It is used by the Plangrep app's API settings page and does **not** accept a bearer API key.

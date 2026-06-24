@@ -1,12 +1,18 @@
 ---
 title: "Revoke All Active Open API Keys for Your Workspace"
 sidebarTitle: "Revoke All Keys"
-description: "Immediately revokes every active API key in the workspace. Use with caution — all integrations will stop working instantly."
+description: "Immediately and permanently revokes every active Open API key in the workspace. All integrations using any key will begin receiving 401 errors instantly."
 ---
+
+Use this endpoint to revoke every active API key in your workspace in a single operation. This is intended for emergency scenarios such as a suspected credential compromise, or as the final step of a coordinated key rotation after replacement keys are already in place.
 
 <Note>
   This endpoint uses session cookie authentication (`plangrep_session`). It is used by the Plangrep app's API settings page and does **not** accept a bearer API key.
 </Note>
+
+<Warning>
+  **This action revokes every active key in your workspace simultaneously and cannot be undone.** All integrations, pipelines, and services authenticating with any API key for this workspace will immediately begin receiving `401 Unauthorized` errors. Only use this endpoint in an emergency (e.g., a suspected key compromise) or as part of a planned, coordinated key rotation where replacement keys are already in place.
+</Warning>
 
 ## Endpoint
 
@@ -51,7 +57,7 @@ Returns an object containing all key records after revocation.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
-      The permission scopes that were granted to this key.
+      The permission scopes that were granted to this key. Possible values: `jobs:read`, `jobs:write`, `artifacts:read`.
     </ResponseField>
 
     <ResponseField name="createdByUserId" type="string">
@@ -78,15 +84,11 @@ Returns an object containing all key records after revocation.
       IP address of the most recent request before revocation, or `null` if the key was never used.
     </ResponseField>
 
-    <ResponseField name="revokedAt" type="string">
+    <ResponseField name="revokedAt" type="string | null">
       ISO 8601 timestamp of when this revocation occurred. Will be non-null for all keys affected by this operation.
     </ResponseField>
   </Expandable>
 </ResponseField>
-
-<Warning>
-  **This action revokes every active key in your workspace simultaneously and cannot be undone.** All integrations, pipelines, and services authenticating with any API key for this workspace will immediately begin receiving `401 Unauthorized` errors. Only use this endpoint in an emergency (e.g., a suspected key compromise) or as part of a planned, coordinated key rotation where replacement keys are already in place.
-</Warning>
 
 <Tip>
   To rotate keys without downtime, [create replacement keys](/api-reference/workspace-keys/create-key) and update all integrations before calling this endpoint.

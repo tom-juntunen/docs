@@ -1,5 +1,5 @@
 ---
-title: "Get One Extracted Drawing Region from a Project"
+title: "Retrieve a Single Drawing Region from a Plangrep Project"
 sidebarTitle: "Get Region"
 description: "GET /api/open/v1/projects/{projectId}/regions/{regionId} — retrieves a single drawing region with bounding box, extracted text, and artifacts."
 ---
@@ -138,7 +138,7 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions/regio
     "displayBox": { "left": 0.52, "top": 0.31, "right": 0.74, "bottom": 0.58 },
     "titleDisplayBox": { "left": 0.52, "top": 0.58, "right": 0.74, "bottom": 0.62 },
     "artifacts": [
-      { "artifactType": "region_crop", "url": "https://..." }
+      { "type": "region_crop", "url": "https://..." }
     ]
   }
 }

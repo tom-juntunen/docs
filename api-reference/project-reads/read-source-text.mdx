@@ -1,5 +1,5 @@
 ---
-title: "Read Bounded Source Text from a Project Entity"
+title: "Read Paginated Source Text for a Plangrep Project Entity"
 sidebarTitle: "Source Text"
 description: "POST /api/open/v1/projects/{projectId}/source-text — retrieves bounded text for a given sourceCatalogUri. Supports pagination and multiple text kinds."
 ---
@@ -24,6 +24,10 @@ Content-Type: `application/json`
 
 <ParamField body="sourceCatalogUri" type="string" required>
   Opaque URI identifying the source entity whose text you want to retrieve. Obtain this value from a `sourceCatalogUri` field on a [search hit](/api-reference/project-reads/search-sources) or from the source catalog. Must be at least **1 character**.
+</ParamField>
+
+<ParamField body="reviewId" type="string">
+  Optional review context identifier. When provided, scopes the text retrieval to sources associated with a specific review.
 </ParamField>
 
 <ParamField body="cursor" type="string">

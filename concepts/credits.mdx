@@ -15,6 +15,17 @@ Plangrep uses a credit-based billing model. Credits are charged per page process
 
 Your organization's actual rates are shown in the `drawingCreditsPerPage` and `documentCreditsPerPage` fields of the `OpenApiProfile` object returned by the workspace keys endpoint. Use those values — not the defaults above — when estimating costs for your specific account.
 
+### OpenApiProfile fields
+
+| Field | Description |
+|-------|-------------|
+| `drawingCreditsPerPage` | Credits charged per drawing page for your organization |
+| `documentCreditsPerPage` | Credits charged per document page for your organization |
+| `enabled` | Whether API access is currently enabled for your organization |
+| `jobPageLimit` | Maximum pages allowed per job for your organization |
+| `retentionDays` | Number of days job results are retained before deletion |
+| `updatedAt` | ISO 8601 timestamp of the most recent profile update |
+
 ---
 
 ## When Credits Are Charged

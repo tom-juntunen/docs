@@ -1,7 +1,7 @@
 ---
 title: "List API Projects for Your Organization"
 sidebarTitle: "List Projects"
-description: "GET /api/open/v1/projects — returns all API projects visible to the authenticated organization key."
+description: "GET /api/open/v1/projects — returns all API projects for your organization, including each project's status, runtime health, and creation timestamps."
 ---
 
 Retrieve every API project that belongs to your organization. The response includes each project's current status, runtime health, and timestamps, giving you a full snapshot of your project inventory in a single call.
@@ -57,8 +57,8 @@ curl --request GET \
           Current runtime status.
         </ResponseField>
 
-        <ResponseField name="upgradeStatus" type="string" required>
-          Indicates whether the project runtime is pending an upgrade.
+        <ResponseField name="upgradeStatus" type="string | null" required>
+          Indicates whether the project runtime is pending an upgrade, or `null` if no upgrade information is available.
         </ResponseField>
       </Expandable>
     </ResponseField>

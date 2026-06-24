@@ -1,5 +1,5 @@
 ---
-title: "Upload Files to Plangrep Jobs"
+title: "Uploading Files to Plangrep Jobs: Three Upload Modes"
 sidebarTitle: "Uploads"
 description: "Learn the three upload paths Plangrep supports: multipart form upload, signed direct PUT, and signed multipart upload for large files."
 ---
@@ -26,6 +26,7 @@ Plangrep supports three upload modes so you can choose the right approach for yo
 
 ```bash
 POST /api/open/v1/jobs/{jobId}/files
+Authorization: Bearer {your_api_key}
 Content-Type: multipart/form-data
 ```
 
@@ -95,6 +96,8 @@ Use this path when you want to upload directly from a client browser, when files
 
 ```bash
 POST /api/open/v1/jobs/{jobId}/uploads
+Authorization: Bearer {your_api_key}
+Content-Type: application/json
 ```
 
 ```json
@@ -146,6 +149,8 @@ This path provides an API-compatibility helper for `direct_put` registered uploa
 
 ```bash
 POST /api/open/v1/jobs/{jobId}/uploads/{documentId}/content
+Authorization: Bearer {your_api_key}
+Content-Type: application/json
 ```
 
 ```json
@@ -166,6 +171,8 @@ After all files are uploaded, call the complete endpoint to close the upload win
 
 ```bash
 POST /api/open/v1/jobs/{jobId}/uploads/complete
+Authorization: Bearer {your_api_key}
+Content-Type: application/json
 Idempotency-Key: your-unique-completion-key
 ```
 

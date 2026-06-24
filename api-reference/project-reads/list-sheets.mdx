@@ -1,5 +1,5 @@
 ---
-title: "List Extracted Sheets in a Plangrep Project"
+title: "List All Extracted Drawing Sheets in a Plangrep Project"
 sidebarTitle: "List Sheets"
 description: "GET /api/open/v1/projects/{projectId}/sheets — paginated list of extracted sheets with filtering by sheet number, file, classification, and more."
 ---
@@ -175,7 +175,7 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets?limit=
       "sheetName": "First Floor Plan",
       "sheetDisplayName": "A1.01 – First Floor Plan",
       "artifacts": [
-        { "artifactType": "thumbnail", "url": "https://..." }
+        { "type": "thumbnail", "url": "https://..." }
       ]
     }
   ]

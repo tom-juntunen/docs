@@ -1,7 +1,7 @@
 ---
 title: "Jobs: Processing Units for Uploaded Document Files"
 sidebarTitle: "Jobs"
-description: "Understand how Plangrep jobs manage the lifecycle of file uploads and document processing, from upload through completion."
+description: "Understand how Plangrep jobs manage the full lifecycle of file uploads and document processing, from creation through completion and result retrieval."
 ---
 
 A job is a single processing unit within a project. You create a job, upload files to it, complete the upload window, and then Plangrep processes the files and writes the results back to the project.
@@ -10,6 +10,8 @@ A job is a single processing unit within a project. You create a job, upload fil
 
 ```bash
 POST /api/open/v1/projects/{projectId}/jobs
+Authorization: Bearer {your_api_key}
+Content-Type: application/json
 ```
 
 ```json
@@ -67,6 +69,7 @@ Once a job reaches `completed` or `completed_with_errors`, the `resultUrl` field
 
 ```bash
 GET /api/open/v1/jobs/{jobId}/result
+Authorization: Bearer {your_api_key}
 ```
 
 See [Results](/concepts/results) for a full breakdown of the result schema.

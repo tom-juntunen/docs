@@ -1,5 +1,5 @@
 ---
-title: "Get One Processed Document Entity from a Project"
+title: "Get One Processed Document Entity from a Plangrep Project"
 sidebarTitle: "Get Doc"
 description: "GET /api/open/v1/projects/{projectId}/docs/{docId} — retrieves a single processed document entity with type, status, and artifact links."
 ---
@@ -99,8 +99,8 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/docs/doc_001"
     "docType": "submittal",
     "status": "complete",
     "artifacts": [
-      { "artifactType": "extracted_json", "url": "https://..." },
-      { "artifactType": "thumbnail", "url": "https://..." }
+      { "type": "extracted_json", "url": "https://..." },
+      { "type": "thumbnail", "url": "https://..." }
     ]
   }
 }

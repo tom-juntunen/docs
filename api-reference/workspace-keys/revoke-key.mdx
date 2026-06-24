@@ -1,8 +1,10 @@
 ---
-title: "Revoke One Open API Key for Your Workspace"
+title: "Immediately Revoke a Single Workspace Open API Key"
 sidebarTitle: "Revoke Key"
-description: "Immediately revokes a single API key. Revoked keys are rejected on all subsequent requests."
+description: "Immediately revokes a single Open API key by ID. The key is permanently disabled and will return 401 Unauthorized on all subsequent API requests."
 ---
+
+Use this endpoint to permanently disable a specific API key by its ID. Revocation takes effect immediately — any integration or service still using the key will start receiving `401 Unauthorized` responses on its next request.
 
 <Note>
   This endpoint uses session cookie authentication (`plangrep_session`). It is used by the Plangrep app's API settings page and does **not** accept a bearer API key.
@@ -59,7 +61,7 @@ Returns an object with the revoked key record.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
-      The permission scopes that were granted to this key.
+      The permission scopes that were granted to this key. Possible values: `jobs:read`, `jobs:write`, `artifacts:read`.
     </ResponseField>
 
     <ResponseField name="createdByUserId" type="string">
@@ -86,7 +88,7 @@ Returns an object with the revoked key record.
       IP address of the most recent request before revocation, or `null` if the key was never used.
     </ResponseField>
 
-    <ResponseField name="revokedAt" type="string">
+    <ResponseField name="revokedAt" type="string | null">
       ISO 8601 timestamp of when this revocation occurred. This field will be non-null on a successfully revoked key.
     </ResponseField>
   </Expandable>

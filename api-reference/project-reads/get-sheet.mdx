@@ -1,5 +1,5 @@
 ---
-title: "Get One Extracted Sheet from a Plangrep Project"
+title: "Retrieve a Single Drawing Sheet from a Plangrep Project"
 sidebarTitle: "Get Sheet"
 description: "GET /api/open/v1/projects/{projectId}/sheets/{sheetId} — retrieves a single extracted sheet entity including sheet number, display name, and artifacts."
 ---
@@ -111,8 +111,8 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets/sheet_
     "sheetName": "First Floor Plan",
     "sheetDisplayName": "A1.01 – First Floor Plan",
     "artifacts": [
-      { "artifactType": "thumbnail", "url": "https://..." },
-      { "artifactType": "vector_crop", "url": "https://..." }
+      { "type": "thumbnail", "url": "https://..." },
+      { "type": "vector_crop", "url": "https://..." }
     ]
   }
 }

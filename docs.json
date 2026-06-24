@@ -75,6 +75,7 @@
           {
             "group": "Jobs",
             "pages": [
+              "api-reference/jobs/list-jobs",
               "api-reference/jobs/create-job",
               "api-reference/jobs/get-job",
               "api-reference/jobs/get-job-result",

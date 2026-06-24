@@ -1,5 +1,5 @@
 ---
-title: "Get Normalized v1 Result JSON for a Job"
+title: "Get Normalized Result JSON for a Plangrep Job"
 sidebarTitle: "Get Result"
 description: "GET /api/open/v1/jobs/{jobId}/result — returns the immutable normalized v1 result JSON for a completed job, including documents, evidence, and usage."
 ---
@@ -54,11 +54,27 @@ curl --request GET \
     </ResponseField>
 
     <ResponseField name="externalId" type="string | null">
-      Client-supplied correlation ID.
+      Client-supplied correlation ID, or `null` if none was provided at creation.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the job was created.
     </ResponseField>
 
     <ResponseField name="completedAt" type="string" required>
       ISO 8601 timestamp of when the job reached its terminal state.
+    </ResponseField>
+
+    <ResponseField name="expiresAt" type="string" required>
+      ISO 8601 timestamp after which the job and its result are no longer accessible.
+    </ResponseField>
+
+    <ResponseField name="resultUrl" type="string | null">
+      Pre-signed URL to the result JSON object. Populated for completed jobs.
+    </ResponseField>
+
+    <ResponseField name="error" type="object | null">
+      Error detail if the job encountered a fatal error, otherwise `null`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -67,16 +83,40 @@ curl --request GET \
   Aggregate processing metrics for the job.
 
   <Expandable title="ResultUsage fields">
-    <ResponseField name="totalPages" type="integer" required>
+    <ResponseField name="pageCount" type="integer" required>
       Total pages submitted for processing.
     </ResponseField>
 
-    <ResponseField name="successfulPages" type="integer" required>
+    <ResponseField name="successfulPageCount" type="integer" required>
       Pages that were processed without errors.
     </ResponseField>
 
-    <ResponseField name="creditsCharged" type="integer" required>
-      Total credits billed for this job.
+    <ResponseField name="drawingPageCount" type="integer" required>
+      Total number of pages classified as drawings.
+    </ResponseField>
+
+    <ResponseField name="documentPageCount" type="integer" required>
+      Total number of pages classified as documents.
+    </ResponseField>
+
+    <ResponseField name="successfulDrawingPageCount" type="integer" required>
+      Drawing pages that were processed successfully.
+    </ResponseField>
+
+    <ResponseField name="successfulDocumentPageCount" type="integer" required>
+      Document pages that were processed successfully.
+    </ResponseField>
+
+    <ResponseField name="drawingCreditsPerPage" type="integer" required>
+      Credits charged per successfully processed drawing page. Default: `10`.
+    </ResponseField>
+
+    <ResponseField name="documentCreditsPerPage" type="integer" required>
+      Credits charged per successfully processed document page. Default: `1`.
+    </ResponseField>
+
+    <ResponseField name="creditsDebited" type="integer" required>
+      Total credits debited for this job.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -129,11 +169,11 @@ curl --request GET \
   </Expandable>
 </ResponseField>
 
-<ResponseField name="warnings" type="string[]" required>
+<ResponseField name="warnings" type="ResultWarning[]" required>
   Non-fatal warnings raised during processing (e.g., unreadable pages, unsupported file formats). Empty array when there are no warnings.
 </ResponseField>
 
-<ResponseField name="errors" type="object[]" required>
+<ResponseField name="errors" type="ResultError[]" required>
   Page-level or file-level errors that prevented full processing. Present in `completed_with_errors` results. Empty array for fully `completed` jobs.
 </ResponseField>
 
@@ -151,12 +191,22 @@ curl --request GET \
     "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
     "status": "completed",
     "externalId": "order-7890",
-    "completedAt": "2024-11-02T09:45:10.000Z"
+    "createdAt": "2024-11-02T09:00:00.000Z",
+    "completedAt": "2024-11-02T09:45:10.000Z",
+    "expiresAt": "2024-11-09T09:00:00.000Z",
+    "resultUrl": "https://storage.plangrep.com/results/job_01hy3m8qtn2e5r7k9p0w4x1def?token=...",
+    "error": null
   },
   "usage": {
-    "totalPages": 204,
-    "successfulPages": 204,
-    "creditsCharged": 204
+    "pageCount": 204,
+    "successfulPageCount": 204,
+    "drawingPageCount": 180,
+    "documentPageCount": 24,
+    "successfulDrawingPageCount": 180,
+    "successfulDocumentPageCount": 24,
+    "drawingCreditsPerPage": 10,
+    "documentCreditsPerPage": 1,
+    "creditsDebited": 1824
   },
   "documents": [
     {
@@ -192,5 +242,5 @@ curl --request GET \
 ```
 
 <Note>
-  Results are only available for jobs with a status of `completed` or `completed_with_errors`. Calling this endpoint on a job in any other status — including `failed`, `cancelled`, or `expired` — will return a `404` or `409` error. Check `job.status` with [Get Job](/api-reference/jobs/get-job) before calling this endpoint.
+  Results are only available for jobs with a status of `completed` or `completed_with_errors`. Calling this endpoint on a job in any other status — including `failed`, `cancelled`, or `expired` — will return an error. Check `job.status` with [Get Job](/api-reference/jobs/get-job) before calling this endpoint.
 </Note>

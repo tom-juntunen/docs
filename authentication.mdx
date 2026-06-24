@@ -1,7 +1,7 @@
 ---
 title: "Authenticate with the Plangrep API Using Bearer Tokens"
 sidebarTitle: "Authentication"
-description: "Learn how to create a scoped API key in Plangrep and pass it as a bearer token on every API request."
+description: "Learn how to create a scoped API key in the Plangrep app, pass it as a bearer token on every request, and understand key scopes and error responses."
 ---
 
 Plangrep uses bearer token authentication for all Open API routes. You create API keys from the Plangrep app's API settings page and pass them in the `Authorization` header of every request. Each key carries one or more scopes that limit exactly which actions it can perform.
@@ -88,7 +88,7 @@ Requests with a missing, invalid, or revoked bearer token receive a `401 Unautho
 }
 ```
 
-All Plangrep API errors follow the same `ErrorEnvelope` shape:
+All Plangrep API errors follow the same shape:
 
 ```json
 {

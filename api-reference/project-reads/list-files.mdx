@@ -1,5 +1,5 @@
 ---
-title: "List Extracted Files in a Plangrep Project"
+title: "List All Extracted Files Belonging to a Plangrep Project"
 sidebarTitle: "List Files"
 description: "GET /api/open/v1/projects/{projectId}/files — paginated list of extracted files with optional filtering by name, classification, and status."
 ---
@@ -159,7 +159,7 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/files?limit=2
       "status": "complete",
       "pageCount": 48,
       "artifacts": [
-        { "artifactType": "thumbnail", "url": "https://..." }
+        { "type": "thumbnail", "url": "https://..." }
       ]
     }
   ]

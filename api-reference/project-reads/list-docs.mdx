@@ -1,5 +1,5 @@
 ---
-title: "List Processed Document Entities in a Project"
+title: "List Processed Document Entities in a Plangrep Project"
 sidebarTitle: "List Docs"
 description: "GET /api/open/v1/projects/{projectId}/docs — paginated list of processed doc entities with filtering by doc type, status, and classification."
 ---
@@ -163,7 +163,7 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/docs?limit=50
       "docType": "submittal",
       "status": "complete",
       "artifacts": [
-        { "artifactType": "extracted_json", "url": "https://..." }
+        { "type": "extracted_json", "url": "https://..." }
       ]
     }
   ]

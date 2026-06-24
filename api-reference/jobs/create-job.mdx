@@ -127,7 +127,7 @@ The endpoint returns `202 Accepted`.
       ISO 8601 timestamp of when the job reached a terminal state, or `null` if still in progress.
     </ResponseField>
 
-    <ResponseField name="expiresAt" type="string | null">
+    <ResponseField name="expiresAt" type="string" required>
       ISO 8601 timestamp after which the job and its result are no longer accessible.
     </ResponseField>
   </Expandable>
@@ -167,8 +167,8 @@ The endpoint returns `202 Accepted`.
     "status": "awaiting_uploads",
     "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
     "limits": {
-      "maxDeclaredBytes": 5368709120,
-      "maxFiles": 50
+      "maxDeclaredBytes": 10000000000,
+      "maxFiles": 100
     },
     "pageCount": 0,
     "successfulPageCount": 0,

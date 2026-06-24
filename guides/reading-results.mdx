@@ -1,5 +1,5 @@
 ---
-title: "Read and Interpret Plangrep Job Results"
+title: "Read, Interpret, and Download Plangrep Job Results"
 sidebarTitle: "Reading Results"
 description: "Learn how to fetch the normalized v1 result JSON, interpret extracted documents, sheets, regions, and evidence records, and download artifacts."
 ---
@@ -20,7 +20,7 @@ The response is a single normalized JSON object:
 ```json
 {
   "schemaVersion": "v1",
-  "job": { "id": "job_xyz789", "status": "completed", "...": "..." },
+  "job": { "id": "job_xyz789", "status": "completed" },
   "usage": {
     "pageCount": 42,
     "drawingPageCount": 38,
@@ -32,8 +32,9 @@ The response is a single normalized JSON object:
       "documentId": "doc_111",
       "fileName": "floor-plan.pdf",
       "classification": "plans",
-      "sheets": ["..."],
-      "artifacts": ["..."]
+      "pageCount": 38,
+      "sheets": [],
+      "artifacts": []
     }
   ],
   "evidence": [
@@ -41,8 +42,7 @@ The response is a single normalized JSON object:
       "id": "ev_001",
       "type": "region",
       "regionType": "detail",
-      "text": "...",
-      "...": "..."
+      "text": "Provide R-19 batt insulation at all exterior stud walls."
     }
   ],
   "warnings": [],

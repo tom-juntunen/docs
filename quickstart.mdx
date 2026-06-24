@@ -1,7 +1,7 @@
 ---
-title: "Get Started with the Plangrep API in Minutes"
+title: "Quickstart: Process Your First Construction Document"
 sidebarTitle: "Quickstart"
-description: "Learn how to create a project, upload a file, and retrieve normalized JSON results from the Plangrep API in four steps."
+description: "Step-by-step guide to creating a project, uploading a construction document, and retrieving normalized JSON results from the Plangrep API."
 ---
 
 This guide walks you through the complete end-to-end flow for processing a construction document with the Plangrep API: create a project, create a job, upload a file, complete the upload, poll for job status, and fetch your normalized JSON results.
@@ -16,7 +16,7 @@ This guide walks you through the complete end-to-end flow for processing a const
 
 <Steps>
 
-### Create a project
+<Step title="Create a project">
 
 Send a `POST` request to create a new project. Projects act as containers for all the jobs and documents you process together.
 
@@ -52,7 +52,9 @@ curl https://plangrep.com/api/open/v1/projects/proj_abc123 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-### Create a job
+</Step>
+
+<Step title="Create a job">
 
 Once your project is `"ready"`, create a job inside it. A job represents a single processing run over one or more uploaded files.
 
@@ -82,7 +84,9 @@ All fields are optional. You can pass a `webhookUrl` here to receive a callback 
 }
 ```
 
-### Upload a file
+</Step>
+
+<Step title="Upload a file">
 
 Upload one or more files to the job using a `multipart/form-data` request. Include a `metadata` part (a JSON string) that describes each file part, followed by the file parts themselves named `file0`, `file1`, and so on.
 
@@ -97,7 +101,9 @@ curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/files \
 
 The response includes an `uploads` array with a `documentId` for each file received. Save these IDs if you need to reference individual documents later.
 
-### Complete uploads and start processing
+</Step>
+
+<Step title="Complete uploads and start processing">
 
 Signal to Plangrep that all files have been uploaded and processing should begin.
 
@@ -128,7 +134,9 @@ An empty JSON body completes all server-stored files for this job.
 
 Plangrep now validates your uploads and begins processing.
 
-### Poll for completion
+</Step>
+
+<Step title="Poll for completion">
 
 Poll `GET /api/open/v1/jobs/{jobId}` until the job reaches a terminal status.
 
@@ -153,13 +161,15 @@ curl https://plangrep.com/api/open/v1/jobs/job_xyz789 \
 | `cancelled` | Job was cancelled before completion |
 | `expired` | Job expired before processing completed |
 
-Continue polling until `job.status` is one of: `completed`, `completed_with_errors`, `failed`, or `cancelled`.
+Continue polling until `job.status` is one of: `completed`, `completed_with_errors`, `failed`, `cancelled`, or `expired`.
 
 <Tip>
   For webhook-driven workflows, pass a `webhookUrl` in the job creation request body instead of polling. Plangrep will `POST` the final job status to your endpoint as soon as processing finishes.
 </Tip>
 
-### Fetch results
+</Step>
+
+<Step title="Fetch results">
 
 Once the job status is `completed` or `completed_with_errors`, fetch the normalized JSON output.
 
@@ -178,6 +188,8 @@ The response is a `Result` object with the following top-level fields:
 | `evidence` | Citable source records — individual sheets, regions, and spec sections that back the extracted data |
 | `warnings` | Non-fatal issues encountered during processing |
 | `errors` | Errors for documents that could not be fully processed |
+
+</Step>
 
 </Steps>
 

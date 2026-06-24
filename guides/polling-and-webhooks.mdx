@@ -1,7 +1,7 @@
 ---
 title: "Poll for Job Status or Receive Webhook Notifications"
 sidebarTitle: "Polling & Webhooks"
-description: "Learn how to track Plangrep job progress by polling the job endpoint or by subscribing to webhook push notifications."
+description: "Learn how to track Plangrep job progress by polling the job status endpoint or by receiving push notifications via a registered webhook URL."
 ---
 
 After completing uploads, Plangrep processes your files asynchronously. You can track progress by polling the job state endpoint or by receiving push notifications via a webhook URL you configure when creating the job.
@@ -72,17 +72,11 @@ Register a webhook URL at job creation time to receive push notifications instea
 }
 ```
 
-Plangrep sends an HTTP `POST` request to your URL whenever the job status changes. The request body contains the current job object at each status transition.
-
-The `webhookSigningSecret` returned at job creation time lets you verify that the request originated from Plangrep. Verify the signature on every incoming request before processing it.
+Plangrep sends an HTTP `POST` request to your URL whenever the job status changes. Use the `webhookSigningSecret` returned at job creation time to verify that each request originated from Plangrep before processing it.
 
 <Warning>
   Your webhook endpoint must respond with a `2xx` status code within a reasonable timeout. Failed deliveries may not be retried — use polling as a fallback for critical workflows.
 </Warning>
-
-<Note>
-  The webhook payload delivers the current job state at each transition. Treat each delivery as an update snapshot and use the `status` field to drive your application logic.
-</Note>
 
 ---
 
@@ -92,8 +86,7 @@ If a job enters `blocked_insufficient_credits`, processing is paused until you a
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/resume \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json"
+  -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 The job will re-enter `preflighting` and then `processing` after a successful resume.
@@ -106,8 +99,7 @@ To cancel a job that is still in progress, send a cancellation request:
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/cancel \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json"
+  -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 Only jobs in a non-terminal status can be cancelled. The response contains the updated job object with `status` set to `"cancelled"`.
