@@ -1,10 +1,10 @@
 ---
 title: "Read Paginated Source Text for a Plangrep Project Entity"
 sidebarTitle: "Source Text"
-description: "POST /api/open/v1/projects/:projectId/source-text — retrieves bounded text for a given sourceCatalogUri. Supports pagination and multiple text kinds."
+description: "POST /api/open/v1/projects/:projectId/source-text - retrieves bounded text for a sourceCatalogUri."
 ---
 
-Retrieves the bounded text content for a source entity identified by a `sourceCatalogUri`. The URI is obtained from a [Search Sources](/api-reference/project-reads/search-sources) hit or from a source catalog. Use `textKind` to control the format of the returned text—plain text, markdown, page regions, or facet-scoped views. Large sources are paginated via `cursor` and `nextCursor`.
+Retrieves bounded text content for a source entity identified by a `sourceCatalogUri`. Use this endpoint for sources such as drawing regions, sheets, and document entities. For specification section evidence, use [Get Spec Section](/api-reference/project-reads/get-specification-section) instead so you receive untruncated section text and structured spec fields.
 
 ## Endpoint
 
@@ -23,7 +23,7 @@ POST https://plangrep.com/api/open/v1/projects/{projectId}/source-text
 Content-Type: `application/json`
 
 <ParamField body="sourceCatalogUri" type="string" required>
-  Opaque URI identifying the source entity whose text you want to retrieve. Obtain this value from a `sourceCatalogUri` field on a [search hit](/api-reference/project-reads/search-sources) or from the source catalog. Must be at least **1 character**.
+  Opaque URI identifying the source entity whose text you want to retrieve. Obtain this value from a `sourceCatalogUri` field on a search hit or from the source catalog. Must be at least **1 character**.
 </ParamField>
 
 <ParamField body="reviewId" type="string">
@@ -38,10 +38,6 @@ Content-Type: `application/json`
   Maximum number of characters to return in a single response. Must be between **1** and **50,000**. If the source text exceeds this limit, use `nextCursor` to retrieve the remainder.
 </ParamField>
 
-<ParamField body="facetId" type="string">
-  Optional. Scopes the text retrieval to a specific facet within the source (e.g. a particular specification part). Must be a valid `facetId` belonging to the referenced source entity.
-</ParamField>
-
 <ParamField body="textKind" type="string">
   Controls the format and scope of returned text. One of:
 
@@ -50,8 +46,6 @@ Content-Type: `application/json`
   | `text` | Plain text extracted from the source (default). |
   | `markdown` | Text formatted as Markdown, preserving structure where detected. |
   | `page_regions` | Text organized by detected page regions. |
-  | `facet_source_text` | Raw source text scoped to the matched facet. |
-  | `facet_match_text` | Processed/normalized text for the matched facet, optimized for comparison. |
 </ParamField>
 
 ## Response
@@ -67,13 +61,22 @@ Returns a `SourceTextResponse` object.
 
   <Expandable title="ProjectSource fields">
     <ResponseField name="type" type="string">
-      The entity type of this source (e.g. `region`, `specification`, `doc`, `sheet`).
+      The entity type of this source (e.g. `region`, `doc`, `sheet`).
     </ResponseField>
     <ResponseField name="id" type="string">
       The unique ID of the source entity.
     </ResponseField>
     <ResponseField name="label" type="string">
       Human-readable label for this source.
+    </ResponseField>
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Artifact objects associated with this source, when available.
+    </ResponseField>
+    <ResponseField name="imageArtifact" type="ProjectEntityArtifact">
+      Primary image artifact for this source, when available.
+    </ResponseField>
+    <ResponseField name="fileArtifacts" type="ProjectEntityArtifact[]">
+      File-oriented artifacts for this source, when available.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -83,11 +86,11 @@ Returns a `SourceTextResponse` object.
 </ResponseField>
 
 <ResponseField name="text" type="string">
-  The retrieved text content, up to `maxChars` characters (or the system default). Empty string if no text is available for the requested `textKind`.
+  The retrieved text content, up to `maxChars` characters or the system default. Empty string if no text is available for the requested `textKind`.
 </ResponseField>
 
 <ResponseField name="cursor" type="string">
-  The cursor value used for this response (echoed from the request).
+  The cursor value used for this response, echoed from the request.
 </ResponseField>
 
 <ResponseField name="nextCursor" type="string">
@@ -99,7 +102,7 @@ Returns a `SourceTextResponse` object.
 </ResponseField>
 
 <ResponseField name="textLength" type="integer">
-  Total character length of the full source text (across all pages). Useful for progress indication.
+  Total character length of the full source text. Useful for progress indication.
 </ResponseField>
 
 <ResponseField name="hasMore" type="boolean">
@@ -107,11 +110,7 @@ Returns a `SourceTextResponse` object.
 </ResponseField>
 
 <ResponseField name="textKind" type="string">
-  The `textKind` that was applied, echoed back from the request (or the default if none was specified).
-</ResponseField>
-
-<ResponseField name="facet" type="object">
-  If a `facetId` was specified, this contains the facet metadata associated with the returned text. `null` if no facet was specified or found.
+  The `textKind` that was applied, echoed back from the request or defaulted by the API.
 </ResponseField>
 
 ## Example Request
@@ -121,7 +120,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text"
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
+    "sourceCatalogUri": "plangrep://projects/proj_abc123/regions/region_204",
     "textKind": "text",
     "maxChars": 5000
   }'
@@ -133,24 +132,23 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text"
 {
   "status": "success",
   "source": {
-    "type": "specification",
-    "id": "spec_018",
-    "label": "Section 07 13 26 – Self-Adhering Sheet Waterproofing"
+    "type": "region",
+    "id": "region_204",
+    "label": "DETAIL 4/A8.02",
+    "imageArtifact": {
+      "type": "region_crop",
+      "url": "https://...",
+      "readWith": "plangrep_show_artifact_image"
+    }
   },
-  "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
-  "text": "PART 2 – PRODUCTS\n\n2.01 WATERPROOFING MEMBRANE\nA. Self-Adhering Sheet: ASTM D1970; SBS-modified bitumen; 40-mil minimum thickness...\n\n2.02 ACCESSORIES\nA. Primer: As recommended by membrane manufacturer...",
+  "sourceCatalogUri": "plangrep://projects/proj_abc123/regions/region_204",
+  "text": "Apply waterproofing membrane to exterior face of below-grade concrete walls.",
   "cursor": null,
-  "nextCursor": "eyJvZmZzZXQiOjUwMDB9",
-  "returnedChars": 5000,
-  "textLength": 18340,
-  "hasMore": true,
-  "textKind": "text",
-  "facet": {
-    "facetId": "facet_003",
-    "facetKey": "part_2_products",
-    "facetKind": "part",
-    "facetLabel": "PART 2 – PRODUCTS"
-  }
+  "nextCursor": null,
+  "returnedChars": 77,
+  "textLength": 77,
+  "hasMore": false,
+  "textKind": "text"
 }
 ```
 
@@ -163,7 +161,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text"
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
+    "sourceCatalogUri": "plangrep://projects/proj_abc123/docs/doc_018",
     "textKind": "text",
     "maxChars": 5000,
     "cursor": "eyJvZmZzZXQiOjUwMDB9"
@@ -176,6 +174,6 @@ Repeat until `hasMore` is `false`.
 
 | Status | Description |
 |--------|-------------|
-| `400`  | Invalid request body — `sourceCatalogUri` missing or empty, `maxChars` out of range. |
+| `400`  | Invalid request body - `sourceCatalogUri` missing or empty, `maxChars` out of range. |
 | `401`  | Missing or invalid Bearer token. |
 | `404`  | Project or source entity not found. |

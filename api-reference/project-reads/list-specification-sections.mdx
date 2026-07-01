@@ -1,0 +1,168 @@
+---
+title: "List Sections in a Specification Document"
+sidebarTitle: "List Spec Sections"
+description: "GET /api/open/v1/projects/:projectId/specifications/:specId/sections - lists CSI-like sections in a specification document."
+---
+
+Returns paginated sections extracted from one specification document. This endpoint exposes CSI-like sections such as `03 30 00`; outline-only headings such as `1.0` are intentionally filtered out.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications/{specId}/sections
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project that owns the specification document.
+</ParamField>
+
+<ParamField path="specId" type="string" required>
+  The unique identifier of the uploaded specification document.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum number of records to return per page. Must be between **1** and **500**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned as `nextCursor` from a previous response. Omit to fetch the first page.
+</ParamField>
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from each section.
+</ParamField>
+
+<ParamField query="sectionNumber" type="string">
+  Filter to sections with this exact section number, such as `03 30 00`.
+</ParamField>
+
+<ParamField query="pageStart" type="integer">
+  Filter to sections whose content starts at or after this 1-based page number. Minimum: `1`.
+</ParamField>
+
+<ParamField query="pageEnd" type="integer">
+  Filter to sections whose content ends at or before this 1-based page number. Minimum: `1`.
+</ParamField>
+
+## Response
+
+Returns a `ProjectSpecificationSectionEntityListResponse` object.
+
+### Pagination Fields
+
+<ResponseField name="total" type="integer">
+  Total number of sections matching the current filters across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The page size limit that was applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this page, echoed back from the request.
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` to retrieve the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer">
+  Number of section entities returned in this response.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="pageInfo" type="object">
+  Relay-style page info object.
+</ResponseField>
+
+### Data Fields
+
+<ResponseField name="sections" type="ProjectSpecificationSectionEntity[]">
+  Array of specification section summary entities.
+
+  <Expandable title="ProjectSpecificationSectionEntity fields">
+    <ResponseField name="sectionId" type="string">
+      Unique identifier for this section.
+    </ResponseField>
+    <ResponseField name="specId" type="string">
+      ID of the parent specification document.
+    </ResponseField>
+    <ResponseField name="sectionNumber" type="string">
+      Specification section number, such as `03 30 00`.
+    </ResponseField>
+    <ResponseField name="sectionTitle" type="string">
+      Human-readable title of the section.
+    </ResponseField>
+    <ResponseField name="pageStart" type="integer">
+      1-based page number where this section begins in the source file.
+    </ResponseField>
+    <ResponseField name="pageEnd" type="integer">
+      1-based page number where this section ends in the source file.
+    </ResponseField>
+    <ResponseField name="textLength" type="integer">
+      Character length of the full section text. Fetch detail to retrieve the untruncated `text`.
+    </ResponseField>
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Artifact objects for this section. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/specifications/spec_001/sections?limit=20&sectionNumber=03%2030%2000" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "total": 48,
+  "limit": 20,
+  "cursor": null,
+  "nextCursor": "eyJvZmZzZXQiOjIwfQ==",
+  "returnedCount": 20,
+  "hasMore": true,
+  "pageInfo": {
+    "startCursor": "eyJvZmZzZXQiOjB9",
+    "endCursor": "eyJvZmZzZXQiOjE5fQ==",
+    "hasPreviousPage": false,
+    "hasNextPage": true
+  },
+  "sections": [
+    {
+      "sectionId": "section_001",
+      "specId": "spec_001",
+      "sectionNumber": "03 30 00",
+      "sectionTitle": "Cast-In-Place Concrete",
+      "pageStart": 45,
+      "pageEnd": 62,
+      "textLength": 84231,
+      "artifacts": [
+        {
+          "type": "specification_file",
+          "url": "https://...",
+          "readWith": "plangrep_show_artifact_file"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Error Responses
+
+| Status | Code | Description |
+|---|---|---|
+| `400` | `invalid_request` | Invalid pagination or filter value. |
+| `401` | `unauthorized` | Missing or invalid Bearer token. |
+| `404` | `open_api_specification_not_found` | No specification document exists for this `specId` in the project. |

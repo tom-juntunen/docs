@@ -4,7 +4,7 @@ sidebarTitle: "Search Sources"
 description: "POST /api/open/v1/projects/:projectId/source-search — semantic and keyword search across all indexed sources in a project. Returns hits with snippets."
 ---
 
-Performs semantic and keyword search across all indexed sources within a project—including drawing regions, specification sections, and document entities. Returns ranked hits, each with a relevance score, a text snippet, a `sourceCatalogUri` you can pass to [Read Source Text](/api-reference/project-reads/read-source-text), and a structured `source` object describing the matched entity.
+Performs semantic and keyword search across all indexed sources within a project, including drawing regions, specification sections, and document entities. Returns ranked hits with a relevance score, snippet, source metadata, and any artifacts exposed for that source. For specification hits, use the returned spec and section identifiers with the specification section endpoints to retrieve full text and structured evidence.
 
 <Warning>
   **409 — Vector index not ready.** If the project has searchable sources but the vector index has not finished building, the API returns `409 Conflict`. Retry the request after a short wait (e.g. 5–10 seconds). This typically occurs immediately after a large batch of files finishes processing.
@@ -101,7 +101,7 @@ Returns a `SourceSearchResponse` object.
       A short excerpt of text from the matched source, suitable for display in a results list.
     </ResponseField>
     <ResponseField name="sourceCatalogUri" type="string">
-      Opaque URI that uniquely identifies this source. Pass this to [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve the full text of the matched entity.
+      Opaque URI that uniquely identifies this source. For non-specification sources, pass this to [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve bounded source text. For specification section sources, use the section API instead.
     </ResponseField>
     <ResponseField name="source" type="ProjectSource">
       Structured object describing the matched source entity.
@@ -115,6 +115,21 @@ Returns a `SourceSearchResponse` object.
         </ResponseField>
         <ResponseField name="label" type="string">
           Human-readable label for this source (e.g. `DETAIL 3/A5.01`, `Section 03 30 00`).
+        </ResponseField>
+        <ResponseField name="specId" type="string">
+          Present for specification section hits. Use with `sectionId` to fetch full section detail.
+        </ResponseField>
+        <ResponseField name="sectionId" type="string">
+          Present for specification section hits. Use with `specId` to call [Get Spec Section](/api-reference/project-reads/get-specification-section).
+        </ResponseField>
+        <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+          Artifact objects associated with this source, when available.
+        </ResponseField>
+        <ResponseField name="imageArtifact" type="ProjectEntityArtifact">
+          Primary image artifact for this source, when available.
+        </ResponseField>
+        <ResponseField name="fileArtifacts" type="ProjectEntityArtifact[]">
+          File-oriented artifacts for this source, when available.
         </ResponseField>
       </Expandable>
     </ResponseField>
@@ -146,11 +161,20 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
     {
       "score": 0.941,
       "snippet": "...self-adhering sheet waterproofing membrane applied to all below-grade foundation walls per ASTM D1970...",
-      "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_018/facets/facet_003",
+      "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_001/sections/section_003",
       "source": {
         "type": "specification",
-        "id": "spec_018",
-        "label": "Section 07 13 26 – Self-Adhering Sheet Waterproofing"
+        "id": "section_003",
+        "specId": "spec_001",
+        "sectionId": "section_003",
+        "label": "Section 07 13 26 - Self-Adhering Sheet Waterproofing",
+        "fileArtifacts": [
+          {
+            "type": "specification_file",
+            "url": "https://...",
+            "readWith": "plangrep_show_artifact_file"
+          }
+        ]
       }
     },
     {
@@ -160,7 +184,12 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
       "source": {
         "type": "region",
         "id": "region_204",
-        "label": "DETAIL 4/A8.02"
+        "label": "DETAIL 4/A8.02",
+        "imageArtifact": {
+          "type": "region_crop",
+          "url": "https://...",
+          "readWith": "plangrep_show_artifact_image"
+        }
       }
     }
   ]

@@ -1,10 +1,10 @@
 ---
-title: "List Extracted Specification Sections in a Project"
+title: "List Specification Documents in a Project"
 sidebarTitle: "List Specs"
-description: "GET /api/open/v1/projects/:projectId/specifications — paginated list of specification sections with filtering by section number and page range."
+description: "GET /api/open/v1/projects/:projectId/specifications - paginated list of specification document rows in a project."
 ---
 
-Returns a paginated list of extracted specification sections within a project. Each entity represents a discrete CSI-formatted (or similar) specification section, including its section number, title, page range, and structured facets that break the section into labeled sub-components. Filter by section number or page range to zero in on specific content.
+Returns a paginated list of uploaded specification documents for a project. Each row represents a specification source document, not an individual CSI section. Use the section endpoints to inspect the sections within a spec document.
 
 ## Endpoint
 
@@ -15,7 +15,7 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications
 ## Path Parameters
 
 <ParamField path="projectId" type="string" required>
-  The unique identifier of the project whose specification sections you want to list.
+  The unique identifier of the project whose specification documents you want to list.
 </ParamField>
 
 ## Query Parameters
@@ -32,32 +32,16 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications
   When `true`, artifact URL fields are stripped from each entity, reducing payload size.
 </ParamField>
 
-<ParamField query="sheets" type="string">
-  Comma-separated list of sheet IDs to narrow results.
-</ParamField>
-
-<ParamField query="fileId" type="string">
-  Restrict results to specification sections from a specific file.
+<ParamField query="specId" type="string">
+  Restrict results to a specific specification document ID.
 </ParamField>
 
 <ParamField query="fileName" type="string">
-  Case-insensitive substring match on the parent file name.
+  Case-insensitive substring match on the uploaded specification file name.
 </ParamField>
 
 <ParamField query="classification" type="string">
-  Filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
-</ParamField>
-
-<ParamField query="sectionNumber" type="string">
-  Filter to sections with this exact section number (e.g. `03 30 00`, `09 90 00`).
-</ParamField>
-
-<ParamField query="pageStart" type="integer">
-  Filter to sections whose content starts at or after this 1-based page number. Minimum: `1`.
-</ParamField>
-
-<ParamField query="pageEnd" type="integer">
-  Filter to sections whose content ends at or before this 1-based page number. Minimum: `1`.
+  Filter by parent file classification. Usually `specifications`, but mixed files can also produce specification rows.
 </ParamField>
 
 ## Response
@@ -67,7 +51,7 @@ Returns a `ProjectSpecificationEntityListResponse` object.
 ### Pagination Fields
 
 <ResponseField name="total" type="integer">
-  Total number of specification sections matching the current filters across all pages.
+  Total number of specification documents matching the current filters across all pages.
 </ResponseField>
 
 <ResponseField name="limit" type="integer">
@@ -75,7 +59,7 @@ Returns a `ProjectSpecificationEntityListResponse` object.
 </ResponseField>
 
 <ResponseField name="cursor" type="string">
-  The cursor value used for this page (echoed back from the request).
+  The cursor value used for this page, echoed back from the request.
 </ResponseField>
 
 <ResponseField name="nextCursor" type="string">
@@ -83,7 +67,7 @@ Returns a `ProjectSpecificationEntityListResponse` object.
 </ResponseField>
 
 <ResponseField name="returnedCount" type="integer">
-  Number of specification entities actually returned in this response.
+  Number of specification documents returned in this response.
 </ResponseField>
 
 <ResponseField name="hasMore" type="boolean">
@@ -112,62 +96,26 @@ Returns a `ProjectSpecificationEntityListResponse` object.
 ### Data Fields
 
 <ResponseField name="specifications" type="ProjectSpecificationEntity[]">
-  Array of extracted specification section entities.
+  Array of specification document rows.
 
   <Expandable title="ProjectSpecificationEntity fields">
-    <ResponseField name="specificationId" type="string">
-      Unique identifier for this specification section.
-    </ResponseField>
-    <ResponseField name="fileId" type="string">
-      ID of the parent file this section was extracted from.
+    <ResponseField name="specId" type="string">
+      Unique identifier for this specification document.
     </ResponseField>
     <ResponseField name="fileName" type="string">
-      Name of the parent file.
+      Original uploaded file name.
     </ResponseField>
-    <ResponseField name="sectionNumber" type="string">
-      Specification section number (e.g. `03 30 00`).
+    <ResponseField name="classification" type="string">
+      File classification for the source document, typically `specifications`.
     </ResponseField>
-    <ResponseField name="sectionTitle" type="string">
-      Full title of the specification section (e.g. `Cast-In-Place Concrete`).
+    <ResponseField name="status" type="string">
+      Current processing status for this specification document.
     </ResponseField>
-    <ResponseField name="pageStart" type="integer">
-      1-based page number where this section begins in the source file.
+    <ResponseField name="sectionCount" type="integer">
+      Number of CSI-like specification sections detected in this document.
     </ResponseField>
-    <ResponseField name="pageEnd" type="integer">
-      1-based page number where this section ends in the source file.
-    </ResponseField>
-    <ResponseField name="facets" type="ProjectSpecificationFacetEntity[]">
-      Structured sub-components of the section (e.g. Part 1 General, Part 2 Products). See facet fields below.
-
-      <Expandable title="ProjectSpecificationFacetEntity fields">
-        <ResponseField name="facetId" type="string">
-          Unique identifier for this facet.
-        </ResponseField>
-        <ResponseField name="facetKey" type="string">
-          Machine-readable key identifying the facet type.
-        </ResponseField>
-        <ResponseField name="facetKind" type="string">
-          Category of the facet (e.g. `part`, `article`, `paragraph`).
-        </ResponseField>
-        <ResponseField name="facetLabel" type="string">
-          Human-readable label for this facet (e.g. `PART 1 – GENERAL`).
-        </ResponseField>
-        <ResponseField name="coverageKind" type="string">
-          Describes how completely this facet covers its source content.
-        </ResponseField>
-        <ResponseField name="facetText" type="string">
-          Raw source text for this facet, up to **50,000 characters**.
-        </ResponseField>
-        <ResponseField name="pageStart" type="integer">
-          1-based page number where this facet begins.
-        </ResponseField>
-        <ResponseField name="pageEnd" type="integer">
-          1-based page number where this facet ends.
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
-    <ResponseField name="artifacts" type="array">
-      Array of artifact objects with URLs to derived outputs. Omitted when `compact=true`.
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Artifact objects for this specification document, such as `specification_file`. Omitted when `compact=true`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -175,7 +123,7 @@ Returns a `ProjectSpecificationEntityListResponse` object.
 ## Example Request
 
 ```bash
-curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/specifications?limit=20&sectionNumber=03%2030%2000" \
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/specifications?limit=20&classification=specifications" \
   -H "Authorization: Bearer YOUR_API_TOKEN"
 ```
 
@@ -183,41 +131,41 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/specification
 
 ```json
 {
-  "total": 85,
+  "total": 3,
   "limit": 20,
   "cursor": null,
-  "nextCursor": "eyJvZmZzZXQiOjIwfQ==",
-  "returnedCount": 20,
-  "hasMore": true,
+  "nextCursor": null,
+  "returnedCount": 3,
+  "hasMore": false,
   "pageInfo": {
     "startCursor": "eyJvZmZzZXQiOjB9",
-    "endCursor": "eyJvZmZzZXQiOjE5fQ==",
+    "endCursor": "eyJvZmZzZXQiOjJ9",
     "hasPreviousPage": false,
-    "hasNextPage": true
+    "hasNextPage": false
   },
   "specifications": [
     {
-      "specificationId": "spec_001",
-      "fileId": "file_002",
+      "specId": "spec_001",
       "fileName": "Project_Specifications.pdf",
-      "sectionNumber": "03 30 00",
-      "sectionTitle": "Cast-In-Place Concrete",
-      "pageStart": 45,
-      "pageEnd": 62,
-      "facets": [
+      "classification": "specifications",
+      "status": "complete",
+      "sectionCount": 48,
+      "artifacts": [
         {
-          "facetId": "facet_001",
-          "facetKey": "part_1_general",
-          "facetKind": "part",
-          "facetLabel": "PART 1 – GENERAL",
-          "coverageKind": "full",
-          "facetText": "1.01 SUMMARY\nA. Section includes cast-in-place concrete...",
-          "pageStart": 45,
-          "pageEnd": 48
+          "type": "specification_file",
+          "url": "https://...",
+          "readWith": "plangrep_show_artifact_file"
         }
-      ],
-      "artifacts": []
+      ]
     }
   ]
 }
 ```
+
+## Error Responses
+
+| Status | Code | Description |
+|---|---|---|
+| `400` | `invalid_request` | Invalid pagination or filter value. |
+| `401` | `unauthorized` | Missing or invalid Bearer token. |
+| `404` | `project_not_found` | Project not found. |

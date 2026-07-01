@@ -1,0 +1,208 @@
+---
+title: "Get a Specification Section from a Project"
+sidebarTitle: "Get Spec Section"
+description: "GET /api/open/v1/projects/:projectId/specifications/:specId/sections/:sectionId - retrieves full section text and structured spec detail."
+---
+
+Retrieves full detail for one CSI-like specification section. Use this endpoint when you need spec evidence, full section text, structured requirements, products, warnings, or facet text.
+
+<Note>
+  Section detail only exists for CSI-like specification sections. Outline-only headings such as `1.0` are intentionally filtered out and can return `404`.
+</Note>
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications/{specId}/sections/{sectionId}
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project that owns the specification document.
+</ParamField>
+
+<ParamField path="specId" type="string" required>
+  The unique identifier of the uploaded specification document.
+</ParamField>
+
+<ParamField path="sectionId" type="string" required>
+  The unique identifier of the specification section to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from the response.
+</ParamField>
+
+## Response
+
+Returns an object containing the full specification section detail.
+
+<ResponseField name="section" type="ProjectSpecificationSectionDetailEntity">
+  The requested specification section detail.
+
+  <Expandable title="ProjectSpecificationSectionDetailEntity fields">
+    <ResponseField name="sectionId" type="string">
+      Unique identifier for this section.
+    </ResponseField>
+    <ResponseField name="specId" type="string">
+      ID of the parent specification document.
+    </ResponseField>
+    <ResponseField name="sectionNumber" type="string">
+      Specification section number, such as `03 30 00`.
+    </ResponseField>
+    <ResponseField name="sectionTitle" type="string">
+      Human-readable title of the section.
+    </ResponseField>
+    <ResponseField name="pageStart" type="integer">
+      1-based page number where this section begins in the source file.
+    </ResponseField>
+    <ResponseField name="pageEnd" type="integer">
+      1-based page number where this section ends in the source file.
+    </ResponseField>
+    <ResponseField name="text" type="string">
+      Untruncated source text for this section.
+    </ResponseField>
+    <ResponseField name="textLength" type="integer">
+      Character length of `text`.
+    </ResponseField>
+    <ResponseField name="parts" type="Part[]">
+      Parsed major parts, such as `PART 1 - GENERAL`, `PART 2 - PRODUCTS`, and `PART 3 - EXECUTION`.
+    </ResponseField>
+    <ResponseField name="products" type="Product[]">
+      Product and material references extracted from the section.
+    </ResponseField>
+    <ResponseField name="submittals" type="SemanticRequirement[]">
+      Submittal requirements extracted from the section.
+    </ResponseField>
+    <ResponseField name="references" type="SemanticRequirement[]">
+      Referenced standards, related documents, or cited requirements.
+    </ResponseField>
+    <ResponseField name="relatedSections" type="SemanticRequirement[]">
+      Cross-references to related specification sections.
+    </ResponseField>
+    <ResponseField name="qualityRequirements" type="SemanticRequirement[]">
+      Quality assurance, testing, inspection, or performance requirements.
+    </ResponseField>
+    <ResponseField name="executionRequirements" type="SemanticRequirement[]">
+      Installation, execution, sequencing, and closeout requirements.
+    </ResponseField>
+    <ResponseField name="warnings" type="Warning[]">
+      Non-fatal extraction or normalization warnings for this section.
+    </ResponseField>
+    <ResponseField name="facets" type="ProjectSpecificationSectionFacetEntity[]">
+      Structured facets for the section. Facet text is returned here as untruncated `facetText`.
+    </ResponseField>
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Artifact objects for this section. Omitted when `compact=true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Nested Schema Notes
+
+<ResponseField name="Part" type="object">
+  Parsed section part or article. Common fields include `label`, `title`, `text`, `pageStart`, and `pageEnd`.
+</ResponseField>
+
+<ResponseField name="Product" type="object">
+  Product or material reference extracted from the section. Common fields include `name`, `description`, and supporting `requirements`.
+</ResponseField>
+
+<ResponseField name="SemanticRequirement" type="object">
+  A normalized requirement with its `text`, optional `label`, and source location metadata when available.
+</ResponseField>
+
+<ResponseField name="Warning" type="object">
+  A non-fatal issue with a machine-readable `code` and human-readable `message`.
+</ResponseField>
+
+<ResponseField name="FacetRequirement" type="object">
+  Requirement extracted within a facet. Common fields include `text`, `kind`, and source metadata.
+</ResponseField>
+
+<ResponseField name="ProjectSpecificationSectionFacetEntity" type="object">
+  Structured section facet with fields such as `facetId`, `facetKey`, `facetKind`, `facetLabel`, `coverageKind`, `facetText`, `requirements`, `pageStart`, and `pageEnd`.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/specifications/spec_001/sections/section_001" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "section": {
+    "sectionId": "section_001",
+    "specId": "spec_001",
+    "sectionNumber": "03 30 00",
+    "sectionTitle": "Cast-In-Place Concrete",
+    "pageStart": 45,
+    "pageEnd": 62,
+    "text": "SECTION 03 30 00 - CAST-IN-PLACE CONCRETE\n\nPART 1 - GENERAL\n...",
+    "textLength": 84231,
+    "parts": [
+      {
+        "label": "PART 1 - GENERAL",
+        "title": "General",
+        "text": "1.01 SUMMARY\nA. Section includes cast-in-place concrete..."
+      }
+    ],
+    "products": [
+      {
+        "name": "Portland Cement",
+        "description": "ASTM C150, Type I or II"
+      }
+    ],
+    "submittals": [
+      { "text": "Submit concrete mix designs before placement." }
+    ],
+    "references": [
+      { "text": "ASTM C150" }
+    ],
+    "relatedSections": [
+      { "text": "Section 03 20 00 - Concrete Reinforcing" }
+    ],
+    "qualityRequirements": [
+      { "text": "Perform field quality control testing for each concrete placement." }
+    ],
+    "executionRequirements": [
+      { "text": "Place concrete continuously between planned construction joints." }
+    ],
+    "warnings": [],
+    "facets": [
+      {
+        "facetId": "facet_001",
+        "facetKey": "part_1_general",
+        "facetKind": "part",
+        "facetLabel": "PART 1 - GENERAL",
+        "coverageKind": "full",
+        "facetText": "1.01 SUMMARY\nA. Section includes cast-in-place concrete..."
+      }
+    ],
+    "artifacts": [
+      {
+        "type": "specification_file",
+        "url": "https://...",
+        "readWith": "plangrep_show_artifact_file"
+      }
+    ]
+  }
+}
+```
+
+## Error Responses
+
+| Status | Code | Description |
+|---|---|---|
+| `400` | `invalid_request` | Invalid request parameters. |
+| `401` | `unauthorized` | Missing or invalid Bearer token. |
+| `404` | `open_api_specification_not_found` | No specification document exists for this `specId` in the project. |
+| `404` | `open_api_specification_section_not_found` | No CSI-like section exists for this `sectionId` in the specification document. |
+| `404` | `specification_section_text_not_found` | Section metadata exists, but full section text was not available from runtime. |

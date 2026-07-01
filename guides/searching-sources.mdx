@@ -32,18 +32,20 @@ The response includes a ranked list of matching source records:
     {
       "score": 0.92,
       "snippet": "Exterior walls shall have minimum R-19 insulation...",
-      "sourceCatalogUri": "pgcat://proj_abc123/spec/07210/...",
+      "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_001/sections/section_07210",
       "source": {
         "type": "specification",
-        "sectionNumber": "07210",
-        "sectionTitle": "Building Insulation"
+        "specId": "spec_001",
+        "sectionId": "section_07210",
+        "sectionNumber": "07 21 00",
+        "sectionTitle": "Thermal Insulation"
       }
     }
   ]
 }
 ```
 
-Each hit includes a relevance `score`, a `snippet` of matching text, and a `sourceCatalogUri` you can use to retrieve the full source content (see [Reading bounded source text](#reading-bounded-source-text) below).
+Each hit includes a relevance `score`, a `snippet` of matching text, and source metadata. For specification hits, use `specId` and `sectionId` with [Get Spec Section](/api-reference/project-reads/get-specification-section) to retrieve full section text and structured evidence. For non-specification hits, you can use `sourceCatalogUri` with [Reading bounded source text](#reading-bounded-source-text).
 
 <Note>
   If the vector index is not yet ready, the endpoint returns a `409 Conflict`. Wait a moment and retry — indexing typically completes within seconds of job completion.
@@ -103,20 +105,22 @@ The response also includes a top-level `warnings` array listing any projects tha
 
 ## Read bounded source text
 
-To retrieve the full text of a specific source record, pass its `sourceCatalogUri` (returned by any search hit) to the source-text endpoint:
+To retrieve bounded text for a non-specification source record, pass its `sourceCatalogUri` to the source-text endpoint:
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/source-text \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "sourceCatalogUri": "pgcat://proj_abc123/spec/07210/...",
+    "sourceCatalogUri": "plangrep://projects/proj_abc123/regions/region_204",
     "maxChars": 10000,
     "textKind": "text"
   }'
 ```
 
 The response includes paginated `text` content. Use `nextCursor` to fetch subsequent pages for long sources.
+
+For specification sources, call `GET /api/open/v1/projects/{projectId}/specifications/{specId}/sections/{sectionId}` instead. That endpoint returns untruncated section `text`, `textLength`, parts, products, requirements, warnings, and facets.
 
 ### `textKind` options
 
@@ -125,8 +129,6 @@ The response includes paginated `text` content. Use `nextCursor` to fetch subseq
 | `text` | Plain extracted text |
 | `markdown` | Text formatted as Markdown |
 | `page_regions` | Structured region data for the page |
-| `facet_source_text` | Source text grouped by facet |
-| `facet_match_text` | Matched text grouped by facet |
 
 ---
 

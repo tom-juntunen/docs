@@ -56,7 +56,7 @@ Projects are designed to grow over time. Each job you submit writes its extracte
 - **Files** — every uploaded source document
 - **Sheets** — individual drawing sheets parsed from plan sets
 - **Regions** — drawing regions and callouts detected on sheets
-- **Specifications** — parsed specification sections
+- **Specifications** — uploaded specification documents, with CSI-like sections available through the specification section endpoints
 - **Docs** — parsed document sections from addenda and other documents
 
 Query all of these through the project entity endpoints (e.g., GET `/api/open/v1/projects/{projectId}/sheets`).
@@ -67,8 +67,8 @@ Projects support two search scopes:
 
 | Endpoint | Scope |
 |----------|-------|
-| GET `/api/open/v1/projects/{projectId}/source-search` | Searches sources indexed within this project |
-| GET `/api/open/v1/search` | Organization-wide search across all projects |
+| POST `/api/open/v1/projects/{projectId}/source-search` | Searches sources indexed within this project |
+| POST `/api/open/v1/projects/search` | Organization-wide search across all projects |
 
 Both endpoints accept a natural-language query and return ranked evidence records.
 

@@ -103,6 +103,8 @@
               "api-reference/project-reads/get-region",
               "api-reference/project-reads/list-specifications",
               "api-reference/project-reads/get-specification",
+              "api-reference/project-reads/list-specification-sections",
+              "api-reference/project-reads/get-specification-section",
               "api-reference/project-reads/list-docs",
               "api-reference/project-reads/get-doc",
               "api-reference/project-reads/search-sources",
