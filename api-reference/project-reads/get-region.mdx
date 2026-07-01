@@ -109,8 +109,8 @@ Returns an object containing the matching region entity.
     <ResponseField name="titleDisplayBox" type="object">
       Normalized bounding box for the region's title/label area. Same structure as `displayBox`. May be `null`.
     </ResponseField>
-    <ResponseField name="artifacts" type="array">
-      Array of artifact objects with URLs to derived outputs. Omitted when `compact=true`.
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Array of artifact objects with URLs to derived outputs, such as `region_crop`, `region_ocr`, and `region_text`. Omitted when `compact=true`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -138,7 +138,8 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions/regio
     "displayBox": { "left": 0.52, "top": 0.31, "right": 0.74, "bottom": 0.58 },
     "titleDisplayBox": { "left": 0.52, "top": 0.58, "right": 0.74, "bottom": 0.62 },
     "artifacts": [
-      { "type": "region_crop", "url": "https://..." }
+      { "type": "region_crop", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+      { "type": "region_text", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
     ]
   }
 }

@@ -4,7 +4,7 @@ sidebarTitle: "Get Sheet"
 description: "GET /api/open/v1/projects/:projectId/sheets/:sheetId — retrieves a single extracted sheet entity including sheet number, display name, and artifacts."
 ---
 
-Retrieves a single extracted sheet by its ID. The response includes the sheet's number, name, display name, parent file reference, page position, and any artifacts generated during extraction (e.g. sheet thumbnail, vector crop). Pass `compact=true` to omit artifact URLs when you only need metadata.
+Retrieves a single extracted sheet by its ID. The response includes the sheet's number, name, display name, parent file reference, page position, and any artifacts generated during extraction. Pass `compact=true` to omit artifact URLs when you only need metadata.
 
 ## Endpoint
 
@@ -85,8 +85,8 @@ Returns an object containing the matching sheet entity.
     <ResponseField name="sheetDisplayName" type="string">
       Human-readable display name combining sheet number and title (e.g. `A1.01 – Floor Plan`).
     </ResponseField>
-    <ResponseField name="artifacts" type="array">
-      Array of artifact objects containing URLs to derived outputs. Omitted when `compact=true`.
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Array of artifact objects containing URLs to derived outputs, such as `thumbnail`, `sheet_render`, and `sheet_pdf`. Omitted when `compact=true`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -111,8 +111,9 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets/sheet_
     "sheetName": "First Floor Plan",
     "sheetDisplayName": "A1.01 – First Floor Plan",
     "artifacts": [
-      { "type": "thumbnail", "url": "https://..." },
-      { "type": "vector_crop", "url": "https://..." }
+      { "type": "thumbnail", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+      { "type": "sheet_render", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+      { "type": "sheet_pdf", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
     ]
   }
 }

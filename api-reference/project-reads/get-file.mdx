@@ -67,8 +67,8 @@ Returns an object containing the matching file entity.
     <ResponseField name="pageCount" type="integer">
       Number of pages in the file.
     </ResponseField>
-    <ResponseField name="artifacts" type="array">
-      Array of artifact objects containing URLs to derived outputs (e.g. thumbnails, extracted JSON). Omitted when `compact=true`.
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Array of artifact objects containing URLs to derived outputs, using the canonical artifact type enum. Omitted when `compact=true`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -91,8 +91,8 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/files/file_00
     "status": "complete",
     "pageCount": 48,
     "artifacts": [
-      { "type": "thumbnail", "url": "https://..." },
-      { "type": "extracted_json", "url": "https://..." }
+      { "type": "thumbnail", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+      { "type": "source_file", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
     ]
   }
 }

@@ -136,8 +136,8 @@ Returns a `ProjectSheetEntityListResponse` object.
     <ResponseField name="sheetDisplayName" type="string">
       Human-readable display name combining sheet number and title (e.g. `A1.01 – Floor Plan`).
     </ResponseField>
-    <ResponseField name="artifacts" type="array">
-      Array of artifact objects containing URLs to derived outputs. Omitted when `compact=true`.
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Array of artifact objects containing URLs to derived outputs, such as `thumbnail`, `sheet_render`, and `sheet_pdf`. Omitted when `compact=true`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -175,7 +175,9 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets?limit=
       "sheetName": "First Floor Plan",
       "sheetDisplayName": "A1.01 – First Floor Plan",
       "artifacts": [
-        { "type": "thumbnail", "url": "https://..." }
+        { "type": "thumbnail", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+        { "type": "sheet_render", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+        { "type": "sheet_pdf", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
       ]
     }
   ]

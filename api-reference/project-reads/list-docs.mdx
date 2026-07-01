@@ -126,8 +126,8 @@ Returns a `ProjectDocEntityListResponse` object.
     <ResponseField name="status" type="string">
       Current processing status of this doc entity.
     </ResponseField>
-    <ResponseField name="artifacts" type="array">
-      Array of artifact objects containing URLs to derived outputs. Omitted when `compact=true`.
+    <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+      Array of artifact objects containing URLs to derived outputs, such as `doc_markdown`, `doc_pdf`, and `thumbnail`. Omitted when `compact=true`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -163,7 +163,8 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/docs?limit=50
       "docType": "submittal",
       "status": "complete",
       "artifacts": [
-        { "type": "extracted_json", "url": "https://..." }
+        { "type": "doc_markdown", "url": "https://...", "readWith": "plangrep_show_artifact_file" },
+        { "type": "doc_pdf", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
       ]
     }
   ]

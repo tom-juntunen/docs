@@ -80,8 +80,10 @@ curl -I "https://plangrep.com/api/open/v1/jobs/JOB_ID/artifact?path=ARTIFACT_PAT
   "result": {
     "artifacts": [
       {
+        "type": "artifact",
         "path": "results/job_01abc123/normalized-output.json",
-        "url": "/api/open/v1/jobs/job_01abc123/artifact?path=results%2Fjob_01abc123%2Fnormalized-output.json"
+        "url": "/api/open/v1/jobs/job_01abc123/artifact?path=results%2Fjob_01abc123%2Fnormalized-output.json",
+        "readWith": "plangrep_show_artifact_file"
       }
     ]
   }

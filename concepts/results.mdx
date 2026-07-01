@@ -53,6 +53,10 @@ Each entry in the `documents` array is a `ResultDocument` representing one uploa
 | `specifications` | array \| null | Specification sections, present when `classification` is `specifications` or `mixed` |
 | `docs` | array \| null | Document sections, present when `classification` is `documents`, `addenda`, or `mixed` |
 
+<Note>
+  Project specification endpoints are document-level first. Use `GET /api/open/v1/projects/{projectId}/specifications/{specId}/sections` and `GET /api/open/v1/projects/{projectId}/specifications/{specId}/sections/{sectionId}` for current specification section reads.
+</Note>
+
 ---
 
 ## Sheets
@@ -123,18 +127,25 @@ See [Credits](/concepts/credits) for a full explanation of the billing model.
 
 ## Artifacts
 
-Artifacts are authenticated links to derived assets Plangrep generates during processing. They appear in both `ResultDocument.artifacts` and `ResultSheet.artifacts`.
+Artifacts are authenticated links to derived assets Plangrep generates during processing. They appear in result objects and project entity responses. Artifact objects include a canonical `type`, a URL or path, and may include `readWith` to tell MCP-aware clients whether to open the artifact as an image or file.
 
 | Artifact type | Description |
 |---------------|-------------|
-| `file` | The original uploaded file |
+| `artifact` | Generic artifact when a more specific type does not apply |
+| `doc_markdown` | Converted document Markdown |
+| `doc_pdf` | Converted document PDF |
+| `model` | Model or structured machine-readable output |
+| `region_crop` | Cropped image of a specific drawing region |
+| `region_ocr` | Raw OCR output for a region |
+| `region_text` | Plain-text extraction of a region |
+| `sheet_pdf` | Derived single-sheet PDF |
+| `sheet_render` | Full-resolution rendered image of a sheet |
+| `source_file` | Original uploaded source file |
+| `specification_file` | Source or derivative PDF for a specification document |
 | `thumbnail` | Low-resolution preview image |
 | `viewer` | Interactive viewer URL for the sheet or document |
-| `render` | Full-resolution rendered image of a sheet |
-| `pdf` | Extracted single-page PDF |
-| `region_crop` | Cropped image of a specific drawing region |
-| `region_text` | Plain-text extraction of a region |
-| `region_ocr` | Raw OCR output for a region |
+
+When present, `readWith` is either `plangrep_show_artifact_image` or `plangrep_show_artifact_file`.
 
 ### Fetching artifact content
 

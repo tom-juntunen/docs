@@ -83,8 +83,10 @@ curl -I "https://plangrep.com/api/open/v1/projects/PROJ_ID/artifact?path=ARTIFAC
       "type": "floor_plan",
       "artifacts": [
         {
+          "type": "thumbnail",
           "path": "projects/proj_01/entities/entity_floor_plan_01/thumbnail.png",
-          "url": "/api/open/v1/projects/proj_01/artifact?path=projects%2Fproj_01%2Fentities%2Fentity_floor_plan_01%2Fthumbnail.png"
+          "url": "/api/open/v1/projects/proj_01/artifact?path=projects%2Fproj_01%2Fentities%2Fentity_floor_plan_01%2Fthumbnail.png",
+          "readWith": "plangrep_show_artifact_image"
         }
       ]
     }

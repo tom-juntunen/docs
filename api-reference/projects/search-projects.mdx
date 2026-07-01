@@ -101,6 +101,30 @@ curl --request POST \
 
     <ResponseField name="sourceMatches" type="object[]" required>
       Specific source content excerpts that contributed to the match score.
+
+      <Expandable title="sourceMatches fields">
+        <ResponseField name="fileName" type="string">
+          Source file name for the matched content.
+        </ResponseField>
+        <ResponseField name="sheetNumber" type="string">
+          Sheet number when the match came from a drawing sheet.
+        </ResponseField>
+        <ResponseField name="pageNumber" type="integer">
+          1-based page number for the source content.
+        </ResponseField>
+        <ResponseField name="excerpt" type="string">
+          Text excerpt that matched the query.
+        </ResponseField>
+        <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
+          Artifact objects associated with this source match, when available.
+        </ResponseField>
+        <ResponseField name="imageArtifact" type="ProjectEntityArtifact">
+          Primary image artifact for this source match, when available.
+        </ResponseField>
+        <ResponseField name="fileArtifacts" type="ProjectEntityArtifact[]">
+          File-oriented artifacts for this source match, when available.
+        </ResponseField>
+      </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -155,7 +179,19 @@ curl --request POST \
           "fileName": "drawings.pdf",
           "sheetNumber": "A-201",
           "pageNumber": 14,
-          "excerpt": "90-min fire-rated hollow metal door assembly, see detail 4/A-501"
+          "excerpt": "90-min fire-rated hollow metal door assembly, see detail 4/A-501",
+          "imageArtifact": {
+            "type": "region_crop",
+            "url": "https://...",
+            "readWith": "plangrep_show_artifact_image"
+          },
+          "fileArtifacts": [
+            {
+              "type": "sheet_pdf",
+              "url": "https://...",
+              "readWith": "plangrep_show_artifact_file"
+            }
+          ]
         }
       ]
     }

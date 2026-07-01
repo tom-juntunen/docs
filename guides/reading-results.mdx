@@ -40,7 +40,7 @@ The response is a single normalized JSON object:
   "evidence": [
     {
       "id": "ev_001",
-      "type": "region",
+      "type": "drawing_region",
       "regionType": "detail",
       "text": "Provide R-19 batt insulation at all exterior stud walls."
     }
@@ -84,7 +84,7 @@ for ev in result["evidence"]:
     print(f"[{ev['type']}] {label} — {snippet}")
 ```
 
-Evidence records carry a `type` field (for example `"region"` or `"specification"`) and additional type-specific fields. Each record also includes a `sourceCatalogUri` you can pass to the source-text endpoint to fetch the full content.
+Evidence records carry a `type` field, such as `"drawing_region"` or `"specification_section"`, and additional type-specific fields. For specification evidence, use the specification section endpoints to fetch full section text and structured requirements. For non-specification source records, use `sourceCatalogUri` with the source-text endpoint when available.
 
 ---
 
@@ -102,14 +102,21 @@ Plangrep generates several artifact types for each document and sheet:
 
 | Type | Description |
 |---|---|
-| `file` | The original uploaded file |
+| `source_file` | Original uploaded source file |
+| `specification_file` | Source or derivative PDF for a specification document |
+| `sheet_pdf` | Derived single-sheet PDF |
+| `sheet_render` | Full-resolution sheet rendering |
+| `doc_markdown` | Converted document Markdown |
+| `doc_pdf` | Converted document PDF |
 | `thumbnail` | Low-resolution preview image |
 | `viewer` | Interactive viewer URL |
-| `render` | Full-resolution page rendering |
-| `pdf` | Processed or normalized PDF |
 | `region_crop` | Cropped image of a specific region |
 | `region_text` | Extracted text for a region |
 | `region_ocr` | Raw OCR output for a region |
+| `model` | Model or structured machine-readable output |
+| `artifact` | Generic artifact when a more specific type does not apply |
+
+Artifact objects can include `readWith`, either `plangrep_show_artifact_image` or `plangrep_show_artifact_file`.
 
 ---
 
