@@ -41,11 +41,11 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications/{specId
 </ParamField>
 
 <ParamField query="pageStart" type="integer">
-  Filter to sections whose content starts at or after this 1-based page number. Minimum: `1`.
+  Filter to sections whose content starts on this exact 1-based page number. Minimum: `1`.
 </ParamField>
 
 <ParamField query="pageEnd" type="integer">
-  Filter to sections whose content ends at or before this 1-based page number. Minimum: `1`.
+  Filter to sections whose content ends on this exact 1-based page number. Minimum: `1`.
 </ParamField>
 
 ## Response
@@ -106,9 +106,6 @@ Returns a `ProjectSpecificationSectionEntityListResponse` object.
     <ResponseField name="pageEnd" type="integer">
       1-based page number where this section ends in the source file.
     </ResponseField>
-    <ResponseField name="textLength" type="integer">
-      Character length of the full section text. Fetch detail to retrieve the untruncated `text`.
-    </ResponseField>
     <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
       Artifact objects for this section. Omitted when `compact=true`.
     </ResponseField>
@@ -146,7 +143,6 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/specification
       "sectionTitle": "Cast-In-Place Concrete",
       "pageStart": 45,
       "pageEnd": 62,
-      "textLength": 84231,
       "artifacts": [
         {
           "type": "specification_file",

@@ -1,13 +1,13 @@
 ---
-title: "Search Project Sources Using Semantic and Keyword Queries"
+title: "Search Project Sources"
 sidebarTitle: "Search Sources"
-description: "POST /api/open/v1/projects/:projectId/source-search — semantic and keyword search across all indexed sources in a project. Returns hits with snippets."
+description: "POST /api/open/v1/projects/:projectId/source-search — semantic, grep, regex, or auto search across all indexed sources in a project. Returns hits with snippets."
 ---
 
-Performs semantic and keyword search across all indexed sources within a project, including drawing regions, specification sections, and document entities. Returns ranked hits with a relevance score, snippet, source metadata, and any artifacts exposed for that source. For specification hits, use the returned spec and section identifiers with the specification section endpoints to retrieve full text and structured evidence.
+Searches indexed sources within a project, including drawing regions, specification sections, and document entities. Use `mode: "semantic"` for vector search, `mode: "grep"` for keyword and boolean prepared-text search, `mode: "regex"` for regular expression search, or `mode: "auto"` for semantic-first behavior with keyword follow-up guidance. Returns hits with snippets, source metadata, and any artifacts exposed for that source. For specification hits, use the returned `source.documentId` and the section ID encoded in `source.id` or `sourceCatalogUri` with the specification section endpoints to retrieve full text and structured evidence.
 
 <Warning>
-  **409 — Vector index not ready.** If the project has searchable sources but the vector index has not finished building, the API returns `409 Conflict`. Retry the request after a short wait (e.g. 5–10 seconds). This typically occurs immediately after a large batch of files finishes processing.
+  **409 — Vector index not ready.** `mode: "semantic"` returns `409 Conflict` when the project has searchable sources but the vector index has not finished building. `mode: "auto"` returns `status: "keyword_search_required"` and next actions instead of a `409`, so agent clients can issue a focused `grep` or `regex` follow-up.
 </Warning>
 
 ## Endpoint
@@ -27,7 +27,11 @@ POST https://plangrep.com/api/open/v1/projects/{projectId}/source-search
 Content-Type: `application/json`
 
 <ParamField body="query" type="string" required>
-  The search query string. Must be at least **1 character**. Supports natural language and keyword queries (e.g. `"waterproofing membrane below grade"`, `"fire rating corridor"`).
+  The search query string. Must be at least **1 character**. For `grep` and `regex`, this can be a plain string or a JSON string with keys such as `all`, `any`, `not`, `regex`, `patterns`, `sourceTypes`, and `query`.
+</ParamField>
+
+<ParamField body="mode" type="enum">
+  Search mode. Accepted values: `semantic`, `grep`, `regex`, `auto`. Defaults to `semantic`.
 </ParamField>
 
 <ParamField body="reviewId" type="string">
@@ -42,16 +46,24 @@ Content-Type: `application/json`
   Maximum number of search hits to return. Must be between **1** and **50**. Defaults to a system value if omitted.
 </ParamField>
 
-<ParamField body="regionType" type="string">
-  Filter hits to regions of this type (e.g. `detail`, `plan`, `section`).
+<ParamField body="regionKind" type="string">
+  Filter hits to regions of this kind (e.g. `detail`, `keynotes`, `schedule`).
 </ParamField>
 
-<ParamField body="layoutType" type="string">
-  Filter hits to sources with this layout type.
+<ParamField body="regionFamily" type="string">
+  Filter hits to regions in this family.
 </ParamField>
 
-<ParamField body="drawingType" type="string">
-  Filter hits to sources associated with this drawing discipline (e.g. `architectural`, `structural`).
+<ParamField body="placedViewKind" type="string">
+  Filter hits to sources with this placed-view kind.
+</ParamField>
+
+<ParamField body="tableKind" type="string">
+  Filter hits to sources with this table kind.
+</ParamField>
+
+<ParamField body="partRole" type="string">
+  Filter hits to sources with this part role.
 </ParamField>
 
 <ParamField body="sheetNumber" type="string">
@@ -75,7 +87,11 @@ Content-Type: `application/json`
 Returns a `SourceSearchResponse` object.
 
 <ResponseField name="status" type="string">
-  Status of the search operation (e.g. `success`).
+  Search status. Usually `ok`; `auto` can return `keyword_search_required`.
+</ResponseField>
+
+<ResponseField name="queryMode" type="string">
+  The mode used for this response: `semantic`, `grep`, `regex`, or `auto`.
 </ResponseField>
 
 <ResponseField name="query" type="string">
@@ -95,32 +111,38 @@ Returns a `SourceSearchResponse` object.
 
   <Expandable title="Hit fields">
     <ResponseField name="score" type="number">
-      Relevance score for this hit. Higher is more relevant.
+      Relevance score for semantic hits. Higher is more relevant.
     </ResponseField>
     <ResponseField name="snippet" type="string">
       A short excerpt of text from the matched source, suitable for display in a results list.
     </ResponseField>
     <ResponseField name="sourceCatalogUri" type="string">
-      Opaque URI that uniquely identifies this source. For non-specification sources, pass this to [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve bounded source text. For specification section sources, use the section API instead.
+      Opaque `source-catalog://...` URI that uniquely identifies this source. For non-specification sources, pass this to [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve bounded source text. For specification section sources, use the section API instead.
     </ResponseField>
     <ResponseField name="source" type="ProjectSource">
       Structured object describing the matched source entity.
 
       <Expandable title="ProjectSource fields">
         <ResponseField name="type" type="string">
-          The entity type of this source (e.g. `region`, `specification`, `doc`, `sheet`).
+          The source catalog entity type (e.g. `project_sheet_region`, `project_specification`, `project_doc`, `project_sheet`).
         </ResponseField>
         <ResponseField name="id" type="string">
-          The unique ID of the matched entity.
+          The catalog ID of the matched entity, usually in `{type}:{id}` format.
         </ResponseField>
         <ResponseField name="label" type="string">
           Human-readable label for this source (e.g. `DETAIL 3/A5.01`, `Section 03 30 00`).
         </ResponseField>
-        <ResponseField name="specId" type="string">
-          Present for specification section hits. Use with `sectionId` to fetch full section detail.
+        <ResponseField name="documentId" type="string">
+          Parent document/file ID. For specification hits, use this as the `specId` path parameter when fetching a specification section.
         </ResponseField>
-        <ResponseField name="sectionId" type="string">
-          Present for specification section hits. Use with `specId` to call [Get Spec Section](/api-reference/project-reads/get-specification-section).
+        <ResponseField name="regionId" type="string">
+          Present for region hits.
+        </ResponseField>
+        <ResponseField name="sectionNumber" type="string">
+          Present for specification hits when available.
+        </ResponseField>
+        <ResponseField name="sectionTitle" type="string">
+          Present for specification hits when available.
         </ResponseField>
         <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
           Artifact objects associated with this source, when available.
@@ -144,6 +166,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
   -H "Content-Type: application/json" \
   -d '{
     "query": "waterproofing membrane below grade",
+    "mode": "semantic",
     "maxHits": 5,
     "classification": "specifications"
   }'
@@ -153,21 +176,23 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
 
 ```json
 {
-  "status": "success",
+  "status": "ok",
   "query": "waterproofing membrane below grade",
+  "queryMode": "semantic",
   "hitCount": 3,
   "searchedChunkCount": 4812,
   "hits": [
     {
       "score": 0.941,
       "snippet": "...self-adhering sheet waterproofing membrane applied to all below-grade foundation walls per ASTM D1970...",
-      "sourceCatalogUri": "plangrep://projects/proj_abc123/specifications/spec_001/sections/section_003",
+      "sourceCatalogUri": "source-catalog://project_specification:section_003",
       "source": {
-        "type": "specification",
-        "id": "section_003",
-        "specId": "spec_001",
-        "sectionId": "section_003",
+        "type": "project_specification",
+        "id": "project_specification:section_003",
+        "documentId": "spec_001",
         "label": "Section 07 13 26 - Self-Adhering Sheet Waterproofing",
+        "sectionNumber": "07 13 26",
+        "sectionTitle": "Self-Adhering Sheet Waterproofing",
         "fileArtifacts": [
           {
             "type": "specification_file",
@@ -180,10 +205,11 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
     {
       "score": 0.887,
       "snippet": "...apply waterproofing membrane to exterior face of below-grade concrete walls. See Detail 4/A8.02...",
-      "sourceCatalogUri": "plangrep://projects/proj_abc123/regions/region_204",
+      "sourceCatalogUri": "source-catalog://project_sheet_region:region_204",
       "source": {
-        "type": "region",
-        "id": "region_204",
+        "type": "project_sheet_region",
+        "id": "project_sheet_region:region_204",
+        "regionId": "region_204",
         "label": "DETAIL 4/A8.02",
         "imageArtifact": {
           "type": "region_crop",
@@ -200,7 +226,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
 
 | Status | Description |
 |--------|-------------|
-| `400`  | Invalid request body — `query` missing or empty, `maxHits` out of range, etc. |
+| `400`  | Invalid request body — `query` missing or empty, invalid regex, `maxHits` out of range, etc. |
 | `401`  | Missing or invalid Bearer token. |
 | `404`  | Project not found. |
-| `409`  | Searchable sources exist but the vector index is not ready yet. Retry after a short wait. Response body: `{ "error": { "code": "<string>", "message": "<string>" } }` |
+| `409`  | `mode: "semantic"` only: searchable sources exist but the vector index is not ready yet. Retry after a short wait or use `mode: "auto"` for keyword follow-up guidance. Response body: `{ "error": { "code": "source_index_not_ready", "message": "<string>" } }` |

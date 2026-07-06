@@ -25,7 +25,7 @@ Plangrep is an async document processing API designed for construction workflows
 
 <Steps>
   <Step title="Create a project">
-    A project is a persistent container for processed results and semantic search. Provision one via `POST /api/open/v1/projects` and wait for its `status` to become `ready` (typically 1–2 minutes).
+    A project is a persistent container for processed results and source search. Provision one via `POST /api/open/v1/projects` and wait for its `status` to become `ready` (typically 1–2 minutes).
   </Step>
   <Step title="Create a job and upload files">
     Create a processing job inside your project, upload your PDF or document files, then call the complete endpoint to kick off processing.
@@ -34,7 +34,7 @@ Plangrep is an async document processing API designed for construction workflows
     Poll `GET /api/open/v1/jobs/{jobId}` until the job `status` reaches `completed` or `completed_with_errors`. Subscribe to a webhook URL on job creation to receive push notifications instead.
   </Step>
   <Step title="Retrieve results">
-    Fetch the normalized JSON result from `GET /api/open/v1/jobs/{jobId}/result`. Query extracted sheets, regions, specifications, and docs through the project entity endpoints, and run semantic search across all processed sources.
+    Fetch the normalized JSON result from `GET /api/open/v1/jobs/{jobId}/result`. Query extracted sheets, regions, specifications, and docs through the project entity endpoints, and run semantic, grep, or regex search across all processed sources.
   </Step>
 </Steps>
 
@@ -44,8 +44,8 @@ Plangrep is an async document processing API designed for construction workflows
   <Card title="Drawings & Specs" icon="file-lines">
     Extracts sheets, drawing regions, and specification sections from PDFs — with bounding boxes, labels, and raw text.
   </Card>
-  <Card title="Semantic Search" icon="magnifying-glass">
-    Run natural-language queries across all project sources or search globally across your organization's projects.
+  <Card title="Source Search" icon="magnifying-glass">
+    Run semantic, grep, or regex queries across project sources or search globally across your organization's projects.
   </Card>
   <Card title="Flexible Uploads" icon="cloud-arrow-up">
     Choose multipart form upload for simplicity or signed direct/multipart uploads for large files and API clients.

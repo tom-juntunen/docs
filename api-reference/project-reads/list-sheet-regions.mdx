@@ -1,0 +1,157 @@
+---
+title: "List Extracted Drawing Regions on a Sheet"
+sidebarTitle: "List Sheet Regions"
+description: "GET /api/open/v1/projects/:projectId/sheets/:sheetId/regions — paginated list of extracted drawing regions belonging to one sheet."
+---
+
+Returns a paginated list of extracted drawing regions that belong to a specific sheet. Use this endpoint when you already know the target `sheetId` and want sheet-scoped region results without passing a sheet allowlist query parameter.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/sheets/{sheetId}/regions
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose sheet regions you want to list.
+</ParamField>
+
+<ParamField path="sheetId" type="string" required>
+  The unique identifier of the sheet whose regions you want to list.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum number of records to return per page. Must be between **1** and **500**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor returned as `nextCursor` from a previous response. Omit to fetch the first page.
+</ParamField>
+
+<ParamField query="compact" type="boolean">
+  When `true`, artifact URL fields are stripped from each entity, reducing payload size.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Restrict results to regions belonging to a specific file.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Case-insensitive substring match on the parent file name.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Filter by parent file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+</ParamField>
+
+<ParamField query="pageNumber" type="integer">
+  Filter to regions on this specific 1-based page number. Minimum: `1`.
+</ParamField>
+
+<ParamField query="regionKind" type="string">
+  Filter by the detected region kind (for example `detail`, `keynotes`, `schedule`, `title_block`).
+</ParamField>
+
+<ParamField query="regionFamily" type="string">
+  Filter by region family.
+</ParamField>
+
+<ParamField query="placedViewKind" type="string">
+  Filter by placed-view kind.
+</ParamField>
+
+<ParamField query="tableKind" type="string">
+  Filter by table kind.
+</ParamField>
+
+<ParamField query="partRole" type="string">
+  Filter by source part role.
+</ParamField>
+
+## Response
+
+Returns a `ProjectRegionEntityListResponse` object.
+
+<ResponseField name="total" type="integer">
+  Total number of regions matching the current filters across all pages.
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The page size limit applied to this response.
+</ResponseField>
+
+<ResponseField name="cursor" type="string">
+  The cursor value used for this page.
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+  Opaque cursor to pass as `cursor` to retrieve the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="returnedCount" type="integer">
+  Number of region entities returned in this response.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available beyond this response.
+</ResponseField>
+
+<ResponseField name="regions" type="ProjectRegionEntity[]">
+  Array of extracted drawing region entities. Region fields match [List Regions](/api-reference/project-reads/list-regions).
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets/sheet_007/regions?limit=50&regionKind=detail" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "total": 12,
+  "limit": 50,
+  "cursor": null,
+  "nextCursor": null,
+  "returnedCount": 12,
+  "hasMore": false,
+  "pageInfo": {
+    "startCursor": "eyJvZmZzZXQiOjB9",
+    "endCursor": "eyJvZmZzZXQiOjExfQ==",
+    "hasPreviousPage": false,
+    "hasNextPage": false
+  },
+  "regions": [
+    {
+      "regionId": "region_001",
+      "fileId": "file_001",
+      "sheetId": "sheet_007",
+      "fileName": "Architectural_Plans_SetA.pdf",
+      "pageNumber": 12,
+      "sheetNumber": "A5.01",
+      "label": "DETAIL 3/A5.01",
+      "text": "CONT. BEAD OF SEALANT AT ALL EDGES. SEE SPEC 07900.",
+      "displayBox": { "left": 0.52, "top": 0.31, "right": 0.74, "bottom": 0.58 },
+      "titleDisplayBox": { "left": 0.52, "top": 0.58, "right": 0.74, "bottom": 0.62 },
+      "artifacts": [
+        { "type": "region_crop", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+        { "type": "region_text", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
+      ]
+    }
+  ]
+}
+```
+
+## Error Responses
+
+| Status | Description |
+|--------|-------------|
+| `400` | Invalid pagination or filter value. |
+| `401` | Missing or invalid Bearer token. |
+| `404` | Project or sheet not found. |

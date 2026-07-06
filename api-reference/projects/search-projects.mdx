@@ -1,10 +1,10 @@
 ---
-title: "Search Projects by Name and Semantic Source Hits"
+title: "Search Projects by Name and Source Hits"
 sidebarTitle: "Search Projects"
-description: "POST /api/open/v1/projects/search — searches organization projects by name and semantic source content. Supports filtering and pagination."
+description: "POST /api/open/v1/projects/search — searches organization projects by name and source content. Supports source search modes, filtering, and pagination."
 ---
 
-Search across all projects in your organization using a combination of name matching and semantic similarity against ingested source content. Results include the matching project, the reasons it was matched, and the specific source hits that contributed to the match score. Supports rich filtering by entity type, drawing metadata, and file classification, as well as cursor-based pagination for large result sets.
+Search across all projects in your organization using a combination of name matching and source search against ingested content. Results include the matching project, the reasons it was matched, and the specific source hits that contributed to the match score. Supports rich filtering by entity type, drawing metadata, and file classification, as well as cursor-based pagination for large result sets.
 
 ## Authentication
 
@@ -19,11 +19,15 @@ POST https://plangrep.com/api/open/v1/projects/search
 ## Request Body
 
 <ParamField body="query" type="string" required>
-  The search string. Must be at least 1 character. Used for both name matching and semantic similarity search across ingested source content.
+  The search string. Must be at least 1 character. Used for project name matching and source search across ingested content.
 </ParamField>
 
 <ParamField body="projectIds" type="string[]">
-  An optional list of project IDs to restrict the semantic search to. When omitted, all projects in your organization are searched.
+  An optional list of project IDs to restrict source search to. When omitted, all projects in your organization are searched.
+</ParamField>
+
+<ParamField body="sourceSearchMode" type="enum">
+  Runtime source search mode for source hits. Accepted values: `semantic`, `grep`, `regex`, `auto`. Defaults to `semantic`.
 </ParamField>
 
 <ParamField body="limit" type="integer">
@@ -35,19 +39,27 @@ POST https://plangrep.com/api/open/v1/projects/search
 </ParamField>
 
 <ParamField body="entityTypes" type="string[]">
-  Filter source matches to specific entity types (e.g., `["door", "window"]`).
+  Filter source matches to specific entity types (for example `["regions", "specifications"]`).
 </ParamField>
 
-<ParamField body="regionType" type="string">
-  Filter source matches to a specific region type within drawings.
+<ParamField body="regionKind" type="string">
+  Filter source matches to a specific region kind within drawings.
 </ParamField>
 
-<ParamField body="layoutType" type="string">
-  Filter source matches to a specific layout type.
+<ParamField body="regionFamily" type="string">
+  Filter source matches to a specific region family.
 </ParamField>
 
-<ParamField body="drawingType" type="string">
-  Filter source matches to a specific drawing type (e.g., `"floor_plan"`).
+<ParamField body="placedViewKind" type="string">
+  Filter source matches to a specific placed-view kind.
+</ParamField>
+
+<ParamField body="tableKind" type="string">
+  Filter source matches to a specific table kind.
+</ParamField>
+
+<ParamField body="partRole" type="string">
+  Filter source matches to a specific part role.
 </ParamField>
 
 <ParamField body="sheetNumber" type="string">
@@ -76,6 +88,7 @@ curl --request POST \
   --header "Accept: application/json" \
   --data '{
     "query": "fire-rated door assembly",
+    "sourceSearchMode": "semantic",
     "classification": "plans",
     "limit": 10
   }'
@@ -95,14 +108,53 @@ curl --request POST \
       The matched project object. See [Get Project](/api-reference/projects/get-project) for field definitions.
     </ResponseField>
 
-    <ResponseField name="matchReasons" type="string[]" required>
-      Human-readable explanations of why this project was included in results (e.g., name match, semantic similarity).
+    <ResponseField name="matchReasons" type="object[]" required>
+      Machine-readable reasons why this project was included in results.
+
+      <Expandable title="matchReasons fields">
+        <ResponseField name="type" type="string">
+          Reason type. Current values include `projectName` and `sourceSemantic`. Source matches can come from `semantic`, `grep`, `regex`, or `auto` source search modes.
+        </ResponseField>
+        <ResponseField name="value" type="string">
+          Present for project name matches.
+        </ResponseField>
+        <ResponseField name="label" type="string">
+          Human-readable label for a matching source, when available.
+        </ResponseField>
+        <ResponseField name="score" type="number">
+          Source match score, when available.
+        </ResponseField>
+        <ResponseField name="sourceCatalogUri" type="string">
+          Opaque `source-catalog://...` URI for the matching source, when available.
+        </ResponseField>
+      </Expandable>
     </ResponseField>
 
-    <ResponseField name="sourceMatches" type="object[]" required>
-      Specific source content excerpts that contributed to the match score.
+    <ResponseField name="sourceMatches" type="ProjectSource[]" required>
+      Specific source records that matched the query.
 
       <Expandable title="sourceMatches fields">
+        <ResponseField name="sourceCatalogUri" type="string">
+          Opaque `source-catalog://...` URI for the matching source.
+        </ResponseField>
+        <ResponseField name="type" type="string">
+          Source catalog entity type, such as `project_sheet_region`, `project_specification`, `project_doc`, or `project_sheet`.
+        </ResponseField>
+        <ResponseField name="id" type="string">
+          Catalog ID for the matching source.
+        </ResponseField>
+        <ResponseField name="label" type="string">
+          Human-readable source label.
+        </ResponseField>
+        <ResponseField name="queryMode" type="string">
+          Source search mode used for this match: `semantic`, `grep`, or `regex`.
+        </ResponseField>
+        <ResponseField name="score" type="number">
+          Match score when available.
+        </ResponseField>
+        <ResponseField name="snippet" type="string">
+          Text snippet that matched the query.
+        </ResponseField>
         <ResponseField name="fileName" type="string">
           Source file name for the matched content.
         </ResponseField>
@@ -111,9 +163,6 @@ curl --request POST \
         </ResponseField>
         <ResponseField name="pageNumber" type="integer">
           1-based page number for the source content.
-        </ResponseField>
-        <ResponseField name="excerpt" type="string">
-          Text excerpt that matched the query.
         </ResponseField>
         <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
           Artifact objects associated with this source match, when available.
@@ -173,13 +222,26 @@ curl --request POST \
         "createdAt": "2024-11-01T14:22:10.000Z",
         "updatedAt": "2024-11-01T14:24:05.000Z"
       },
-      "matchReasons": ["semantic similarity: fire-rated door assembly found on sheet A-201"],
+      "matchReasons": [
+        {
+          "type": "sourceSemantic",
+          "label": "Door Schedule / A-201",
+          "score": 0.88,
+          "sourceCatalogUri": "source-catalog://project_sheet_region:region_501"
+        }
+      ],
       "sourceMatches": [
         {
+          "sourceCatalogUri": "source-catalog://project_sheet_region:region_501",
+          "type": "project_sheet_region",
+          "id": "project_sheet_region:region_501",
+          "label": "Door Schedule / A-201",
+          "queryMode": "semantic",
+          "score": 0.88,
+          "snippet": "90-min fire-rated hollow metal door assembly, see detail 4/A-501",
           "fileName": "drawings.pdf",
           "sheetNumber": "A-201",
           "pageNumber": 14,
-          "excerpt": "90-min fire-rated hollow metal door assembly, see detail 4/A-501",
           "imageArtifact": {
             "type": "region_crop",
             "url": "https://...",
@@ -207,5 +269,5 @@ curl --request POST \
 ```
 
 <Tip>
-  Use `projectIds` to scope expensive semantic searches to a known subset of projects. This significantly reduces latency when you already know which projects are candidates.
+  Use `projectIds` to scope source searches to a known subset of projects. This significantly reduces latency when you already know which projects are candidates.
 </Tip>

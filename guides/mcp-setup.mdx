@@ -1,0 +1,49 @@
+---
+title: "Connect Plangrep with MCP"
+sidebarTitle: "MCP Setup"
+description: "Configure Plangrep MCP and use source discovery tools before reading source text or displaying source images."
+---
+
+Use MCP when ChatGPT, Codex, or another MCP client should work with Plangrep projects and uploaded chat files. Use the Open API instead when your own application calls Plangrep directly.
+
+## MCP server URL
+
+Use the test server while developing:
+
+```text
+https://test-app.plangrep.com/api/mcp/v1
+```
+
+Use the production server for live projects:
+
+```text
+https://plangrep.com/api/mcp/v1
+```
+
+Plangrep owns the MCP OAuth facade. MCP clients should not be configured directly against Auth0.
+
+## Source discovery workflow
+
+Use `plangrep_search_project_sources` before reading source text or displaying source images. It returns source handles and metadata that the follow-up tools can use.
+
+```text
+plangrep_search_project_sources
+plangrep_read_source_text
+plangrep_show_source_image
+plangrep_show_source_images
+```
+
+`plangrep_search_project_sources` accepts a `mode` field:
+
+| Mode | Use when |
+|---|---|
+| `semantic` | You want vector search over source meaning. This is the default. |
+| `grep` | You want keyword or boolean prepared-text search. |
+| `regex` | You need case-insensitive multiline regex search over prepared source text. |
+| `auto` | An agent should try semantic search first and receive keyword follow-up guidance if vectors are not ready. |
+
+For organization-wide project discovery, `plangrep_search_projects` accepts `sourceSearchMode` with the same values.
+
+## Artifact and source handles
+
+MCP clients should not fetch Open API artifact URLs directly. The MCP server converts source and artifact URLs into opaque handles. Pass image handles to `plangrep_show_artifact_image` or `plangrep_show_source_image`, and pass source handles to `plangrep_read_source_text` when you need bounded text.

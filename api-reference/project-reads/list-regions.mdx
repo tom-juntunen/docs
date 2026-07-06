@@ -1,10 +1,10 @@
 ---
 title: "List Extracted Drawing Regions in a Plangrep Project"
 sidebarTitle: "List Regions"
-description: "GET /api/open/v1/projects/:projectId/regions — paginated list of extracted drawing regions filterable by region type, drawing type, layout, and more."
+description: "GET /api/open/v1/projects/:projectId/regions — paginated list of extracted drawing regions filterable by canonical region metadata and more."
 ---
 
-Returns a paginated list of extracted drawing regions within a project. A region is a bounding-box-delimited area detected on a sheet—such as a detail, plan view, section cut, or title block—along with any text extracted from that area. Filter by region type, drawing type, or layout type to focus on specific content patterns.
+Returns a paginated list of extracted drawing regions within a project. A region is a bounding-box-delimited area detected on a sheet—such as a detail, plan view, section cut, or title block—along with any text extracted from that area. Filter by canonical region metadata to focus on specific content patterns.
 
 <Tip>
   **Sheet-scoped regions:** To list regions belonging to a specific sheet, use the sub-resource endpoint `GET /api/open/v1/projects/{projectId}/sheets/{sheetId}/regions`. It accepts the same filter and pagination parameters as this endpoint (except `sheetId` becomes a path parameter and the `sheets` allowlist param is not available on that route).
@@ -60,16 +60,24 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/regions
   Filter to regions on this specific 1-based page number. Minimum: `1`.
 </ParamField>
 
-<ParamField query="regionType" type="string">
-  Filter by the detected region type (e.g. `detail`, `plan`, `section`, `elevation`, `schedule`, `title_block`).
+<ParamField query="regionKind" type="string">
+  Filter by the detected region kind (e.g. `detail`, `keynotes`, `schedule`, `title_block`).
 </ParamField>
 
-<ParamField query="drawingType" type="string">
-  Filter by drawing discipline or type (e.g. `architectural`, `structural`, `mechanical`).
+<ParamField query="regionFamily" type="string">
+  Filter by region family.
 </ParamField>
 
-<ParamField query="layoutType" type="string">
-  Filter by layout classification of the region.
+<ParamField query="placedViewKind" type="string">
+  Filter by placed-view kind.
+</ParamField>
+
+<ParamField query="tableKind" type="string">
+  Filter by table kind.
+</ParamField>
+
+<ParamField query="partRole" type="string">
+  Filter by source part role.
 </ParamField>
 
 ## Response
@@ -173,7 +181,7 @@ Returns a `ProjectRegionEntityListResponse` object.
 ## Example Request
 
 ```bash
-curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions?limit=50&regionType=detail&classification=plans" \
+curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions?limit=50&regionKind=detail&classification=plans" \
   -H "Authorization: Bearer YOUR_API_TOKEN"
 ```
 

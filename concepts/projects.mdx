@@ -1,10 +1,10 @@
 ---
 title: "Projects: Persistent Containers for Processed Document Data"
 sidebarTitle: "Projects"
-description: "Learn how Plangrep projects store processed files, enable semantic search, and serve as the organizing unit for your construction documents."
+description: "Learn how Plangrep projects store processed files, enable source search, and serve as the organizing unit for your construction documents."
 ---
 
-A Plangrep project is a persistent, organization-scoped container that holds all the processed entities — sheets, regions, specifications, docs — extracted from your uploaded construction documents. Each project also powers semantic search across all its indexed sources.
+A Plangrep project is a persistent, organization-scoped container that holds all the processed entities — sheets, regions, specifications, docs — extracted from your uploaded construction documents. Each project also powers source search across all its indexed sources.
 
 ## Creating a Project
 
@@ -61,7 +61,7 @@ Projects are designed to grow over time. Each job you submit writes its extracte
 
 Query all of these through the project entity endpoints (e.g., GET `/api/open/v1/projects/{projectId}/sheets`).
 
-## Semantic Search
+## Source Search
 
 Projects support two search scopes:
 
@@ -70,7 +70,7 @@ Projects support two search scopes:
 | POST `/api/open/v1/projects/{projectId}/source-search` | Searches sources indexed within this project |
 | POST `/api/open/v1/projects/search` | Organization-wide search across all projects |
 
-Both endpoints accept a natural-language query and return ranked evidence records.
+Both endpoints accept a query and return ranked evidence records. Use semantic mode for vector search, grep mode for keyword and boolean prepared-text search, and regex mode for regular expression search.
 
 ## Project Fields
 

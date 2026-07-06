@@ -96,15 +96,17 @@ The top-level `evidence` array is a flat, deduplicated collection of all extract
 | Evidence type | Additional fields |
 |---------------|-------------------|
 | `sheet` | `sheetId`, `sheetNumber`, `sheetName` |
-| `drawing_region` | `regionId`, `sheetId`, `regionType`, `drawingType`, `layoutType` |
+| `drawing_region` | `regionId`, `sheetId`, `regionKind`, `regionFamily`, `placedViewKind`, `tableKind`, `partRole` |
 | `specification_section` | `sectionNumber`, `sectionTitle` |
 | `document_section` | `sectionTitle`, `pageNumber` |
 
-Drawing regions include three classification dimensions:
+Drawing regions include source classification dimensions:
 
-- **`regionType`** — the kind of region (e.g., keynote legend, detail, plan view)
-- **`drawingType`** — the drawing discipline (e.g., architectural, structural, mechanical)
-- **`layoutType`** — how the region is laid out on the sheet
+- **`regionKind`** — the kind of region (e.g., keynote legend, detail, schedule)
+- **`regionFamily`** — the broader family for the region
+- **`placedViewKind`** — the kind of placed drawing view, when applicable
+- **`tableKind`** — the kind of table, when applicable
+- **`partRole`** — the role of a source part within its parent source
 
 ---
 

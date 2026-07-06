@@ -41,7 +41,7 @@ The response is a single normalized JSON object:
     {
       "id": "ev_001",
       "type": "drawing_region",
-      "regionType": "detail",
+      "regionKind": "detail",
       "text": "Provide R-19 batt insulation at all exterior stud walls."
     }
   ],
@@ -69,7 +69,7 @@ for doc in result["documents"]:
         )
 ```
 
-Sheet objects include fields such as `sheetNumber`, `sheetName`, `pageNumber`, `drawingType`, `discipline`, and `artifacts` for associated renderings.
+Sheet objects include fields such as `sheetNumber`, `sheetName`, `pageNumber`, `discipline`, and `artifacts` for associated renderings.
 
 ---
 
@@ -129,8 +129,8 @@ After processing completes, you can query individual entity types on the project
 curl "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets?limit=50" \
   -H "Authorization: Bearer YOUR_API_KEY"
 
-# List regions of type 'detail'
-curl "https://plangrep.com/api/open/v1/projects/proj_abc123/regions?regionType=detail&limit=100" \
+# List detail regions
+curl "https://plangrep.com/api/open/v1/projects/proj_abc123/regions?regionKind=detail&limit=100" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 

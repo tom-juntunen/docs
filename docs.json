@@ -54,7 +54,8 @@
               "guides/submit-a-job",
               "guides/polling-and-webhooks",
               "guides/reading-results",
-              "guides/searching-sources"
+              "guides/searching-sources",
+              "guides/mcp-setup"
             ]
           }
         ]
@@ -99,6 +100,7 @@
               "api-reference/project-reads/get-file",
               "api-reference/project-reads/list-sheets",
               "api-reference/project-reads/get-sheet",
+              "api-reference/project-reads/list-sheet-regions",
               "api-reference/project-reads/list-regions",
               "api-reference/project-reads/get-region",
               "api-reference/project-reads/list-specifications",

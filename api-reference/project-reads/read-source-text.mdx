@@ -38,6 +38,10 @@ Content-Type: `application/json`
   Maximum number of characters to return in a single response. Must be between **1** and **50,000**. If the source text exceeds this limit, use `nextCursor` to retrieve the remainder.
 </ParamField>
 
+<ParamField body="facetId" type="string">
+  Optional specification facet identifier or facet key. When provided, text retrieval is scoped to that facet's source or match text artifacts.
+</ParamField>
+
 <ParamField body="textKind" type="string">
   Controls the format and scope of returned text. One of:
 
@@ -46,6 +50,8 @@ Content-Type: `application/json`
   | `text` | Plain text extracted from the source (default). |
   | `markdown` | Text formatted as Markdown, preserving structure where detected. |
   | `page_regions` | Text organized by detected page regions. |
+  | `facet_source_text` | Full source text for the selected specification facet. Use with `facetId`. |
+  | `facet_match_text` | Match-focused text for the selected specification facet. Use with `facetId`. |
 </ParamField>
 
 ## Response
@@ -53,7 +59,7 @@ Content-Type: `application/json`
 Returns a `SourceTextResponse` object.
 
 <ResponseField name="status" type="string">
-  Status of the text retrieval operation (e.g. `success`).
+  Status of the text retrieval operation, usually `ok`.
 </ResponseField>
 
 <ResponseField name="source" type="ProjectSource">
@@ -90,7 +96,7 @@ Returns a `SourceTextResponse` object.
 </ResponseField>
 
 <ResponseField name="cursor" type="string">
-  The cursor value used for this response, echoed from the request.
+  The numeric character offset used for this response, returned as a string.
 </ResponseField>
 
 <ResponseField name="nextCursor" type="string">
@@ -113,6 +119,10 @@ Returns a `SourceTextResponse` object.
   The `textKind` that was applied, echoed back from the request or defaulted by the API.
 </ResponseField>
 
+<ResponseField name="facet" type="object">
+  Facet metadata when `facetId` scoped the request. Includes `facetId`, `facetKey`, `facetKind`, `facetLabel`, and `textKind` when available.
+</ResponseField>
+
 ## Example Request
 
 ```bash
@@ -120,7 +130,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text"
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "sourceCatalogUri": "plangrep://projects/proj_abc123/regions/region_204",
+    "sourceCatalogUri": "source-catalog://project_sheet_region:region_204",
     "textKind": "text",
     "maxChars": 5000
   }'
@@ -130,10 +140,11 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text"
 
 ```json
 {
-  "status": "success",
+  "status": "ok",
   "source": {
-    "type": "region",
-    "id": "region_204",
+    "type": "project_sheet_region",
+    "id": "project_sheet_region:region_204",
+    "regionId": "region_204",
     "label": "DETAIL 4/A8.02",
     "imageArtifact": {
       "type": "region_crop",
@@ -141,9 +152,9 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text"
       "readWith": "plangrep_show_artifact_image"
     }
   },
-  "sourceCatalogUri": "plangrep://projects/proj_abc123/regions/region_204",
+  "sourceCatalogUri": "source-catalog://project_sheet_region:region_204",
   "text": "Apply waterproofing membrane to exterior face of below-grade concrete walls.",
-  "cursor": null,
+  "cursor": "0",
   "nextCursor": null,
   "returnedChars": 77,
   "textLength": 77,
@@ -161,10 +172,10 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-text"
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "sourceCatalogUri": "plangrep://projects/proj_abc123/docs/doc_018",
+    "sourceCatalogUri": "source-catalog://project_doc:doc_018",
     "textKind": "text",
     "maxChars": 5000,
-    "cursor": "eyJvZmZzZXQiOjUwMDB9"
+    "cursor": "5000"
   }'
 ```
 

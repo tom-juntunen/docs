@@ -52,16 +52,24 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/regions/{regionId}
   Optional filter — returns the region only if it is on this 1-based page number.
 </ParamField>
 
-<ParamField query="regionType" type="string">
-  Optional filter by detected region type.
+<ParamField query="regionKind" type="string">
+  Optional filter by detected region kind.
 </ParamField>
 
-<ParamField query="drawingType" type="string">
-  Optional filter by drawing discipline or type.
+<ParamField query="regionFamily" type="string">
+  Optional filter by region family.
 </ParamField>
 
-<ParamField query="layoutType" type="string">
-  Optional filter by layout classification of the region.
+<ParamField query="placedViewKind" type="string">
+  Optional filter by placed-view kind.
+</ParamField>
+
+<ParamField query="tableKind" type="string">
+  Optional filter by table kind.
+</ParamField>
+
+<ParamField query="partRole" type="string">
+  Optional filter by source part role.
 </ParamField>
 
 ## Response
