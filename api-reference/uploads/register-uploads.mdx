@@ -46,7 +46,7 @@ Authorization: Bearer YOUR_API_KEY
   </ParamField>
 
   <ParamField body="files[].contentType" type="string" required>
-    MIME type of the file (e.g. `application/pdf`).
+    MIME type of the file (for example `application/pdf`, `text/markdown`, or `application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
   </ParamField>
 
   <ParamField body="files[].fileSize" type="integer" required>
@@ -61,6 +61,22 @@ Authorization: Bearer YOUR_API_KEY
     Document classification hint. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`. Omit to allow Plangrep to auto-classify based on file content.
   </ParamField>
 </ParamField>
+
+### Supported file types
+
+The declared `fileName` extension and `contentType` must agree. Supported uploads include:
+
+| File type | Extensions | Common MIME types |
+|---|---|---|
+| PDF | `.pdf` | `application/pdf` |
+| Images | `.png`, `.jpg`, `.jpeg` | `image/png`, `image/jpeg` |
+| Word | `.docx` | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
+| Excel | `.xls`, `.xlsx` | `application/vnd.ms-excel`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` |
+| PowerPoint | `.pptx` | `application/vnd.openxmlformats-officedocument.presentationml.presentation` |
+| CSV | `.csv` | `text/csv`, `application/csv` |
+| Markdown | `.md`, `.markdown` | `text/markdown`, `text/plain` |
+| Text | `.txt` | `text/plain` |
+| JSON | `.json` | `application/json`, `text/json`, `text/plain` |
 
 ## Response
 

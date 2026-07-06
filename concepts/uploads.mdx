@@ -10,6 +10,22 @@ Plangrep supports three upload modes so you can choose the right approach for yo
   Each job allows a maximum of **100 files** and a maximum total declared size of **10 GB**. Requests that exceed either limit are rejected before any bytes are transferred.
 </Note>
 
+## Supported File Types
+
+The declared file extension and MIME type must agree. Plangrep accepts:
+
+| File type | Extensions | Common MIME types |
+|------|------------|-------------------|
+| PDF | `.pdf` | `application/pdf` |
+| Images | `.png`, `.jpg`, `.jpeg` | `image/png`, `image/jpeg` |
+| Word | `.docx` | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
+| Excel | `.xls`, `.xlsx` | `application/vnd.ms-excel`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` |
+| PowerPoint | `.pptx` | `application/vnd.openxmlformats-officedocument.presentationml.presentation` |
+| CSV | `.csv` | `text/csv`, `application/csv` |
+| Markdown | `.md`, `.markdown` | `text/markdown`, `text/plain` |
+| Text | `.txt` | `text/plain` |
+| JSON | `.json` | `application/json`, `text/json`, `text/plain` |
+
 ## Upload Mode Comparison
 
 | Mode | Best for | Requires SHA-256 upfront? |
