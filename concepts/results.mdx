@@ -46,12 +46,15 @@ Each entry in the `documents` array is a `ResultDocument` representing one uploa
 | `status` | string | Processing status for this document |
 | `pageCount` | number | Total pages in the file |
 | `successfulPageCount` | number | Pages that processed without error |
-| `failedPageCount` | number | Pages that encountered a processing error |
+| `drawingPageCount` | number | Pages billed and processed as drawings |
+| `documentPageCount` | number | Pages billed and processed as documents |
+| `successfulDrawingPageCount` | number | Drawing pages that processed without error |
+| `successfulDocumentPageCount` | number | Document pages that processed without error |
 | `error` | object \| null | Document-level error, if any |
 | `artifacts` | array | Authenticated links to derived file assets (see [Artifacts](#artifacts)) |
 | `sheets` | array | Drawing sheets extracted from this document (see [Sheets](#sheets)) |
-| `specifications` | array \| null | Specification sections, present when `classification` is `specifications` or `mixed` |
-| `docs` | array \| null | Document sections, present when `classification` is `documents`, `addenda`, or `mixed` |
+| `specifications` | array | Specification sections, omitted when none are present |
+| `docs` | array | Document sections, omitted when none are present |
 
 <Note>
   Project specification endpoints are document-level first. Use `GET /api/open/v1/projects/{projectId}/specifications/{specId}/sections` and `GET /api/open/v1/projects/{projectId}/specifications/{specId}/sections/{sectionId}` for current specification section reads.
@@ -65,6 +68,7 @@ Each `ResultSheet` inside a document's `sheets` array represents a single drawin
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `id` | string | Entity identifier for this sheet |
 | `sheetId` | string | Unique identifier for this sheet |
 | `sheetNumber` | string | Sheet number as read from the title block (e.g., `A101`) |
 | `sheetName` | string | Sheet name or title (e.g., `FIRST FLOOR PLAN`) |
@@ -83,22 +87,25 @@ The top-level `evidence` array is a flat, deduplicated collection of all extract
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Unique evidence record identifier |
-| `type` | string | Evidence type: `sheet`, `drawing_region`, `specification_section`, `document_section` |
+| `type` | string | Evidence type, commonly `project_file`, `sheet`, `project_sheet_region`, `project_specification`, or `project_doc` |
 | `label` | string | Human-readable label for this evidence item |
 | `documentId` | string | Source document identifier |
 | `fileName` | string | Source file name |
 | `classification` | string | Source document classification |
-| `sourceRef` | object | Structured reference to the source location (page, section, etc.) |
+| `sourceRef` | string | `source-catalog://...` URI; pass this value as `sourceCatalogUri` to source-text reads |
+| `sourceCallouts` | array | Parsed callout records when the source includes them |
+| `artifacts` | array | Artifact links scoped to this evidence item |
 | `text` | string \| null | Inline extracted text when available |
 
 ### Type-specific fields
 
 | Evidence type | Additional fields |
 |---------------|-------------------|
+| `project_file` | `documentId`, `fileName` |
 | `sheet` | `sheetId`, `sheetNumber`, `sheetName` |
-| `drawing_region` | `regionId`, `sheetId`, `regionKind`, `regionFamily`, `placedViewKind`, `tableKind`, `partRole` |
-| `specification_section` | `sectionNumber`, `sectionTitle` |
-| `document_section` | `sectionTitle`, `pageNumber` |
+| `project_sheet_region` | `regionId`, `regionKey`, `regionName`, `regionNumber`, `sheetId`, `sheetNumber`, `regionKind`, `regionFamily`, `placedViewKind`, `tableKind`, `partRole` |
+| `project_specification` | `sectionNumber`, `sectionTitle`, `pageNumber` |
+| `project_doc` | `pageNumber`, document labels or section fields when available |
 
 Drawing regions include source classification dimensions:
 
@@ -116,9 +123,12 @@ The `usage` object (type `ResultUsage`) provides an immutable breakdown of how c
 
 | Field | Description |
 |-------|-------------|
+| `pageCount` | Total pages in submitted job files |
 | `drawingPageCount` | Number of drawing pages processed |
 | `documentPageCount` | Number of document pages processed |
 | `successfulPageCount` | Total pages that completed without error |
+| `successfulDrawingPageCount` | Drawing pages that completed without error |
+| `successfulDocumentPageCount` | Document pages that completed without error |
 | `creditsDebited` | Total credits charged for this job |
 | `drawingCreditsPerPage` | Rate applied to drawing pages (default: 10) |
 | `documentCreditsPerPage` | Rate applied to document pages (default: 1) |
@@ -129,7 +139,7 @@ See [Credits](/concepts/credits) for a full explanation of the billing model.
 
 ## Artifacts
 
-Artifacts are authenticated links to derived assets Plangrep generates during processing. They appear in result objects and project entity responses. Artifact objects include a canonical `type`, a URL or path, and may include `readWith` to tell MCP-aware clients whether to open the artifact as an image or file.
+Artifacts are authenticated links to derived assets Plangrep generates during processing. They appear in result objects and project entity responses. Artifact objects include a canonical `type`, a `url`, and may include `readWith` to tell MCP-aware clients whether to open the artifact as an image or file.
 
 | Artifact type | Description |
 |---------------|-------------|

@@ -20,29 +20,64 @@ The response is a single normalized JSON object:
 ```json
 {
   "schemaVersion": "v1",
-  "job": { "id": "job_xyz789", "status": "completed" },
+  "job": {
+    "id": "job_xyz789",
+    "projectId": "proj_abc123",
+    "status": "completed",
+    "resultUrl": "/api/open/v1/jobs/job_xyz789/result",
+    "createdAt": "2024-01-15T10:00:00Z",
+    "completedAt": "2024-01-15T10:05:00Z",
+    "expiresAt": "2024-02-14T10:00:00Z",
+    "externalId": null,
+    "error": null
+  },
   "usage": {
-    "pageCount": 42,
-    "drawingPageCount": 38,
-    "documentPageCount": 4,
-    "creditsDebited": 384
+    "pageCount": 26,
+    "successfulPageCount": 26,
+    "drawingPageCount": 26,
+    "documentPageCount": 0,
+    "successfulDrawingPageCount": 26,
+    "successfulDocumentPageCount": 0,
+    "creditsDebited": 260
   },
   "documents": [
     {
-      "documentId": "doc_111",
-      "fileName": "floor-plan.pdf",
+      "documentId": "project_file_abc123",
+      "fileName": "trenton_plans.pdf",
       "classification": "plans",
-      "pageCount": 38,
-      "sheets": [],
+      "contentType": "application/pdf",
+      "fileSize": 8752555,
+      "status": "ready",
+      "pageCount": 26,
+      "drawingPageCount": 26,
+      "documentPageCount": 0,
+      "successfulPageCount": 26,
+      "successfulDrawingPageCount": 26,
+      "successfulDocumentPageCount": 0,
+      "error": null,
+      "sheets": [
+        {
+          "id": "project_sheet_001",
+          "sheetId": "project_sheet_001",
+          "sheetNumber": "G-001",
+          "sheetName": "TRENTON READINESS CENTER - RENOVATE",
+          "pageNumber": 1,
+          "status": "ready",
+          "artifacts": []
+        }
+      ],
       "artifacts": []
     }
   ],
   "evidence": [
     {
-      "id": "ev_001",
-      "type": "drawing_region",
-      "regionKind": "detail",
-      "text": "Provide R-19 batt insulation at all exterior stud walls."
+      "id": "project_sheet_region:project_sheet_region_001",
+      "type": "project_sheet_region",
+      "sourceRef": "source-catalog://project_sheet_region:project_sheet_region_001",
+      "sheetNumber": "G-001",
+      "regionKind": "cover_sheet",
+      "sourceCallouts": [],
+      "text": "Extracted region text when available."
     }
   ],
   "warnings": [],
@@ -69,7 +104,7 @@ for doc in result["documents"]:
         )
 ```
 
-Sheet objects include fields such as `sheetNumber`, `sheetName`, `pageNumber`, `discipline`, and `artifacts` for associated renderings.
+Sheet objects include fields such as `id`, `sheetId`, `sheetNumber`, `sheetName`, `pageNumber`, `status`, and `artifacts` for associated renderings.
 
 ---
 
@@ -84,7 +119,7 @@ for ev in result["evidence"]:
     print(f"[{ev['type']}] {label} — {snippet}")
 ```
 
-Evidence records carry a `type` field, such as `"drawing_region"` or `"specification_section"`, and additional type-specific fields. For specification evidence, use the specification section endpoints to fetch full section text and structured requirements. For non-specification source records, use `sourceCatalogUri` with the source-text endpoint when available.
+Evidence records carry a `type` field, such as `"project_file"`, `"sheet"`, `"project_sheet_region"`, `"project_specification"`, or `"project_doc"`, and additional type-specific fields. Use each record's `sourceRef` value as the `sourceCatalogUri` when you call the source-text endpoint for exact source text. For specification evidence, use the specification section endpoints to fetch full section text and structured requirements.
 
 ---
 
