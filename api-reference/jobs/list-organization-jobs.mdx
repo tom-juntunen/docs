@@ -1,0 +1,108 @@
+---
+title: "List Jobs Across Your Organization"
+sidebarTitle: "List Organization Jobs"
+description: "GET /api/open/v1/jobs — returns processing jobs across all visible projects in your organization, with optional project, status, and active-only filters."
+---
+
+Retrieve processing jobs across every project visible to the authenticated organization key. Jobs are ordered newest first and returned with an opaque pagination cursor.
+
+Use this endpoint for dashboards, queues, recent-activity views, and billing reconciliation across projects. To list jobs for one project, use [List Jobs](/api-reference/jobs/list-jobs).
+
+## Authentication
+
+Include an API key with the `jobs:read` scope as `Authorization: Bearer YOUR_API_KEY`.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/jobs
+```
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="20">
+  Maximum number of jobs to return. Must be between **1** and **100**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque pagination cursor returned as `nextCursor` from a previous response.
+</ParamField>
+
+<ParamField query="projectId" type="string">
+  Restrict results to one project. `project_id` is also accepted.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Restrict results to one job status, such as `processing`, `completed`, or `failed`.
+</ParamField>
+
+<ParamField query="activeOnly" type="boolean">
+  When `true`, returns only active jobs in `provisioning`, `awaiting_uploads`, `uploading`, `preflighting`, or `processing`. `active_only` is also accepted.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="jobs" type="Job[]" required>
+  Jobs matching the current filters, ordered newest first.
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string | null" required>
+  Cursor to pass as `cursor` for the next page, or `null` when there are no more jobs.
+</ResponseField>
+
+Each job uses the same `Job` object documented in [Get Job](/api-reference/jobs/get-job).
+
+## Example Request
+
+```bash
+curl "https://plangrep.com/api/open/v1/jobs?limit=10&activeOnly=true" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Example Response
+
+```json
+{
+  "jobs": [
+    {
+      "id": "open_api_job_01hy3m8qtn2e5r7k9p0w4x1def",
+      "displayName": "Downtown Tower - 2026-07-11",
+      "activityLabel": "Downtown Tower - 2026-07-11",
+      "externalId": null,
+      "status": "processing",
+      "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+      "project": {
+        "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+        "name": "Downtown Tower"
+      },
+      "pageCount": 204,
+      "successfulPageCount": 87,
+      "failedPageCount": 117,
+      "progress": {
+        "processedPages": 87,
+        "totalPages": 204,
+        "percent": 43,
+        "phase": "processing",
+        "message": "Files are being processed.",
+        "updatedAt": "2026-07-11T18:07:35.000Z"
+      },
+      "resultUrl": "/api/open/v1/jobs/open_api_job_01hy3m8qtn2e5r7k9p0w4x1def/result",
+      "billing": {
+        "creditsDebited": 870,
+        "creditsReserved": 2040
+      },
+      "files": [],
+      "limits": {
+        "maxDeclaredBytes": 10000000000,
+        "maxFiles": 100
+      },
+      "error": null,
+      "createdAt": "2026-07-11T18:00:00.000Z",
+      "updatedAt": "2026-07-11T18:07:35.000Z",
+      "completedAt": null,
+      "expiresAt": "2026-08-10T18:00:00.000Z"
+    }
+  ],
+  "nextCursor": null
+}
+```

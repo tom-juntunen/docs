@@ -65,6 +65,14 @@ The endpoint returns `202 Accepted`.
       Unique identifier for the job.
     </ResponseField>
 
+    <ResponseField name="displayName" type="string" required>
+      Human-readable display name for the job. Uses `externalId` when supplied, otherwise falls back to the project name and creation date.
+    </ResponseField>
+
+    <ResponseField name="activityLabel" type="string" required>
+      Label suitable for activity feeds and dashboard rows. Currently matches `displayName`.
+    </ResponseField>
+
     <ResponseField name="externalId" type="string | null">
       The `externalId` you supplied, or `null` if omitted.
     </ResponseField>
@@ -99,6 +107,14 @@ The endpoint returns `202 Accepted`.
       Number of pages that were processed successfully.
     </ResponseField>
 
+    <ResponseField name="failedPageCount" type="integer" required>
+      Number of pages that have failed or have not completed successfully.
+    </ResponseField>
+
+    <ResponseField name="progress" type="object" required>
+      Dashboard-friendly progress summary with `processedPages`, `totalPages`, `percent`, `phase`, `message`, and `updatedAt`.
+    </ResponseField>
+
     <ResponseField name="billing" type="object" required>
       Billing information for this job.
     </ResponseField>
@@ -107,8 +123,8 @@ The endpoint returns `202 Accepted`.
       Metadata for each file attached to the job.
     </ResponseField>
 
-    <ResponseField name="resultUrl" type="string | null">
-      Pre-signed URL to the normalized result JSON, populated once the job reaches a completed terminal state.
+    <ResponseField name="resultUrl" type="string">
+      API path for the normalized result JSON, such as `/api/open/v1/jobs/{jobId}/result`.
     </ResponseField>
 
     <ResponseField name="error" type="object | null">
@@ -163,6 +179,8 @@ The endpoint returns `202 Accepted`.
 {
   "job": {
     "id": "job_01hy3m8qtn2e5r7k9p0w4x1def",
+    "displayName": "order-7890",
+    "activityLabel": "order-7890",
     "externalId": "order-7890",
     "status": "awaiting_uploads",
     "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
@@ -172,9 +190,18 @@ The endpoint returns `202 Accepted`.
     },
     "pageCount": 0,
     "successfulPageCount": 0,
+    "failedPageCount": 0,
+    "progress": {
+      "processedPages": 0,
+      "totalPages": 0,
+      "percent": 0,
+      "phase": "upload",
+      "message": "Waiting for uploads.",
+      "updatedAt": "2024-11-02T09:00:01.000Z"
+    },
     "billing": {},
     "files": [],
-    "resultUrl": null,
+    "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result",
     "error": null,
     "createdAt": "2024-11-02T09:00:00.000Z",
     "updatedAt": "2024-11-02T09:00:01.000Z",

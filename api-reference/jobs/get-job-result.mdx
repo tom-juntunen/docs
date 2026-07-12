@@ -69,8 +69,8 @@ curl --request GET \
       ISO 8601 timestamp after which the job and its result are no longer accessible.
     </ResponseField>
 
-    <ResponseField name="resultUrl" type="string | null">
-      Pre-signed URL to the result JSON object. Populated for completed jobs.
+    <ResponseField name="resultUrl" type="string">
+      API path for this result JSON object.
     </ResponseField>
 
     <ResponseField name="error" type="object | null">
@@ -194,7 +194,7 @@ curl --request GET \
     "createdAt": "2024-11-02T09:00:00.000Z",
     "completedAt": "2024-11-02T09:45:10.000Z",
     "expiresAt": "2024-11-09T09:00:00.000Z",
-    "resultUrl": "https://storage.plangrep.com/results/job_01hy3m8qtn2e5r7k9p0w4x1def?token=...",
+    "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result",
     "error": null
   },
   "usage": {

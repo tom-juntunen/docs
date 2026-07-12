@@ -87,8 +87,8 @@ curl --request POST \
       Metadata for each file attached to the job.
     </ResponseField>
 
-    <ResponseField name="resultUrl" type="string | null">
-      Pre-signed URL to the normalized result JSON, once the job reaches a completed state.
+    <ResponseField name="resultUrl" type="string">
+      API path for the normalized result JSON, such as `/api/open/v1/jobs/{jobId}/result`.
     </ResponseField>
 
     <ResponseField name="error" type="object | null">
@@ -128,6 +128,15 @@ curl --request POST \
     },
     "pageCount": 204,
     "successfulPageCount": 112,
+    "failedPageCount": 92,
+    "progress": {
+      "processedPages": 112,
+      "totalPages": 204,
+      "percent": 55,
+      "phase": "processing",
+      "message": "Files are being processed.",
+      "updatedAt": "2024-11-02T10:15:42.000Z"
+    },
     "billing": {
       "creditsDebited": 112
     },
@@ -138,7 +147,7 @@ curl --request POST \
         "status": "processing"
       }
     ],
-    "resultUrl": null,
+    "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result",
     "error": null,
     "createdAt": "2024-11-02T09:00:00.000Z",
     "updatedAt": "2024-11-02T10:15:42.000Z",

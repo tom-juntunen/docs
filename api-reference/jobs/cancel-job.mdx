@@ -87,8 +87,8 @@ curl --request POST \
       Metadata for each file that was attached to the job.
     </ResponseField>
 
-    <ResponseField name="resultUrl" type="string | null">
-      Always `null` for cancelled jobs — no result is generated.
+    <ResponseField name="resultUrl" type="string">
+      API path for the normalized result JSON, such as `/api/open/v1/jobs/{jobId}/result`. Cancelled jobs do not produce a readable result; calling the result endpoint before completion returns an error.
     </ResponseField>
 
     <ResponseField name="error" type="object | null">
@@ -128,6 +128,15 @@ curl --request POST \
     },
     "pageCount": 204,
     "successfulPageCount": 63,
+    "failedPageCount": 141,
+    "progress": {
+      "processedPages": 63,
+      "totalPages": 204,
+      "percent": 31,
+      "phase": "complete",
+      "message": "Job was cancelled.",
+      "updatedAt": "2024-11-02T09:22:17.000Z"
+    },
     "billing": {
       "creditsDebited": 63
     },
@@ -138,7 +147,7 @@ curl --request POST \
         "status": "cancelled"
       }
     ],
-    "resultUrl": null,
+    "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result",
     "error": null,
     "createdAt": "2024-11-02T09:00:00.000Z",
     "updatedAt": "2024-11-02T09:22:17.000Z",

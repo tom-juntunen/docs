@@ -65,7 +65,7 @@ These limits are enforced at the time you register or upload files. Requests tha
 
 ## Fetching Results
 
-Once a job reaches `completed` or `completed_with_errors`, the `resultUrl` field on the job object contains the URL to fetch the normalized result JSON. You can also use:
+The `resultUrl` field on the job object contains the API path for the normalized result JSON. Fetch it after the job reaches `completed` or `completed_with_errors`:
 
 ```bash
 GET /api/open/v1/jobs/{jobId}/result
@@ -89,7 +89,12 @@ The `expiresAt` field on a job shows when result data will be permanently delete
 | `status` | string | Current job status (see table above) |
 | `limits.maxDeclaredBytes` | number | Max total file size in bytes |
 | `limits.maxFiles` | number | Max number of files |
-| `resultUrl` | string \| null | URL to fetch result JSON once completed |
+| `displayName` | string | Human-readable job label for UI and logs |
+| `activityLabel` | string | Activity-feed label, currently matching `displayName` |
+| `project` | object | Parent project summary when available |
+| `progress` | object | Processed page count, total pages, percent, phase, message, and update timestamp |
+| `failedPageCount` | number | Pages that failed or have not completed successfully |
+| `resultUrl` | string | API path to fetch result JSON after completion |
 | `expiresAt` | string \| null | ISO 8601 timestamp when result data expires |
 | `createdAt` | string | ISO 8601 timestamp when the job was created |
 | `updatedAt` | string | ISO 8601 timestamp of the most recent update |

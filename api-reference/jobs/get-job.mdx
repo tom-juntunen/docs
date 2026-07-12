@@ -41,6 +41,14 @@ curl --request GET \
       Unique identifier for the job.
     </ResponseField>
 
+    <ResponseField name="displayName" type="string" required>
+      Human-readable display name for the job. Uses `externalId` when supplied, otherwise falls back to the project name and creation date.
+    </ResponseField>
+
+    <ResponseField name="activityLabel" type="string" required>
+      Label suitable for activity feeds and dashboard rows. Currently matches `displayName`.
+    </ResponseField>
+
     <ResponseField name="externalId" type="string | null">
       Client-supplied correlation ID, or `null` if none was provided at creation.
     </ResponseField>
@@ -51,6 +59,20 @@ curl --request GET \
 
     <ResponseField name="projectId" type="string" required>
       The ID of the parent project.
+    </ResponseField>
+
+    <ResponseField name="project" type="object">
+      Parent project summary, when available.
+
+      <Expandable title="project fields">
+        <ResponseField name="id" type="string" required>
+          Parent project ID.
+        </ResponseField>
+
+        <ResponseField name="name" type="string" required>
+          Parent project name.
+        </ResponseField>
+      </Expandable>
     </ResponseField>
 
     <ResponseField name="limits" type="object" required>
@@ -75,6 +97,40 @@ curl --request GET \
       Number of pages processed without errors so far.
     </ResponseField>
 
+    <ResponseField name="failedPageCount" type="integer" required>
+      Number of pages that have failed or have not completed successfully.
+    </ResponseField>
+
+    <ResponseField name="progress" type="object" required>
+      Dashboard-friendly progress summary for the job.
+
+      <Expandable title="progress fields">
+        <ResponseField name="processedPages" type="integer" required>
+          Number of pages processed successfully.
+        </ResponseField>
+
+        <ResponseField name="totalPages" type="integer" required>
+          Total pages submitted for processing.
+        </ResponseField>
+
+        <ResponseField name="percent" type="integer" required>
+          Completion percentage from `0` to `100`.
+        </ResponseField>
+
+        <ResponseField name="phase" type="string" required>
+          Coarse progress phase: `provisioning`, `upload`, `preflight`, `processing`, or `complete`.
+        </ResponseField>
+
+        <ResponseField name="message" type="string" required>
+          Human-readable status message.
+        </ResponseField>
+
+        <ResponseField name="updatedAt" type="string" required>
+          ISO 8601 timestamp of the latest job update.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
     <ResponseField name="billing" type="object" required>
       Billing snapshot for the job.
     </ResponseField>
@@ -83,8 +139,8 @@ curl --request GET \
       Metadata for each file attached to the job.
     </ResponseField>
 
-    <ResponseField name="resultUrl" type="string | null">
-      Pre-signed URL to the normalized result JSON. Populated once status is `completed` or `completed_with_errors`. Use [Get Job Result](/api-reference/jobs/get-job-result) to retrieve the structured result.
+    <ResponseField name="resultUrl" type="string">
+      API path for the normalized result JSON, such as `/api/open/v1/jobs/{jobId}/result`. Use [Get Job Result](/api-reference/jobs/get-job-result) after the job reaches `completed` or `completed_with_errors`.
     </ResponseField>
 
     <ResponseField name="error" type="object | null">
@@ -140,15 +196,30 @@ Jobs in these states will not change further. Results (if any) can be retrieved.
 {
   "job": {
     "id": "job_01hy3m8qtn2e5r7k9p0w4x1def",
+    "displayName": "order-7890",
+    "activityLabel": "order-7890",
     "externalId": "order-7890",
     "status": "processing",
     "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+    "project": {
+      "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
+      "name": "Downtown Office Tower"
+    },
     "limits": {
       "maxDeclaredBytes": 10000000000,
       "maxFiles": 100
     },
     "pageCount": 204,
     "successfulPageCount": 87,
+    "failedPageCount": 117,
+    "progress": {
+      "processedPages": 87,
+      "totalPages": 204,
+      "percent": 43,
+      "phase": "processing",
+      "message": "Files are being processed.",
+      "updatedAt": "2024-11-02T09:07:35.000Z"
+    },
     "billing": {
       "creditsDebited": 87
     },
@@ -159,7 +230,7 @@ Jobs in these states will not change further. Results (if any) can be retrieved.
         "status": "processing"
       }
     ],
-    "resultUrl": null,
+    "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result",
     "error": null,
     "createdAt": "2024-11-02T09:00:00.000Z",
     "updatedAt": "2024-11-02T09:07:35.000Z",
