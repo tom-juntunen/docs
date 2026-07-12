@@ -8,7 +8,7 @@ A Plangrep project is a persistent, organization-scoped container that holds all
 
 ## Creating a Project
 
-Create a project by posting a `name` to the projects endpoint. The name can be up to 180 characters and should be descriptive enough to identify the building, bid package, or phase it represents. Every project created through the API sets `projectKind` to `open_api` automatically — you don't need to specify this value.
+Create a project by posting a `name` to the projects endpoint. The name can be up to 180 characters and should be descriptive enough to identify the building, bid package, or phase it represents. Projects created through the Open API set `projectKind` to `open_api` automatically — you don't need to specify this value.
 
 ```bash
 POST /api/open/v1/projects
@@ -18,9 +18,12 @@ Content-Type: application/json
 
 ```json
 {
-  "name": "123 Main Street — SD Package"
+  "name": "123 Main Street - SD Package",
+  "disciplines": ["Architecture", "MEP"]
 }
 ```
+
+`disciplines` is optional. Pass up to 12 non-empty strings, each 80 characters or fewer. Duplicate values are removed case-insensitively.
 
 ## Project Status Lifecycle
 
@@ -78,7 +81,8 @@ Both endpoints accept a query and return ranked evidence records. Use semantic m
 |-------|------|-------------|
 | `id` | string | Unique project identifier |
 | `name` | string | Human-readable name (max 180 chars) |
-| `projectKind` | string | Always `open_api` for API-created projects |
+| `projectKind` | string | `open_api` for API-created projects; list and search responses can also include visible `workspace` projects |
+| `disciplines` | string[] | User-supplied discipline tags for the project |
 | `status` | string | `provisioning` or `ready` |
 | `runtime.status` | string | Underlying runtime state |
 | `runtime.upgradeStatus` | string \| null | Non-null when an upgrade is in progress |

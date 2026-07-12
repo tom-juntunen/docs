@@ -1,0 +1,101 @@
+---
+title: "Reconcile Project Source Index"
+sidebarTitle: "Reconcile Source Index"
+description: "POST /api/open/v1/projects/:projectId/source-index/reconcile — asks the project runtime to reconcile missing or stale source-index records."
+---
+
+Ask a project runtime to reconcile its source index. This is a maintenance endpoint for projects whose files and entities exist but source search is not yet available or appears stale.
+
+Most integrations do not need to call this during the normal upload flow. Use it when a project overview shows source rows but search capability is not ready.
+
+## Authentication
+
+Include an API key with the `jobs:write` scope as `Authorization: Bearer YOUR_API_KEY`.
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/projects/{projectId}/source-index/reconcile
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose source index should be reconciled.
+</ParamField>
+
+## Request Body
+
+<ParamField body="limit" type="integer" default="5">
+  Maximum number of source-index repair tasks to process in this request. Must be between **1** and **25**.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="project" type="Project" required>
+  The project record.
+</ResponseField>
+
+<ResponseField name="sourceIndex" type="object" required>
+  Runtime source-index reconciliation result.
+</ResponseField>
+
+<ResponseField name="overview" type="ProjectOverview" required>
+  Updated project overview after reconciliation.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/source-index/reconcile \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "limit": 10 }'
+```
+
+## Example Response
+
+```json
+{
+  "project": {
+    "id": "proj_abc123",
+    "name": "Downtown Tower",
+    "projectKind": "open_api",
+    "disciplines": [],
+    "status": "ready",
+    "runtime": {
+      "status": "ready",
+      "upgradeStatus": null
+    },
+    "createdAt": "2026-07-11T18:00:00.000Z",
+    "updatedAt": "2026-07-11T18:02:00.000Z"
+  },
+  "sourceIndex": {
+    "status": "ok"
+  },
+  "overview": {
+    "status": "ready",
+    "statusLabel": "Ready",
+    "counts": {
+      "files": 2,
+      "sheets": 48,
+      "regions": 310,
+      "vectors": 1200,
+      "vectorChunks": 1200,
+      "normalizedRegions": 310,
+      "specifications": 1,
+      "docs": 4
+    },
+    "disciplines": [],
+    "latestJob": null,
+    "nextAction": null,
+    "capabilities": {
+      "canCreateJob": true,
+      "canUpload": true,
+      "canSearch": true,
+      "canVectorize": false,
+      "canNormalize": false
+    }
+  }
+}
+```

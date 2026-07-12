@@ -1,10 +1,10 @@
 ---
-title: "Get API Project State"
+title: "Get Project State"
 sidebarTitle: "Get Project"
 description: "GET /api/open/v1/projects/:projectId — retrieves the current state of a single project. Use for polling readiness after creation before submitting jobs."
 ---
 
-Fetch the current state of a single API project by its ID. This is the primary endpoint for polling a project after creation — call it repeatedly until `status` transitions to `ready` before submitting jobs.
+Fetch the current state of a single project by its ID. This is the primary endpoint for polling a project after creation — call it repeatedly until `status` transitions to `ready` before submitting jobs.
 
 ## Authentication
 
@@ -45,8 +45,12 @@ curl --request GET \
       Human-readable display name for the project.
     </ResponseField>
 
-    <ResponseField name="projectKind" type='"open_api"' required>
-      Always `"open_api"` for API-created projects.
+    <ResponseField name="projectKind" type='"open_api" | "workspace"' required>
+      Project type. API-created projects are `open_api`; projects created in the Plangrep app are `workspace`.
+    </ResponseField>
+
+    <ResponseField name="disciplines" type="string[]" required>
+      User-supplied discipline tags for this project.
     </ResponseField>
 
     <ResponseField name="status" type="string" required>
@@ -88,10 +92,11 @@ curl --request GET \
     "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
     "name": "Downtown Office Tower",
     "projectKind": "open_api",
+    "disciplines": ["Architecture", "MEP"],
     "status": "ready",
     "runtime": {
-      "status": "running",
-      "upgradeStatus": "none"
+      "status": "ready",
+      "upgradeStatus": null
     },
     "createdAt": "2024-11-01T14:22:10.000Z",
     "updatedAt": "2024-11-01T14:24:05.000Z"

@@ -1,0 +1,130 @@
+---
+title: "Get Project Overview"
+sidebarTitle: "Get Overview"
+description: "GET /api/open/v1/projects/:projectId/overview — returns dashboard-oriented project counts, latest job state, source-index readiness, and next actions."
+---
+
+Fetch a dashboard-oriented overview for one project. The overview combines control-plane project state with runtime source-catalog counts when the project runtime is ready.
+
+Use this endpoint to decide whether a project can accept uploads, whether source search is available, and whether maintenance actions such as source-index reconciliation or region normalization are useful.
+
+## Authentication
+
+Include an API key with the `jobs:read` scope as `Authorization: Bearer YOUR_API_KEY`.
+
+## Endpoint
+
+```
+GET https://plangrep.com/api/open/v1/projects/{projectId}/overview
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project to inspect.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="project" type="Project" required>
+  The project record. See [Get Project](/api-reference/projects/get-project) for the `Project` fields.
+</ResponseField>
+
+<ResponseField name="overview" type="ProjectOverview" required>
+  Dashboard-oriented source and readiness state for the project.
+
+  <Expandable title="ProjectOverview fields">
+    <ResponseField name="status" type="string" required>
+      High-level state for the project overview. Common values are `provisioning`, `processing`, `ready`, and `error`.
+    </ResponseField>
+
+    <ResponseField name="statusLabel" type="string" required>
+      Human-readable label for `status`.
+    </ResponseField>
+
+    <ResponseField name="counts" type="object" required>
+      Source-catalog counts. Includes `files`, `sheets`, `regions`, `vectors`, `vectorChunks`, `normalizedRegions`, `specifications`, and `docs`.
+    </ResponseField>
+
+    <ResponseField name="disciplines" type="object[]" required>
+      Detected discipline summaries, each with `code`, `label`, and `count`.
+    </ResponseField>
+
+    <ResponseField name="latestJob" type="object | null" required>
+      Latest processing job for this project, or `null` if no jobs exist.
+    </ResponseField>
+
+    <ResponseField name="nextAction" type="string | null" required>
+      Suggested next action. Common values are `wait`, `upload`, `vectorize`, `normalize`, or `null`.
+    </ResponseField>
+
+    <ResponseField name="capabilities" type="object" required>
+      Booleans indicating what the project can currently do: `canCreateJob`, `canUpload`, `canSearch`, `canVectorize`, and `canNormalize`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl https://plangrep.com/api/open/v1/projects/proj_abc123/overview \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Example Response
+
+```json
+{
+  "project": {
+    "id": "proj_abc123",
+    "name": "Downtown Tower",
+    "projectKind": "open_api",
+    "disciplines": ["Architecture", "MEP"],
+    "status": "ready",
+    "runtime": {
+      "status": "ready",
+      "upgradeStatus": null
+    },
+    "createdAt": "2026-07-11T18:00:00.000Z",
+    "updatedAt": "2026-07-11T18:02:00.000Z"
+  },
+  "overview": {
+    "status": "ready",
+    "statusLabel": "Ready",
+    "counts": {
+      "files": 2,
+      "sheets": 48,
+      "regions": 310,
+      "vectors": 1200,
+      "vectorChunks": 1200,
+      "normalizedRegions": 310,
+      "specifications": 1,
+      "docs": 4
+    },
+    "disciplines": [
+      { "code": "ARCH", "label": "Architectural", "count": 1 },
+      { "code": "MECH", "label": "Mechanical", "count": 1 }
+    ],
+    "latestJob": {
+      "id": "open_api_job_abc123",
+      "status": "completed",
+      "createdAt": "2026-07-11T18:05:00.000Z",
+      "updatedAt": "2026-07-11T18:45:00.000Z",
+      "completedAt": "2026-07-11T18:45:00.000Z",
+      "error": null
+    },
+    "nextAction": null,
+    "capabilities": {
+      "canCreateJob": true,
+      "canUpload": true,
+      "canSearch": true,
+      "canVectorize": false,
+      "canNormalize": false
+    }
+  }
+}
+```
+
+<Tip>
+  To include the same overview object on each row from [List Projects](/api-reference/projects/list-projects), call `GET /api/open/v1/projects?include=overview`.
+</Tip>

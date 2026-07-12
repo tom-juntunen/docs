@@ -1,0 +1,130 @@
+---
+title: "Normalize Project Regions"
+sidebarTitle: "Normalize Regions"
+description: "POST /api/open/v1/projects/:projectId/regions/normalize — schedules repair for ready documents that are missing normalized region data."
+---
+
+Schedule a normalization repair job for project regions. This endpoint is useful when a project has extracted regions but some ready documents are missing `normalizedData` on region entities or evidence records.
+
+Most integrations do not need to call this during the normal upload flow. Use it when [Get Project Overview](/api-reference/projects/get-project-overview) reports that `counts.regions` is greater than `counts.normalizedRegions`.
+
+## Authentication
+
+Include an API key with the `jobs:write` scope as `Authorization: Bearer YOUR_API_KEY`.
+
+## Endpoint
+
+```
+POST https://plangrep.com/api/open/v1/projects/{projectId}/regions/normalize
+```
+
+## Path Parameters
+
+<ParamField path="projectId" type="string" required>
+  The unique identifier of the project whose regions should be normalized.
+</ParamField>
+
+## Request Body
+
+<ParamField body="mode" type="string" default="missing_normalized_regions">
+  Normalization mode. The only supported value is `missing_normalized_regions`.
+</ParamField>
+
+<ParamField body="documentIds" type="string[]">
+  Optional list of document IDs to repair. When omitted, Plangrep considers every ready document in the project.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="project" type="Project" required>
+  The project record.
+</ResponseField>
+
+<ResponseField name="normalization" type="object" required>
+  Scheduling result for the normalization repair.
+
+  <Expandable title="normalization fields">
+    <ResponseField name="scheduledDocumentCount" type="integer" required>
+      Number of ready documents scheduled for normalization repair.
+    </ResponseField>
+
+    <ResponseField name="skippedDocumentCount" type="integer" required>
+      Number of ready documents skipped.
+    </ResponseField>
+
+    <ResponseField name="mode" type="string" required>
+      Normalization mode used for this request.
+    </ResponseField>
+
+    <ResponseField name="jobId" type="string | null" required>
+      Internal repair job ID, or `null` when no documents needed repair.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="overview" type="ProjectOverview" required>
+  Updated project overview.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/regions/normalize \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "mode": "missing_normalized_regions" }'
+```
+
+## Example Response
+
+```json
+{
+  "project": {
+    "id": "proj_abc123",
+    "name": "Downtown Tower",
+    "projectKind": "open_api",
+    "disciplines": [],
+    "status": "ready",
+    "runtime": {
+      "status": "ready",
+      "upgradeStatus": null
+    },
+    "createdAt": "2026-07-11T18:00:00.000Z",
+    "updatedAt": "2026-07-11T18:02:00.000Z"
+  },
+  "normalization": {
+    "scheduledDocumentCount": 2,
+    "skippedDocumentCount": 0,
+    "mode": "missing_normalized_regions",
+    "jobId": "container_job_abc123"
+  },
+  "overview": {
+    "status": "ready",
+    "statusLabel": "Ready",
+    "counts": {
+      "files": 2,
+      "sheets": 48,
+      "regions": 310,
+      "vectors": 1200,
+      "vectorChunks": 1200,
+      "normalizedRegions": 120,
+      "specifications": 1,
+      "docs": 4
+    },
+    "disciplines": [],
+    "latestJob": null,
+    "nextAction": "normalize",
+    "capabilities": {
+      "canCreateJob": true,
+      "canUpload": true,
+      "canSearch": true,
+      "canVectorize": false,
+      "canNormalize": true
+    }
+  }
+}
+```
+
+<Note>
+  The endpoint returns `202 Accepted` when a repair job is scheduled. If no ready documents match the request, it returns `200 OK` with `scheduledDocumentCount: 0` and `jobId: null`.
+</Note>

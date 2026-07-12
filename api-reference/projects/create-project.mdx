@@ -22,6 +22,10 @@ POST https://plangrep.com/api/open/v1/projects
   A human-readable name for the project. Maximum 180 characters. Must be unique within your organization.
 </ParamField>
 
+<ParamField body="disciplines" type="string[]">
+  Optional discipline tags for the project. You can pass up to 12 non-empty strings, each 80 characters or fewer. Duplicate values are removed case-insensitively.
+</ParamField>
+
 ## Example Request
 
 ```bash
@@ -31,7 +35,8 @@ curl --request POST \
   --header "Content-Type: application/json" \
   --header "Accept: application/json" \
   --data '{
-    "name": "My Project"
+    "name": "My Project",
+    "disciplines": ["Architecture", "MEP"]
   }'
 ```
 
@@ -53,6 +58,10 @@ The endpoint returns `202 Accepted` with the following body.
 
     <ResponseField name="projectKind" type='"open_api"' required>
       Always `"open_api"` for API-created projects.
+    </ResponseField>
+
+    <ResponseField name="disciplines" type="string[]" required>
+      User-supplied discipline tags for this project.
     </ResponseField>
 
     <ResponseField name="status" type="string" required>
@@ -109,10 +118,11 @@ The endpoint returns `202 Accepted` with the following body.
     "id": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
     "name": "My Project",
     "projectKind": "open_api",
+    "disciplines": ["Architecture", "MEP"],
     "status": "provisioning",
     "runtime": {
-      "status": "starting",
-      "upgradeStatus": "none"
+      "status": "provisioning",
+      "upgradeStatus": null
     },
     "createdAt": "2024-11-01T14:22:10.000Z",
     "updatedAt": "2024-11-01T14:22:10.000Z"

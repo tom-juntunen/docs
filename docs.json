@@ -69,13 +69,17 @@
               "api-reference/projects/list-projects",
               "api-reference/projects/create-project",
               "api-reference/projects/get-project",
+              "api-reference/projects/get-project-overview",
               "api-reference/projects/search-projects",
-              "api-reference/projects/get-project-summary"
+              "api-reference/projects/get-project-summary",
+              "api-reference/projects/reconcile-source-index",
+              "api-reference/projects/normalize-regions"
             ]
           },
           {
             "group": "Jobs",
             "pages": [
+              "api-reference/jobs/list-organization-jobs",
               "api-reference/jobs/list-jobs",
               "api-reference/jobs/create-job",
               "api-reference/jobs/get-job",
