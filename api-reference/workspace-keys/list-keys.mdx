@@ -13,7 +13,7 @@ Use this endpoint to retrieve every Open API key in your workspace alongside the
 ## Endpoint
 
 ```
-GET https://plangrep.com/api/open-api/keys
+GET https://plangrep.com/api/api-keys
 ```
 
 ## Authentication
@@ -47,7 +47,11 @@ Returns an `OpenApiKeyListResponse` object.
     </ResponseField>
 
     <ResponseField name="keyPrefix" type="string">
-      The first few characters of the plaintext key, used for identification. The full key is never returned after creation.
+      The short prefix embedded in the plaintext key, used for identification. The full key is never returned after creation.
+    </ResponseField>
+
+    <ResponseField name="keyLast4" type="string | null">
+      The last four characters of the plaintext key, used with `keyPrefix` to identify a key without revealing the secret.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
@@ -125,7 +129,7 @@ Returns an `OpenApiKeyListResponse` object.
 <CodeGroup>
 
 ```bash cURL
-curl https://plangrep.com/api/open-api/keys \
+curl https://plangrep.com/api/api-keys \
   -H "Cookie: plangrep_session=YOUR_SESSION_COOKIE"
 ```
 
@@ -139,7 +143,8 @@ curl https://plangrep.com/api/open-api/keys \
     {
       "id": "key_01hx3z...",
       "label": "Production Integration",
-      "keyPrefix": "pgk_live_abc1",
+      "keyPrefix": "abc123",
+      "keyLast4": "9f3a",
       "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
       "createdByUserId": "usr_01hx3y...",
       "hashVersion": "v1",

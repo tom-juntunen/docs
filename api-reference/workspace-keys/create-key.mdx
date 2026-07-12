@@ -13,7 +13,7 @@ Use this endpoint to generate a new Open API key with one or more permission sco
 ## Endpoint
 
 ```
-POST https://plangrep.com/api/open-api/keys
+POST https://plangrep.com/api/api-keys
 ```
 
 ## Authentication
@@ -65,7 +65,11 @@ Returns an `OpenApiKeyCreateResponse` object.
     </ResponseField>
 
     <ResponseField name="keyPrefix" type="string">
-      The first few characters of the plaintext key, used for identification in list views. The full key is only available in the `plaintextKey` field on this response.
+      The short prefix embedded in the plaintext key, used for identification in list views. The full key is only available in the `plaintextKey` field on this response.
+    </ResponseField>
+
+    <ResponseField name="keyLast4" type="string | null">
+      The last four characters of the plaintext key, used with `keyPrefix` to identify the key without revealing the secret.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
@@ -131,7 +135,7 @@ Returns an `OpenApiKeyCreateResponse` object.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://plangrep.com/api/open-api/keys \
+curl -X POST https://plangrep.com/api/api-keys \
   -H "Cookie: plangrep_session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -149,7 +153,8 @@ curl -X POST https://plangrep.com/api/open-api/keys \
   "key": {
     "id": "key_01hx3z...",
     "label": "My Integration Key",
-    "keyPrefix": "pgk_live_abc1",
+    "keyPrefix": "abc123",
+    "keyLast4": "9f3a",
     "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
     "createdByUserId": "usr_01hx3y...",
     "hashVersion": "v1",
@@ -159,7 +164,7 @@ curl -X POST https://plangrep.com/api/open-api/keys \
     "lastUsedIp": null,
     "revokedAt": null
   },
-  "plaintextKey": "pgk_live_abc1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "plaintextKey": "pgp_open_abc123_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx9f3a"
 }
 ```
 

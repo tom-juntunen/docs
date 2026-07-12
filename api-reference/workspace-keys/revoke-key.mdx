@@ -13,7 +13,7 @@ Use this endpoint to permanently disable a specific API key by its ID. Revocatio
 ## Endpoint
 
 ```
-POST https://plangrep.com/api/open-api/keys/{keyId}/revoke
+POST https://plangrep.com/api/api-keys/{keyId}/revoke
 ```
 
 ## Authentication
@@ -58,6 +58,10 @@ Returns an object with the revoked key record.
 
     <ResponseField name="keyPrefix" type="string">
       The prefix used to identify the key.
+    </ResponseField>
+
+    <ResponseField name="keyLast4" type="string | null">
+      The last four characters of the plaintext key, used with `keyPrefix` to identify the key without revealing the secret.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
@@ -105,7 +109,7 @@ Returns an object with the revoked key record.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://plangrep.com/api/open-api/keys/KEY_ID/revoke \
+curl -X POST https://plangrep.com/api/api-keys/KEY_ID/revoke \
   -H "Cookie: plangrep_session=YOUR_SESSION_COOKIE"
 ```
 
@@ -118,7 +122,8 @@ curl -X POST https://plangrep.com/api/open-api/keys/KEY_ID/revoke \
   "key": {
     "id": "key_01hx3z...",
     "label": "Production Integration",
-    "keyPrefix": "pgk_live_abc1",
+    "keyPrefix": "abc123",
+    "keyLast4": "9f3a",
     "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
     "createdByUserId": "usr_01hx3y...",
     "hashVersion": "v1",

@@ -17,7 +17,7 @@ Use this endpoint to revoke every active API key in your workspace in a single o
 ## Endpoint
 
 ```
-POST https://plangrep.com/api/open-api/keys/revoke-all
+POST https://plangrep.com/api/api-keys/revoke-all
 ```
 
 ## Authentication
@@ -54,6 +54,10 @@ Returns an object containing all key records after revocation.
 
     <ResponseField name="keyPrefix" type="string">
       The prefix used to identify the key.
+    </ResponseField>
+
+    <ResponseField name="keyLast4" type="string | null">
+      The last four characters of the plaintext key, used with `keyPrefix` to identify the key without revealing the secret.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
@@ -101,7 +105,7 @@ Returns an object containing all key records after revocation.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://plangrep.com/api/open-api/keys/revoke-all \
+curl -X POST https://plangrep.com/api/api-keys/revoke-all \
   -H "Cookie: plangrep_session=YOUR_SESSION_COOKIE"
 ```
 
@@ -115,7 +119,8 @@ curl -X POST https://plangrep.com/api/open-api/keys/revoke-all \
     {
       "id": "key_01hx3z...",
       "label": "Production Integration",
-      "keyPrefix": "pgk_live_abc1",
+      "keyPrefix": "abc123",
+      "keyLast4": "9f3a",
       "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
       "createdByUserId": "usr_01hx3y...",
       "hashVersion": "v1",
@@ -128,7 +133,8 @@ curl -X POST https://plangrep.com/api/open-api/keys/revoke-all \
     {
       "id": "key_01hx4a...",
       "label": "Staging Key",
-      "keyPrefix": "pgk_live_xyz9",
+      "keyPrefix": "def456",
+      "keyLast4": "1c8d",
       "scopes": ["jobs:read"],
       "createdByUserId": "usr_01hx3y...",
       "hashVersion": "v1",
