@@ -47,7 +47,7 @@ The response includes a ranked list of matching source records:
 }
 ```
 
-Each hit includes a relevance `score` for semantic search, a `snippet` of matching text, and source metadata. For specification hits, use `source.documentId` as the specification document ID and the section ID encoded in `source.id` or `sourceCatalogUri` with [Get Spec Section](/api-reference/project-reads/get-specification-section) to retrieve full section text and structured evidence. For non-specification hits, you can use `sourceCatalogUri` with [Reading bounded source text](#reading-bounded-source-text).
+Each hit includes a relevance `score` for semantic search, a `snippet` of matching text, and source metadata. For specification hits, use `source.documentId` as the specification document ID and the section ID encoded in `source.id` or `sourceCatalogUri` with [Get Spec Section](/api-reference/project-reads/get-specification-section) to retrieve full section text and structured evidence. For non-specification hits, you can use `sourceCatalogUri` with [reading bounded source text](#read-bounded-source-text).
 
 <Note>
   `mode: "semantic"` returns `409 Conflict` when the vector index is not ready. `mode: "auto"` returns `status: "keyword_search_required"` with next actions so agent clients can issue a focused `grep` or `regex` follow-up.
@@ -70,7 +70,7 @@ Narrow your search using any combination of these optional filter fields in the 
 
 | Filter | Description |
 |---|---|
-| `classification` | Restrict to `plans`, `specifications`, `documents`, `addenda`, `mixed`, or `other` |
+| `classification` | Restrict to analyzed file classifications: `plans`, `specifications`, `documents`, or `mixed` |
 | `entityTypes` | Limit results to specific entity types |
 | `regionKind` | Filter regions by kind (for example `detail`, `keynotes`, `schedule`) |
 | `regionFamily` | Filter by region family |

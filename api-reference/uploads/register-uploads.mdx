@@ -57,10 +57,11 @@ Authorization: Bearer YOUR_API_KEY
     A 64-character lowercase hex string — the SHA-256 digest of the **exact bytes** you will upload. Used for integrity verification and deduplication.
   </ParamField>
 
-  <ParamField body="files[].classification" type="string">
-    Document classification hint. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`. Omit to allow Plangrep to auto-classify based on file content.
-  </ParamField>
 </ParamField>
+
+<Note>
+  Classification is not an upload input. Requests that supply it are rejected. Plangrep analyzes file content during preflight and assigns `plans`, `specifications`, `documents`, or `mixed`.
+</Note>
 
 ### Supported file types
 

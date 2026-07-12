@@ -104,23 +104,12 @@ Submit your construction documents using `POST /api/open/v1/jobs/{jobId}/files` 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/files \
   -H "Authorization: Bearer YOUR_API_KEY" \
-  -F 'metadata={"files":[{"partName":"file0","fileName":"floor-plan.pdf","contentType":"application/pdf","classification":"plans"},{"partName":"file1","fileName":"spec-book.pdf","contentType":"application/pdf","classification":"specifications"}]}' \
+  -F 'metadata={"files":[{"partName":"file0","fileName":"floor-plan.pdf","contentType":"application/pdf"},{"partName":"file1","fileName":"spec-book.pdf","contentType":"application/pdf"}]}' \
   -F 'file0=@floor-plan.pdf' \
   -F 'file1=@spec-book.pdf'
 ```
 
-The `classification` field tells Plangrep how to interpret each file. Supported values are:
-
-| Value | Description |
-|---|---|
-| `plans` | Construction drawings and floor plans |
-| `specifications` | Project specification books |
-| `documents` | General project documents |
-| `addenda` | Addenda and bulletins |
-| `mixed` | Files containing multiple content types |
-| `other` | Anything that does not fit the above |
-
-Omit `classification` to let Plangrep auto-classify the file based on its content.
+Do not include `classification` in upload metadata. Upload overrides are rejected. During preflight, Plangrep analyzes the file bytes and assigns `plans`, `specifications`, `documents`, or `mixed`. The filename does not determine the result.
 
 The response returns an `uploads` array with a `documentId` for each uploaded file. Store these IDs if you need to reference individual documents later.
 
@@ -139,7 +128,7 @@ curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads/complete \
   -d '{}'
 ```
 
-The job transitions first to `preflighting` (where Plangrep validates your files and checks credits) and then to `processing`. See [Polling & Webhooks](/guides/polling-and-webhooks) to track progress from here.
+The job transitions first to `preflighting`, where Plangrep validates each file, analyzes page families, and reserves credits from the resulting page counts. It then transitions to `processing`. See [Polling & Webhooks](/guides/polling-and-webhooks) to track progress from here.
 
 </Steps>
 

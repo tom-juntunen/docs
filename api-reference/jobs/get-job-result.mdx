@@ -92,27 +92,27 @@ curl --request GET \
     </ResponseField>
 
     <ResponseField name="drawingPageCount" type="integer" required>
-      Total number of pages classified as drawings.
+      Total number of analyzed plan pages.
     </ResponseField>
 
     <ResponseField name="documentPageCount" type="integer" required>
-      Total number of pages classified as documents.
+      Total number of analyzed specification and document pages.
     </ResponseField>
 
     <ResponseField name="successfulDrawingPageCount" type="integer" required>
-      Drawing pages that were processed successfully.
+      Analyzed plan pages that were processed successfully.
     </ResponseField>
 
     <ResponseField name="successfulDocumentPageCount" type="integer" required>
-      Document pages that were processed successfully.
+      Analyzed specification and document pages that were processed successfully.
     </ResponseField>
 
     <ResponseField name="drawingCreditsPerPage" type="integer" required>
-      Credits charged per successfully processed drawing page. Default: `10`.
+      Credits charged per successfully processed plan page. Default: `10`.
     </ResponseField>
 
     <ResponseField name="documentCreditsPerPage" type="integer" required>
-      Credits charged per successfully processed document page. Default: `1`.
+      Credits charged per successfully processed specification or document page. Default: `1`.
     </ResponseField>
 
     <ResponseField name="creditsDebited" type="integer" required>

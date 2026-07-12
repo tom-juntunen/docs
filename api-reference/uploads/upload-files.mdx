@@ -38,6 +38,10 @@ Authorization: Bearer YOUR_API_KEY
 
 The request body is a multipart form with a required `metadata` part and one or more binary file parts.
 
+<Note>
+  Do not include a classification in `metadata`. Upload overrides are rejected. Plangrep assigns `plans`, `specifications`, `documents`, or `mixed` during preflight.
+</Note>
+
 ### metadata Part
 
 <ParamField body="metadata" type="string" required>
@@ -56,10 +60,6 @@ The request body is a multipart form with a required `metadata` part and one or 
 
   <ParamField body="contentType" type="string">
     MIME type of the file (for example `application/pdf`, `text/markdown`, or `application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
-  </ParamField>
-
-  <ParamField body="classification" type="string">
-    Document classification hint. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`. Omit to allow Plangrep to auto-classify.
   </ParamField>
 
   <ParamField body="sha256" type="string">
@@ -102,14 +102,12 @@ The declared `fileName` extension and `contentType` must agree. Supported upload
     {
       "partName": "file0",
       "fileName": "drawings.pdf",
-      "contentType": "application/pdf",
-      "classification": "plans"
+      "contentType": "application/pdf"
     },
     {
       "partName": "file1",
       "fileName": "specs.pdf",
-      "contentType": "application/pdf",
-      "classification": "specifications"
+      "contentType": "application/pdf"
     }
   ]
 }
@@ -157,8 +155,8 @@ The declared `fileName` extension and `contentType` must agree. Supported upload
     File size in bytes.
   </ResponseField>
 
-  <ResponseField name="uploads[].classification" type="string">
-    Document classification applied to this file.
+  <ResponseField name="uploads[].classification" type="string | null">
+    Analyzed file classification. This is `null` until preflight determines `plans`, `specifications`, `documents`, or `mixed`.
   </ResponseField>
 
   <ResponseField name="uploads[].status" type="string">
@@ -179,7 +177,7 @@ The declared `fileName` extension and `contentType` must agree. Supported upload
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/files \
   -H "Authorization: Bearer YOUR_API_KEY" \
-  -F 'metadata={"files":[{"partName":"file0","fileName":"drawings.pdf","contentType":"application/pdf","classification":"plans"}]}' \
+  -F 'metadata={"files":[{"partName":"file0","fileName":"drawings.pdf","contentType":"application/pdf"}]}' \
   -F 'file0=@drawings.pdf'
 ```
 
@@ -200,7 +198,7 @@ curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/files \
       "fileName": "drawings.pdf",
       "contentType": "application/pdf",
       "fileSize": 2048576,
-      "classification": "plans",
+      "classification": null,
       "status": "uploaded",
       "skippedReason": null
     }

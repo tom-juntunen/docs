@@ -61,14 +61,12 @@ Send a `multipart/form-data` request with:
       "partName": "file0",
       "fileName": "A101-floor-plan.pdf",
       "contentType": "application/pdf",
-      "classification": "plans",
       "sha256": "optional-64-char-hex-digest"
     },
     {
       "partName": "file1",
       "fileName": "Division-03-concrete-spec.pdf",
-      "contentType": "application/pdf",
-      "classification": "specifications"
+      "contentType": "application/pdf"
     }
   ]
 }
@@ -80,19 +78,15 @@ Send a `multipart/form-data` request with:
 | `files[].partName` | Yes | Must match the form part name (`file0`, `file1`, …) |
 | `files[].fileName` | Yes | Original file name including extension |
 | `files[].contentType` | Yes | MIME type of the file |
-| `files[].classification` | No | See classification enum below. Omit to auto-classify. |
 | `files[].sha256` | No | 64-character lowercase hex SHA-256 digest for integrity verification |
 
-### File classification enum
+### Classification during preflight
 
-| Value | Use when |
-|-------|----------|
-| `plans` | Construction drawing sets |
-| `specifications` | Project specification books |
-| `documents` | General project documents |
-| `addenda` | Issued addenda |
-| `mixed` | A single file containing multiple document types |
-| `other` | Anything that doesn't fit another category |
+Do not send a classification with an upload. Plangrep determines it from the file during preflight, and rejects upload requests that try to supply an override.
+
+For PDFs, every page is analyzed as a plan, specification, or document page. A file with one page family becomes `plans`, `specifications`, or `documents`. A file containing more than one page family becomes `mixed`. Non-PDF office and text formats are currently classified as `documents`.
+
+Classification is based on file content and page evidence, not the filename. Upload responses may return `classification: null` until preflight finishes.
 
 ### Response
 
@@ -226,4 +220,4 @@ Include completion tokens so Plangrep can finalize the uploads:
 
 ### After completing
 
-The response includes the updated job state. The job transitions to `preflighting` while Plangrep validates the files, then moves to `processing`. Poll GET `/api/open/v1/jobs/{jobId}` or use your `webhookUrl` to track progress.
+The response includes the updated job state. The job transitions to `preflighting` while Plangrep validates each file, analyzes its page families, and calculates billing counts. It then moves to `processing`. Poll GET `/api/open/v1/jobs/{jobId}` or use your `webhookUrl` to track progress.

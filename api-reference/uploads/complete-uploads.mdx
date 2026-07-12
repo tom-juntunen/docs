@@ -6,7 +6,7 @@ description: "POST /api/open/v1/jobs/:jobId/uploads/complete — closes the uplo
 
 ## Overview
 
-After all files have been uploaded to a job, call this endpoint to close the upload window and trigger Plangrep processing. The job transitions through `preflighting` and then into `processing`.
+After all files have been uploaded to a job, call this endpoint to close the upload window and trigger Plangrep processing. During `preflighting`, Plangrep validates each file, analyzes its page families, assigns the canonical file classification, and reserves credits from the analyzed counts. The job then enters `processing`.
 
 This endpoint is safe to call multiple times with the same `Idempotency-Key` — duplicate calls within the idempotency window return the original response without re-triggering processing.
 
@@ -101,7 +101,7 @@ For jobs using [registered uploads](/api-reference/uploads/register-uploads), th
 **Status: `202 Accepted`**
 
 <ResponseField name="job" type="object">
-  The updated Job object. Immediately after this call the job status will begin transitioning to `preflighting`, then `processing`.
+  The updated Job object. Immediately after this call the job status begins transitioning to `preflighting`, then `processing`.
 </ResponseField>
 
 <ResponseField name="idempotent" type="boolean">

@@ -41,7 +41,7 @@ Idempotency-Key: your-unique-key-here
 | `provisioning` | Job is being set up. |
 | `awaiting_uploads` | Job is ready to accept file uploads. |
 | `uploading` | Files are actively being transferred. |
-| `preflighting` | Files received; Plangrep is validating them before processing begins. |
+| `preflighting` | Files received; Plangrep is validating them, analyzing page families, and reserving credits. |
 | `blocked_insufficient_credits` | Processing paused because your organization has insufficient credits. |
 | `processing` | Plangrep is actively extracting entities from your documents. |
 | `completed` | All pages processed successfully. Results are available. |

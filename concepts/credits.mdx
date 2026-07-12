@@ -4,14 +4,14 @@ sidebarTitle: "Credits"
 description: "Learn how Plangrep credits work, how many are charged per drawing or document page, and what happens when credits run low during a job."
 ---
 
-Plangrep uses a credit-based billing model. Credits are charged per page processed, with different rates for drawing pages (construction plan sheets) versus document pages (specifications, addenda, or other documents).
+Plangrep uses a credit-based billing model. Credits are charged per page processed. Plan pages use the drawing-page rate. Specification and document pages use the document-page rate.
 
 ## Credit Rates
 
 | Page type | Default credits per page |
 |-----------|--------------------------|
-| Drawing page | 10 credits |
-| Document page | 1 credit |
+| Drawing page (`plan` family) | 10 credits |
+| Document page (`specification` or `document` family) | 1 credit |
 
 Your organization's actual rates are shown in the `drawingCreditsPerPage` and `documentCreditsPerPage` fields of the `OpenApiProfile` object returned by the workspace keys endpoint. Use those values — not the defaults above — when estimating costs for your specific account.
 
@@ -34,7 +34,7 @@ Credits move through two stages during a job's lifecycle:
 
 <Steps>
   <Step title="Reserved at preflight">
-    When a job transitions to `preflighting`, Plangrep estimates the total pages based on declared file sizes and **reserves** (`creditsReserved`) that amount from your balance. This prevents other jobs from over-drawing your account concurrently.
+    When a job transitions to `preflighting`, Plangrep analyzes every page, calculates exact plan and document-priced page counts, and **reserves** (`creditsReserved`) the corresponding amount from your balance. This prevents other jobs from over-drawing your account concurrently.
   </Step>
   <Step title="Debited on success">
     As each page is successfully processed, credits are **debited** (`creditsDebited`) from your balance. Only successfully processed pages consume credits — failed pages are not charged.
@@ -91,8 +91,8 @@ If your organization's credit balance is exhausted while a job is processing, th
 | `creditsReserved` | Credits currently held in reserve for this job |
 | `drawingCreditsPerPage` | Rate applied to drawing pages for this job |
 | `documentCreditsPerPage` | Rate applied to document pages for this job |
-| `drawingPageCount` | Drawing pages processed so far |
-| `documentPageCount` | Document pages processed so far |
+| `drawingPageCount` | Analyzed plan pages processed so far |
+| `documentPageCount` | Analyzed specification and document pages processed so far |
 | `successfulPageCount` | Total pages that completed without error |
 
 ### On every Result object (`ResultUsage`)

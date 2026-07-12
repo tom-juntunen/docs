@@ -37,7 +37,7 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/files/{fileId}
 </ParamField>
 
 <ParamField query="classification" type="string">
-  Optional filter by file classification. One of: `plans`, `specifications`, `documents`, `addenda`, `mixed`, `other`.
+  Optional filter by analyzed file classification. One of: `plans`, `specifications`, `documents`, `mixed`.
 </ParamField>
 
 <ParamField query="status" type="string">
@@ -58,8 +58,8 @@ Returns an object containing the matching file entity.
     <ResponseField name="fileName" type="string">
       Original name of the uploaded file.
     </ResponseField>
-    <ResponseField name="classification" type="string">
-      Plangrep classification of the file: `plans`, `specifications`, `documents`, `addenda`, `mixed`, or `other`.
+    <ResponseField name="classification" type="string | null">
+      Analyzed file classification: `plans`, `specifications`, `documents`, or `mixed`. This is `null` while analysis is pending.
     </ResponseField>
     <ResponseField name="status" type="string">
       Current processing status of the file.

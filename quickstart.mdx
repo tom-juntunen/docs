@@ -71,7 +71,7 @@ curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
 {}
 ```
 
-All fields are optional. You can pass a `webhookUrl` here to receive a callback when the job finishes instead of polling — see [Step 5](#step-5-poll-for-completion) for details.
+All fields are optional. You can pass a `webhookUrl` here to receive a callback when the job finishes instead of polling. See [Polling and webhooks](/guides/polling-and-webhooks) for details.
 
 **Response (202)**
 
@@ -132,7 +132,7 @@ An empty JSON body completes all server-stored files for this job.
 }
 ```
 
-Plangrep now validates your uploads and begins processing.
+Plangrep now validates each upload, analyzes its page families, calculates the billing counts, and begins processing.
 
 </Step>
 
@@ -152,7 +152,7 @@ curl https://plangrep.com/api/open/v1/jobs/job_xyz789 \
 | `provisioning` | Job is being set up |
 | `awaiting_uploads` | Ready to receive file uploads |
 | `uploading` | File upload in progress |
-| `preflighting` | Validating uploads before processing |
+| `preflighting` | Validating files, analyzing page families, and reserving credits |
 | `blocked_insufficient_credits` | Job is paused — top up credits to continue |
 | `processing` | Actively extracting and normalizing data |
 | `completed` | All documents processed successfully |

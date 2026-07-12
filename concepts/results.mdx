@@ -40,16 +40,16 @@ Each entry in the `documents` array is a `ResultDocument` representing one uploa
 |-------|------|-------------|
 | `documentId` | string | Unique identifier matching the upload registration |
 | `fileName` | string | Original file name as provided at upload |
-| `classification` | string | `plans`, `specifications`, `documents`, `addenda`, `mixed`, or `other` |
+| `classification` | string | Analyzed file classification: `plans`, `specifications`, `documents`, or `mixed` |
 | `contentType` | string | MIME type of the file |
 | `fileSize` | number | File size in bytes |
 | `status` | string | Processing status for this document |
 | `pageCount` | number | Total pages in the file |
 | `successfulPageCount` | number | Pages that processed without error |
-| `drawingPageCount` | number | Pages billed and processed as drawings |
-| `documentPageCount` | number | Pages billed and processed as documents |
-| `successfulDrawingPageCount` | number | Drawing pages that processed without error |
-| `successfulDocumentPageCount` | number | Document pages that processed without error |
+| `drawingPageCount` | number | Analyzed plan pages billed at the drawing-page rate |
+| `documentPageCount` | number | Analyzed specification and document pages billed at the document-page rate |
+| `successfulDrawingPageCount` | number | Analyzed plan pages that processed without error |
+| `successfulDocumentPageCount` | number | Analyzed specification and document pages that processed without error |
 | `error` | object \| null | Document-level error, if any |
 | `artifacts` | array | Authenticated links to derived file assets (see [Artifacts](#artifacts)) |
 | `sheets` | array | Drawing sheets extracted from this document (see [Sheets](#sheets)) |
@@ -59,6 +59,8 @@ Each entry in the `documents` array is a `ResultDocument` representing one uploa
 <Note>
   Project specification endpoints are document-level first. Use `GET /api/open/v1/projects/{projectId}/specifications/{specId}/sections` and `GET /api/open/v1/projects/{projectId}/specifications/{specId}/sections/{sectionId}` for current specification section reads.
 </Note>
+
+The child arrays reflect extracted evidence rather than the file label. For example, a `mixed` file can contain entries in `sheets`, `specifications`, and `docs` at the same time.
 
 ---
 
@@ -125,11 +127,11 @@ The `usage` object (type `ResultUsage`) provides an immutable breakdown of how c
 | Field | Description |
 |-------|-------------|
 | `pageCount` | Total pages in submitted job files |
-| `drawingPageCount` | Number of drawing pages processed |
-| `documentPageCount` | Number of document pages processed |
+| `drawingPageCount` | Number of analyzed plan pages processed |
+| `documentPageCount` | Number of analyzed specification and document pages processed |
 | `successfulPageCount` | Total pages that completed without error |
-| `successfulDrawingPageCount` | Drawing pages that completed without error |
-| `successfulDocumentPageCount` | Document pages that completed without error |
+| `successfulDrawingPageCount` | Analyzed plan pages that completed without error |
+| `successfulDocumentPageCount` | Analyzed specification and document pages that completed without error |
 | `creditsDebited` | Total credits charged for this job |
 | `drawingCreditsPerPage` | Rate applied to drawing pages (default: 10) |
 | `documentCreditsPerPage` | Rate applied to document pages (default: 1) |
