@@ -104,6 +104,9 @@ Returns an object containing the matching region entity.
     <ResponseField name="text" type="string">
       Text extracted from this region. Always present; returns an empty string `""` if no text was detected.
     </ResponseField>
+    <ResponseField name="normalizedData" type="object">
+      Structured region data when Plangrep has normalized this region. Shape varies by region kind, such as sheet title blocks, schedules, legends, and placed views.
+    </ResponseField>
     <ResponseField name="displayBox" type="object">
       Normalized bounding box for the region (values in `[0, 1]` relative to page dimensions).
 
@@ -143,6 +146,7 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions/regio
     "sheetNumber": "A5.01",
     "label": "DETAIL 3/A5.01",
     "text": "CONT. BEAD OF SEALANT AT ALL EDGES. SEE SPEC 07900.",
+    "normalizedData": {},
     "displayBox": { "left": 0.52, "top": 0.31, "right": 0.74, "bottom": 0.58 },
     "titleDisplayBox": { "left": 0.52, "top": 0.58, "right": 0.74, "bottom": 0.62 },
     "artifacts": [

@@ -138,6 +138,21 @@ Returns a `SourceSearchResponse` object.
         <ResponseField name="regionId" type="string">
           Present for region hits.
         </ResponseField>
+        <ResponseField name="regionFamily" type="string">
+          Present for region hits when available.
+        </ResponseField>
+        <ResponseField name="placedViewKind" type="string">
+          Present for region hits when available.
+        </ResponseField>
+        <ResponseField name="tableKind" type="string">
+          Present for table-like region hits when available.
+        </ResponseField>
+        <ResponseField name="partRole" type="string">
+          Present for source parts when available.
+        </ResponseField>
+        <ResponseField name="normalizedData" type="object">
+          Structured region data for normalized region hits. Shape varies by region kind.
+        </ResponseField>
         <ResponseField name="sectionNumber" type="string">
           Present for specification hits when available.
         </ResponseField>
@@ -211,6 +226,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
         "id": "project_sheet_region:region_204",
         "regionId": "region_204",
         "label": "DETAIL 4/A8.02",
+        "normalizedData": {},
         "imageArtifact": {
           "type": "region_crop",
           "url": "https://...",

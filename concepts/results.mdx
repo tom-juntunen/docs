@@ -95,7 +95,7 @@ The top-level `evidence` array is a flat, deduplicated collection of all extract
 | `sourceRef` | string | `source-catalog://...` URI; pass this value as `sourceCatalogUri` to source-text reads |
 | `sourceCallouts` | array | Parsed callout records when the source includes them |
 | `artifacts` | array | Artifact links scoped to this evidence item |
-| `text` | string \| null | Inline extracted text when available |
+| `text` | string \| null | Inline extracted text when available. For normalized sheet-region evidence, this may be omitted; use `normalizedData` instead. |
 
 ### Type-specific fields
 
@@ -103,7 +103,7 @@ The top-level `evidence` array is a flat, deduplicated collection of all extract
 |---------------|-------------------|
 | `project_file` | `documentId`, `fileName` |
 | `sheet` | `sheetId`, `sheetNumber`, `sheetName` |
-| `project_sheet_region` | `regionId`, `regionKey`, `regionName`, `regionNumber`, `sheetId`, `sheetNumber`, `regionKind`, `regionFamily`, `placedViewKind`, `tableKind`, `partRole` |
+| `project_sheet_region` | `regionId`, `regionKey`, `regionName`, `regionNumber`, `sheetId`, `sheetNumber`, `regionKind`, `regionFamily`, `placedViewKind`, `tableKind`, `partRole`, `normalizedData` |
 | `project_specification` | `sectionNumber`, `sectionTitle`, `pageNumber` |
 | `project_doc` | `pageNumber`, document labels or section fields when available |
 
@@ -114,6 +114,7 @@ Drawing regions include source classification dimensions:
 - **`placedViewKind`** — the kind of placed drawing view, when applicable
 - **`tableKind`** — the kind of table, when applicable
 - **`partRole`** — the role of a source part within its parent source
+- **`normalizedData`** — structured region data when Plangrep has normalized a region. Shape varies by region kind, such as sheet title blocks, schedules, legends, and placed views.
 
 ---
 

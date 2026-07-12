@@ -76,8 +76,12 @@ The response is a single normalized JSON object:
       "sourceRef": "source-catalog://project_sheet_region:project_sheet_region_001",
       "sheetNumber": "G-001",
       "regionKind": "cover_sheet",
+      "normalizedData": {
+        "sheetNumber": "G-001",
+        "sheetTitle": "Trenton Readiness Center - Renovate"
+      },
       "sourceCallouts": [],
-      "text": "Extracted region text when available."
+      "text": null
     }
   ],
   "warnings": [],
@@ -119,7 +123,7 @@ for ev in result["evidence"]:
     print(f"[{ev['type']}] {label} — {snippet}")
 ```
 
-Evidence records carry a `type` field, such as `"project_file"`, `"sheet"`, `"project_sheet_region"`, `"project_specification"`, or `"project_doc"`, and additional type-specific fields. Use each record's `sourceRef` value as the `sourceCatalogUri` when you call the source-text endpoint for exact source text. For specification evidence, use the specification section endpoints to fetch full section text and structured requirements.
+Evidence records carry a `type` field, such as `"project_file"`, `"sheet"`, `"project_sheet_region"`, `"project_specification"`, or `"project_doc"`, and additional type-specific fields. Sheet-region evidence can include `normalizedData` for structured region content; when it does, inline `text` may be omitted or `null`. Use each record's `sourceRef` value as the `sourceCatalogUri` when you call the source-text endpoint for exact source text. For specification evidence, use the specification section endpoints to fetch full section text and structured requirements.
 
 ---
 
