@@ -1,137 +1,145 @@
 ---
-title: "Upload Construction Files and Submit a Processing Job"
+title: "Hash files and submit a processing job"
 sidebarTitle: "Submit a Job"
-description: "Learn how to create a Plangrep project, upload construction drawings and specification documents, and start the async processing pipeline."
+description: "Create a Plangrep job, register SHA-256 file declarations, upload new bytes directly to R2, and complete authoritative verification."
 ---
 
-This guide walks through the full job submission workflow: provisioning a project, creating a job, uploading files using multipart form data, and completing the upload to start processing. All requests use the base URL `https://plangrep.com`.
+This guide covers the full multi-file submission workflow. Browser uploads, review attachments, and Open API uploads use the same content lifecycle: validate, hash, register, reuse or transfer, verify, then ingest.
+
+All Open API requests use `https://plangrep.com` as the base URL.
 
 <Steps>
 
-### Create a project (if you don't have one)
-
-Send a `POST` request to create a new project. Projects are the top-level container for all your jobs and processed documents.
+### Create or select a ready project
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/projects \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name": "My Construction Project"}'
+  -H "Idempotency-Key: project-my-order-123" \
+  -d '{"name":"My Construction Project"}'
 ```
 
-The API responds with `202 Accepted` and a project object:
-
-```json
-{
-  "project": {
-    "id": "proj_abc123",
-    "name": "My Construction Project",
-    "projectKind": "open_api",
-    "status": "provisioning",
-    "runtime": { "status": "starting", "upgradeStatus": null },
-    "createdAt": "2024-01-15T10:00:00Z",
-    "updatedAt": "2024-01-15T10:00:00Z"
-  },
-  "billing": {
-    "availableCredits": 5000,
-    "creditsCharged": 0,
-    "requiredCredits": 0
-  }
-}
-```
-
-<Note>
-  The project starts in `provisioning` status. Poll `GET /api/open/v1/projects/{projectId}` every 10 seconds until `status === "ready"`. Give up after 5 minutes.
-</Note>
-
-### Poll until ready
-
-Call `GET /api/open/v1/projects/{projectId}` and wait until `project.status` is `"ready"` before proceeding.
-
-```bash
-curl https://plangrep.com/api/open/v1/projects/proj_abc123 \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```
-
-Only a project in `"ready"` status can accept new jobs. Attempting to create a job against a provisioning project will return an error.
+Project creation returns `202 Accepted`. Poll `GET /api/open/v1/projects/{projectId}` until `project.status` is `"ready"` before creating a job.
 
 ### Create a job
 
-Send a `POST` request to create a job under your project. A minimal request body is an empty object:
-
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-To attach an external ID for correlation in your system and register a webhook URL for push notifications, include them in the body:
-
-```bash
-curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: job-my-order-123" \
   -d '{
     "externalId": "my-order-123",
     "webhookUrl": "https://myapp.example.com/webhooks/plangrep"
   }'
 ```
 
-The API responds with `202 Accepted`:
+The job starts in `awaiting_uploads`. If you supplied a webhook URL, save the one-time `webhookSigningSecret` from the response.
 
-```json
-{
-  "job": {
-    "id": "job_xyz789",
-    "projectId": "proj_abc123",
-    "status": "awaiting_uploads",
-    "createdAt": "2024-01-15T10:01:00Z",
-    "updatedAt": "2024-01-15T10:01:00Z"
-  },
-  "webhookSigningSecret": "wss_..."
-}
+### Validate and hash every file
+
+Before registration, validate the local filename, exact byte size, and MIME type. Then calculate SHA-256 from the exact bytes you will upload.
+
+In a browser or WASM client, hash in the existing worker for every file, including small files. Read bounded slices instead of materializing the full file in memory. A 4 MiB chunk size is a practical default.
+
+```text
+for each selected file:
+  validate file.name, file.size, and file.type
+  sha256 = worker.hashIncrementally(file, chunkSize = 4 MiB)
+  declaration = { fileName, fileSize, contentType, sha256 }
 ```
 
-<Warning>
-  Save the `webhookSigningSecret` immediately — it is shown only once at job creation time and is used to verify the authenticity of webhook payloads delivered to your endpoint.
-</Warning>
+Treat the client digest as an untrusted declaration. Plangrep calculates its own authoritative digest from R2 during completion.
 
-### Upload files
-
-Submit your construction documents using `POST /api/open/v1/jobs/{jobId}/files` with `multipart/form-data`. Include a `metadata` part containing a JSON string that describes each file part, followed by the file parts themselves.
+### Register the complete batch
 
 ```bash
-curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/files \
+curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads \
   -H "Authorization: Bearer YOUR_API_KEY" \
-  -F 'metadata={"files":[{"partName":"file0","fileName":"floor-plan.pdf","contentType":"application/pdf"},{"partName":"file1","fileName":"spec-book.pdf","contentType":"application/pdf"}]}' \
-  -F 'file0=@floor-plan.pdf' \
-  -F 'file1=@spec-book.pdf'
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      {
+        "fileName": "A101-floor-plan.pdf",
+        "fileSize": 52428800,
+        "contentType": "application/pdf",
+        "sha256": "a3f1b2c4d5e6f7081920a1b2c3d4e5f6a7b8c9d0e1f2031415161718191a1b1c"
+      },
+      {
+        "fileName": "Division-03-concrete-spec.pdf",
+        "fileSize": 10485760,
+        "contentType": "application/pdf",
+        "sha256": "b4e2c3d5e6f7081920a1b2c3d4e5f6a7b8c9d0e1f2031415161718191a1b1c2d"
+      }
+    ]
+  }'
 ```
 
-Do not include `classification` in upload metadata. Upload overrides are rejected. During preflight, Plangrep analyzes the file bytes and assigns `plans`, `specifications`, `documents`, or `mixed`. The filename does not determine the result.
+Do not include `classification`. Plangrep assigns `plans`, `specifications`, `documents`, or `mixed` from page evidence during preflight.
 
-The response returns an `uploads` array with a `documentId` for each uploaded file. Store these IDs if you need to reference individual documents later.
+Registration can return a different branch for each file:
 
-<Tip>
-  For files over 100 MB or programmatic uploads, see the signed upload registration workflow in [/concepts/uploads](/concepts/uploads).
-</Tip>
+- **Reused:** `status: "reused"`. Send no bytes. The verified physical content belongs to your organization and can back this new logical file.
+- **Direct PUT:** `uploadMode: "direct_put"`. PUT the full file to `uploadUrl` with every exact `uploadHeaders` value.
+- **Multipart:** `uploadMode: "multipart"`. PUT every declared byte range, then collect its `ETag`.
+- **Skipped:** `status: "skipped"`. Do not transfer or complete it.
 
-### Complete uploads and start processing
+### Transfer only new content
 
-Once all files are uploaded, signal to Plangrep that the upload phase is finished:
+For direct PUT instructions:
+
+```bash
+curl -X PUT "UPLOAD_URL" \
+  -H "content-type: application/pdf" \
+  -H "x-amz-checksum-sha256: BASE64_CHECKSUM_FROM_UPLOAD_HEADERS" \
+  --data-binary @A101-floor-plan.pdf
+```
+
+The signed checksum value comes from `uploadHeaders`. Send it exactly as returned.
+
+For multipart instructions, upload each local slice `[startByte, endByteExclusive)` to its signed part URL. Preserve the part number and response `ETag`. Do not concatenate, base64-encode, or proxy the bytes through the Plangrep API.
+
+### Complete the selected documents
+
+Build one completion request from all accepted branches:
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads/complete \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -H "Idempotency-Key: complete-my-order-123" \
+  -d '{
+    "documentIds": ["doc_reused", "doc_direct", "doc_multipart"],
+    "directUploads": [
+      { "documentId": "doc_direct", "uploadToken": "token-direct" }
+    ],
+    "multipartUploads": [
+      {
+        "documentId": "doc_multipart",
+        "multipartUploadId": "multipart-id",
+        "uploadToken": "token-multipart",
+        "parts": [
+          { "partNumber": 1, "etag": "\"etag-1\"" },
+          { "partNumber": 2, "etag": "\"etag-2\"" }
+        ]
+      }
+    ]
+  }'
 ```
 
-The job transitions first to `preflighting`, where Plangrep validates each file, analyzes page families, and reserves credits from the resulting page counts. It then transitions to `processing`. See [Polling & Webhooks](/guides/polling-and-webhooks) to track progress from here.
+Reused content needs only its `documentId`. Direct and multipart content also need their registration tokens and transport results.
+
+Completion does not trust the client declaration. Plangrep streams each new R2 object through authoritative size and SHA-256 calculation, checks file magic/type, and checks its digest against the known-malware blocklist. The object stays quarantined unless all checks pass.
+
+Only then does Plangrep attach the verified physical content to the logical project or review file and enqueue ingestion.
+
+### Track processing
+
+The job transitions through `preflighting` and `processing`. Poll `GET /api/open/v1/jobs/{jobId}` or use your webhook. See [Polling and webhooks](/guides/polling-and-webhooks).
 
 </Steps>
 
 <Tip>
-  Use the `Idempotency-Key` header on both job creation and upload completion requests to safely retry on network errors without creating duplicate jobs.
+  Keep the local file mapped to its `documentId` until completion succeeds. Registration batches can mix reuse, direct PUT, multipart, and skipped results.
 </Tip>

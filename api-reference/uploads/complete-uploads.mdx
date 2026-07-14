@@ -1,174 +1,153 @@
 ---
-title: "Complete Job Uploads and Trigger Plangrep Processing"
+title: "Complete and verify job uploads"
 sidebarTitle: "Complete Uploads"
-description: "POST /api/open/v1/jobs/:jobId/uploads/complete — closes the upload window and starts processing. Supports idempotency for safe retries."
+description: "POST /api/open/v1/jobs/:jobId/uploads/complete — finalize signed R2 uploads, verify quarantined content, and start processing."
 ---
 
 ## Overview
 
-After all files have been uploaded to a job, call this endpoint to close the upload window and trigger Plangrep processing. During `preflighting`, Plangrep validates each file, analyzes its page families, assigns the canonical file classification, and reserves credits from the analyzed counts. The job then enters `processing`.
+Complete a job after every accepted registration has either reused verified content or finished its signed R2 upload. Completion assembles multipart objects, verifies new stored bytes, attaches only verified clean content to logical files, and starts preflight.
 
-This endpoint is safe to call multiple times with the same `Idempotency-Key` — duplicate calls within the idempotency window return the original response without re-triggering processing.
+New content stays quarantined until Plangrep confirms:
+
+- Authoritative byte count equals registered `fileSize`.
+- Authoritative SHA-256 equals registered `sha256`.
+- File magic and detected type agree with the declaration.
+- SHA-256 does not match the configured known-malware blocklist.
+
+A failed check rejects the content and prevents ingestion. Client hashes and upload tokens are never treated as proof of the stored bytes.
 
 <Tip>
-  Always supply an `Idempotency-Key` header when calling this endpoint. If the network request fails or times out, you can safely retry with the same key without risk of double-processing the job.
+  Always send an `Idempotency-Key`. Retry a lost or timed-out response with the same key and body.
 </Tip>
 
 ## Endpoint
 
-```
+```http
 POST https://plangrep.com/api/open/v1/jobs/{jobId}/uploads/complete
 ```
 
 ## Authentication
 
-All requests must include a Bearer token in the `Authorization` header.
-
-```
+```http
 Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+Idempotency-Key: YOUR_UNIQUE_COMPLETION_KEY
 ```
 
-## Path Parameters
+## Path parameters
 
 <ParamField path="jobId" type="string" required>
-  The unique identifier of the job whose uploads you are completing.
+  The job whose registered documents should be verified and processed.
 </ParamField>
 
-## Request Headers
+## Request headers
 
 <ParamField header="Idempotency-Key" type="string">
-  An optional client-generated idempotency key (max 256 characters). If a request with this key has already succeeded, the server returns the original response and sets `idempotent: true` in the body. Use a UUID or other unique value per completion attempt.
+  A client-generated key of up to 256 characters. Repeating a successful key returns the prior result without starting processing again.
 </ParamField>
 
-## Request Body
-
-**Content-Type:** `application/json` (optional)
-
-The request body is optional. For jobs where files were uploaded via `POST /api/open/v1/jobs/{jobId}/files`, send an empty object `{}` or omit the body entirely.
-
-For jobs using [registered uploads](/api-reference/uploads/register-uploads), the body carries completion payloads for each upload mode.
+## Request body
 
 <ParamField body="documentIds" type="string[]">
-  An explicit list of document IDs to include in this completion. When omitted, all documents uploaded to the job are included.
+  Logical document IDs to process. Include reused, direct PUT, and multipart documents. When omitted, Plangrep selects all registered documents for the job.
 </ParamField>
 
 <ParamField body="directUploads" type="array">
-  Completion records for files uploaded via the `direct_put` flow (registered uploads). Each entry must include:
+  Required transport proof for each new `direct_put` document.
 
   <ParamField body="directUploads[].documentId" type="string" required>
-    The document ID returned during registration.
+    The document ID returned by registration.
   </ParamField>
 
   <ParamField body="directUploads[].uploadToken" type="string" required>
-    The upload token returned during registration. Proves the direct PUT was performed.
+    The matching signed upload token returned by registration.
   </ParamField>
 </ParamField>
 
 <ParamField body="multipartUploads" type="array">
-  Completion records for files uploaded via the `multipart` flow (registered uploads). Each entry must include:
+  Required assembly data for each new `multipart` document.
 
   <ParamField body="multipartUploads[].documentId" type="string" required>
-    The document ID returned during registration.
+    The document ID returned by registration.
   </ParamField>
 
   <ParamField body="multipartUploads[].multipartUploadId" type="string" required>
-    The multipart upload ID returned during registration.
+    The multipart upload ID returned by registration.
   </ParamField>
 
   <ParamField body="multipartUploads[].uploadToken" type="string" required>
-    The upload token returned during registration.
+    The matching signed upload token returned by registration.
   </ParamField>
 
   <ParamField body="multipartUploads[].parts" type="array" required>
-    The list of uploaded parts. Each part must include:
+    Every uploaded part in ascending part order.
 
-    <ParamField body="parts[].partNumber" type="integer" required>
-      The 1-based part number matching the registration instructions.
+    <ParamField body="multipartUploads[].parts[].partNumber" type="integer" required>
+      The 1-based part number.
     </ParamField>
 
-    <ParamField body="parts[].etag" type="string" required>
-      The ETag value returned by the storage provider when the part was uploaded.
+    <ParamField body="multipartUploads[].parts[].etag" type="string" required>
+      The `ETag` response header from that part's PUT request.
     </ParamField>
   </ParamField>
 </ParamField>
 
 <ParamField body="failedUploads" type="array">
-  Records of uploads that failed on the client side. Reporting these allows Plangrep to mark the corresponding documents and surface errors in the job result rather than waiting for a timeout.
+  Optional client-side failures. Report a failed transport so Plangrep can mark the logical document failed instead of waiting for an upload that will not arrive.
 </ParamField>
 
-## Response
+## Completion rules by registration result
 
-**Status: `202 Accepted`**
+| Registration result | Completion data |
+|---|---|
+| `status: "reused"` | Add `documentId` only. Do not invent an upload token. |
+| `uploadMode: "direct_put"` | Add `documentId` and one matching `directUploads` record. |
+| `uploadMode: "multipart"` | Add `documentId` and one matching `multipartUploads` record with every part `ETag`. |
+| `status: "skipped"` | Omit it from completion. |
 
-<ResponseField name="job" type="object">
-  The updated Job object. Immediately after this call the job status begins transitioning to `preflighting`, then `processing`.
-</ResponseField>
-
-<ResponseField name="idempotent" type="boolean">
-  Present and `true` when the response was served from a previously completed idempotent request. Absent on first-time completions.
-</ResponseField>
-
-## Job Status Transitions
-
-```
-uploading → preflighting → processing → complete
-                                      ↘ failed
-```
-
-After this endpoint returns `202`, poll the job status or use webhooks to detect when processing finishes.
-
-## Example Requests
-
-### Form Upload Completion (most common)
+## Example: mixed completion
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
-  -d '{}'
-```
-
-### Direct PUT Completion
-
-```bash
-curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  -H "Idempotency-Key: complete-job-123" \
   -d '{
+    "documentIds": ["doc_reused", "doc_direct", "doc_multipart"],
     "directUploads": [
       {
-        "documentId": "doc_01xyz789",
-        "uploadToken": "tok_abc123"
+        "documentId": "doc_direct",
+        "uploadToken": "DIRECT_UPLOAD_TOKEN"
       }
-    ]
-  }'
-```
-
-### Multipart Completion
-
-```bash
-curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
-  -d '{
+    ],
     "multipartUploads": [
       {
-        "documentId": "doc_01xyz789",
-        "multipartUploadId": "mpu_def456",
-        "uploadToken": "tok_abc123",
+        "documentId": "doc_multipart",
+        "multipartUploadId": "MULTIPART_ID",
+        "uploadToken": "MULTIPART_UPLOAD_TOKEN",
         "parts": [
-          { "partNumber": 1, "etag": "\"d41d8cd98f00b204e9800998ecf8427e\"" },
-          { "partNumber": 2, "etag": "\"7215ee9c7d9dc229d2921a40e899ec5f\"" }
+          { "partNumber": 1, "etag": "\"etag-value-1\"" },
+          { "partNumber": 2, "etag": "\"etag-value-2\"" }
         ]
       }
     ]
   }'
 ```
 
-## Example Response
+`doc_reused` needs no transport record because its physical content was already verified within the same organization.
+
+## Response
+
+**Status: `202 Accepted`**
+
+<ResponseField name="job" type="object">
+  The updated job. It transitions to `preflighting` and then `processing` after verification succeeds.
+</ResponseField>
+
+<ResponseField name="idempotent" type="boolean">
+  Present as `true` when the response came from a previously successful request with the same idempotency key.
+</ResponseField>
 
 ```json
 {
@@ -179,14 +158,26 @@ curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads/complete \
 }
 ```
 
-### Idempotent Repeat Response
+## Verification failures
 
-```json
-{
-  "job": {
-    "id": "job_01abc123",
-    "status": "processing"
-  },
-  "idempotent": true
-}
+Completion can fail before ingestion with errors such as:
+
+| Error code | Meaning |
+|---|---|
+| `direct_upload_object_missing` | The signed upload did not create the expected R2 object. |
+| `upload_size_mismatch` | Stored bytes do not match the registered byte length. |
+| `upload_hash_mismatch` | Authoritative SHA-256 does not match registration. |
+| `magic_mismatch` | Stored bytes do not match the declared file format. |
+| `malware_hash_blocked` | SHA-256 matches the configured known-malware blocklist. |
+| `content_blob_not_verified` | The logical file still points to unverified quarantined content. |
+
+Do not retry completion with changed declarations. Register the intended file again and upload the correct bytes.
+
+## Status transitions
+
+```text
+awaiting_uploads → uploading → preflighting → processing → completed
+                                             ↘ failed
 ```
+
+Poll [Get Job](/api-reference/jobs/get-job) or configure a webhook to observe terminal status.

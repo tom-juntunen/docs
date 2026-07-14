@@ -61,7 +61,7 @@ Idempotency-Key: your-unique-key-here
 | `limits.maxDeclaredBytes` | 10 GB total file size per job |
 | `limits.maxFiles` | 100 files per job |
 
-These limits are enforced at the time you register or upload files. Requests that would exceed either limit are rejected with a 4xx error.
+These limits are enforced when you register files, before any new bytes are transferred. Requests that would exceed either limit are rejected with a 4xx error.
 
 ## Fetching Results
 

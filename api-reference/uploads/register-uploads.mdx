@@ -1,71 +1,72 @@
 ---
-title: "Register Signed Upload Instructions for Large Files"
+title: "Register hash-first file uploads"
 sidebarTitle: "Register Uploads"
-description: "POST /api/open/v1/jobs/:jobId/uploads — registers files and returns signed direct PUT or multipart upload instructions with upload tokens."
+description: "POST /api/open/v1/jobs/:jobId/uploads — register file metadata and SHA-256, then receive verified reuse or signed direct-to-R2 instructions."
 ---
 
 ## Overview
 
-Register one or more files with a job to receive signed upload instructions. Plangrep inspects each file's declared size and SHA-256 digest and returns either a **direct PUT** URL (for smaller files) or **multipart** upload instructions (for large files). You then upload bytes directly to the signed storage URLs — bypassing Plangrep's servers — before calling [Complete Uploads](/api-reference/uploads/complete-uploads).
+Register every file before sending bytes. For each declaration, Plangrep returns one of these results:
 
-This is the recommended path for large files (e.g. full drawing sets) where multipart upload and direct-to-storage delivery offer better performance and reliability.
+- An organization-scoped verified content reference with `status: "reused"` and no byte upload.
+- A signed `direct_put` instruction with an enforced SHA-256 checksum header.
+- Signed `multipart` instructions for files at or above 32 MiB.
+- A `skipped` result when no logical file was accepted.
+
+This is the only Open API endpoint for starting file uploads.
 
 <Note>
-  The total declared file sizes across all registrations for a job must not exceed **10 GB**.
+  A job accepts up to **100 files** and **10 GB** of declared bytes. Each file can be up to **2 GB**.
 </Note>
 
 ## Endpoint
 
-```
+```http
 POST https://plangrep.com/api/open/v1/jobs/{jobId}/uploads
 ```
 
 ## Authentication
 
-All requests must include a Bearer token in the `Authorization` header.
-
-```
+```http
 Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
 ```
 
-## Path Parameters
+## Path parameters
 
 <ParamField path="jobId" type="string" required>
-  The unique identifier of the job to register files against.
+  The job that will process the logical files.
 </ParamField>
 
-## Request Body
-
-**Content-Type:** `application/json`
+## Request body
 
 <ParamField body="files" type="array" required>
-  List of files to register. Must contain between **1 and 100** items.
+  Contains between 1 and 100 file declarations.
 
   <ParamField body="files[].fileName" type="string" required>
-    The original filename, including extension (e.g. `large-drawings.pdf`).
-  </ParamField>
-
-  <ParamField body="files[].contentType" type="string" required>
-    MIME type of the file (for example `application/pdf`, `text/markdown`, or `application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
+    The original filename, including a supported extension.
   </ParamField>
 
   <ParamField body="files[].fileSize" type="integer" required>
-    Exact size of the file in bytes. Must be `>= 0`. This value is used to determine upload mode and allocate storage.
+    The exact non-negative byte length. Fractional and precision-losing values are rejected.
+  </ParamField>
+
+  <ParamField body="files[].contentType" type="string" required>
+    The declared MIME type. It must agree with the filename extension.
   </ParamField>
 
   <ParamField body="files[].sha256" type="string" required>
-    A 64-character lowercase hex string — the SHA-256 digest of the **exact bytes** you will upload. Used for integrity verification and deduplication.
+    The 64-character hexadecimal SHA-256 digest of the exact file bytes.
   </ParamField>
-
 </ParamField>
 
-<Note>
-  Classification is not an upload input. Requests that supply it are rejected. Plangrep analyzes file content during preflight and assigns `plans`, `specifications`, `documents`, or `mixed`.
-</Note>
+<Warning>
+  Calculate SHA-256 before registration. In browsers, hash every file incrementally in a worker. Do not load a large file into one JavaScript or WASM buffer.
+</Warning>
+
+Do not send `classification`. Plangrep derives classification from page evidence during preflight.
 
 ### Supported file types
-
-The declared `fileName` extension and `contentType` must agree. Supported uploads include:
 
 | File type | Extensions | Common MIME types |
 |---|---|---|
@@ -81,106 +82,97 @@ The declared `fileName` extension and `contentType` must agree. Supported upload
 
 ## Response
 
-**Status: `200 OK`**
+**Status: `201 Created`**
 
 <ResponseField name="job" type="object">
-  The updated Job object.
+  The updated job. Its status is normally `uploading` after registration.
 </ResponseField>
 
 <ResponseField name="uploads" type="array">
-  One `UploadInstruction` object per registered file.
+  One result per accepted or skipped declaration.
 
   <ResponseField name="uploads[].documentId" type="string">
-    The unique document ID assigned to this file. Reference this ID in the completion request.
+    The logical document ID. Include accepted document IDs in completion.
+  </ResponseField>
+
+  <ResponseField name="uploads[].status" type="string">
+    Present as `reused` when verified bytes can be reused or `skipped` when the declaration was not accepted. New transfers omit this field.
+  </ResponseField>
+
+  <ResponseField name="uploads[].contentBlobId" type="string">
+    Present for `reused`. Identifies verified physical content within your organization.
+  </ResponseField>
+
+  <ResponseField name="uploads[].requiresCompletion" type="boolean">
+    Present for `reused`. Include the `documentId` in completion when this job should process the logical file.
+  </ResponseField>
+
+  <ResponseField name="uploads[].skippedReason" type="string">
+    Present for `skipped`. Do not upload or complete that item.
   </ResponseField>
 
   <ResponseField name="uploads[].uploadMode" type="string">
-    The upload strategy Plangrep selected. Either `direct_put` (single PUT request) or `multipart` (multiple part uploads).
+    Present for new content. Either `direct_put` or `multipart`.
   </ResponseField>
 
   <ResponseField name="uploads[].uploadUrl" type="string">
-    **`direct_put` only.** The signed URL to PUT the full file bytes to. Valid until `expiresAt`.
+    Present for `direct_put`. PUT the full raw file to this signed URL.
   </ResponseField>
 
   <ResponseField name="uploads[].uploadHeaders" type="object">
-    **`direct_put` only.** A map of HTTP headers that **must** be included when uploading bytes to `uploadUrl` (e.g. `Content-Type`, `x-amz-checksum-sha256`). Omitting these headers will cause the upload to fail.
+    Headers that must be sent exactly as returned. Direct PUT includes `content-type` and `x-amz-checksum-sha256`.
+  </ResponseField>
+
+  <ResponseField name="uploads[].checksumAlgorithm" type="string">
+    `SHA256` for signed direct PUT uploads.
+  </ResponseField>
+
+  <ResponseField name="uploads[].checksumEnforced" type="boolean">
+    `true` when R2 enforces the signed checksum header. Multipart currently returns `false` and is authoritatively hashed after assembly.
   </ResponseField>
 
   <ResponseField name="uploads[].uploadToken" type="string">
-    An opaque token proving upload completion. Include this in the [Complete Uploads](/api-reference/uploads/complete-uploads) request body.
+    Present for new content. Return it in the matching completion record.
   </ResponseField>
 
   <ResponseField name="uploads[].expiresAt" type="string">
-    ISO 8601 timestamp indicating when the signed upload URL(s) expire. Complete the upload before this time.
+    Expiration time for the signed instruction. Re-register after expiry.
   </ResponseField>
 
   <ResponseField name="uploads[].multipartUploadId" type="string">
-    **`multipart` only.** The multipart upload session ID. Include this in the completion request.
+    Present for `multipart`. Return it during completion.
   </ResponseField>
 
   <ResponseField name="uploads[].partSize" type="integer">
-    **`multipart` only.** The target size in bytes for each part. Use this to split the file when uploading parts.
+    Present for `multipart`. The target part size in bytes.
   </ResponseField>
 
   <ResponseField name="uploads[].parts" type="array">
-    **`multipart` only.** One entry per part, describing the byte range and signed URL for that part.
+    Present for `multipart`. Upload every part.
 
-    <ResponseField name="parts[].partNumber" type="integer">
-      1-based part index. Include this in the completion request's `parts` array.
+    <ResponseField name="uploads[].parts[].partNumber" type="integer">
+      The 1-based part number.
     </ResponseField>
 
-    <ResponseField name="parts[].startByte" type="integer">
-      Inclusive start byte offset for this part within the full file.
+    <ResponseField name="uploads[].parts[].startByte" type="integer">
+      The inclusive local file offset.
     </ResponseField>
 
-    <ResponseField name="parts[].endByteExclusive" type="integer">
-      Exclusive end byte offset for this part. Read bytes `[startByte, endByteExclusive)`.
+    <ResponseField name="uploads[].parts[].endByteExclusive" type="integer">
+      The exclusive local file offset.
     </ResponseField>
 
-    <ResponseField name="parts[].uploadUrl" type="string">
-      Signed URL to PUT this part's bytes to.
+    <ResponseField name="uploads[].parts[].uploadUrl" type="string">
+      The signed PUT URL for this part.
     </ResponseField>
 
-    <ResponseField name="parts[].uploadHeaders" type="object">
-      Required headers for the PUT request for this part.
+    <ResponseField name="uploads[].parts[].uploadHeaders" type="object">
+      Headers to include in the part PUT.
     </ResponseField>
   </ResponseField>
 </ResponseField>
 
-<ResponseField name="documents" type="array">
-  Additional document metadata objects associated with this registration.
-</ResponseField>
-
-## Upload Flow After Registration
-
-### Direct PUT
-
-```
-Register → PUT file bytes to uploadUrl (with uploadHeaders)
-         → Complete with directUploads: [{ documentId, uploadToken }]
-```
-
-1. Receive `uploadUrl` and `uploadHeaders` for the document.
-2. `PUT` the complete file bytes to `uploadUrl`, including every key-value pair from `uploadHeaders`.
-3. Include `{ documentId, uploadToken }` in the `directUploads` array of the [Complete Uploads](/api-reference/uploads/complete-uploads) request.
-
-### Multipart
-
-```
-Register → PUT each part byte range to its parts[n].uploadUrl
-         → Collect ETags from each response
-         → Complete with multipartUploads: [{ documentId, multipartUploadId, uploadToken, parts }]
-```
-
-1. For each entry in `parts`, `PUT` the corresponding byte range to `parts[n].uploadUrl` with `parts[n].uploadHeaders`.
-2. Capture the `ETag` response header from each part upload.
-3. Include the full `multipartUploads` record — with `parts[].partNumber` and `parts[].etag` — in the [Complete Uploads](/api-reference/uploads/complete-uploads) request.
-
-<Warning>
-  Signed upload URLs expire at `expiresAt`. If uploads are not completed before expiry, you must re-register the files to obtain fresh URLs. Do not store signed URLs for reuse.
-</Warning>
-
-## Example Request
+## Example request
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads \
@@ -190,73 +182,98 @@ curl -X POST https://plangrep.com/api/open/v1/jobs/JOB_ID/uploads \
     "files": [
       {
         "fileName": "large-drawings.pdf",
-        "contentType": "application/pdf",
         "fileSize": 52428800,
+        "contentType": "application/pdf",
         "sha256": "a3f1b2c4d5e6f7081920a1b2c3d4e5f6a7b8c9d0e1f2031415161718191a1b1c"
       }
     ]
   }'
 ```
 
-## Example Response (direct_put)
+## Example response: verified reuse
 
 ```json
 {
-  "job": {
-    "id": "job_01abc123",
-    "status": "uploading"
-  },
+  "job": { "id": "job_01abc123", "status": "uploading" },
+  "uploads": [
+    {
+      "documentId": "doc_01xyz789",
+      "contentBlobId": "blob_01verified",
+      "fileName": "large-drawings.pdf",
+      "fileSize": 52428800,
+      "contentType": "application/pdf",
+      "sha256": "a3f1b2c4d5e6f7081920a1b2c3d4e5f6a7b8c9d0e1f2031415161718191a1b1c",
+      "status": "reused",
+      "requiresCompletion": true
+    }
+  ]
+}
+```
+
+Send no file bytes for this result. Complete it with `documentIds: ["doc_01xyz789"]`.
+
+## Example response: direct PUT
+
+```json
+{
+  "job": { "id": "job_01abc123", "status": "uploading" },
   "uploads": [
     {
       "documentId": "doc_01xyz789",
       "uploadMode": "direct_put",
-      "uploadUrl": "https://storage.example.com/uploads/doc_01xyz789?X-Signature=...",
+      "uploadUrl": "https://ACCOUNT.r2.cloudflarestorage.com/BUCKET/OBJECT?X-Amz-...",
       "uploadHeaders": {
-        "Content-Type": "application/pdf",
-        "x-amz-checksum-sha256": "a3f1b2c4..."
+        "content-type": "application/pdf",
+        "x-amz-checksum-sha256": "BASE64_SHA256_CHECKSUM"
       },
-      "uploadToken": "tok_abc123def456",
-      "expiresAt": "2024-11-01T15:30:00Z"
+      "checksumAlgorithm": "SHA256",
+      "checksumEnforced": true,
+      "uploadToken": "UPLOAD_TOKEN",
+      "expiresAt": "2026-07-14T18:30:00Z"
     }
-  ],
-  "documents": []
+  ]
 }
 ```
 
-## Example Response (multipart)
+PUT the complete file with every returned header, then complete it with `{ documentId, uploadToken }` in `directUploads`.
+
+## Example response: multipart
 
 ```json
 {
-  "job": {
-    "id": "job_01abc123",
-    "status": "uploading"
-  },
+  "job": { "id": "job_01abc123", "status": "uploading" },
   "uploads": [
     {
       "documentId": "doc_01xyz789",
       "uploadMode": "multipart",
-      "uploadToken": "tok_abc123def456",
-      "multipartUploadId": "mpu_def456ghi789",
-      "partSize": 10485760,
-      "expiresAt": "2024-11-01T15:30:00Z",
+      "multipartUploadId": "MULTIPART_ID",
+      "partSize": 33554432,
+      "checksumEnforced": false,
+      "uploadToken": "UPLOAD_TOKEN",
+      "expiresAt": "2026-07-14T18:30:00Z",
       "parts": [
         {
           "partNumber": 1,
           "startByte": 0,
-          "endByteExclusive": 10485760,
-          "uploadUrl": "https://storage.example.com/uploads/doc_01xyz789/part/1?X-Signature=...",
-          "uploadHeaders": { "Content-Type": "application/octet-stream" }
+          "endByteExclusive": 33554432,
+          "uploadUrl": "https://ACCOUNT.r2.cloudflarestorage.com/BUCKET/OBJECT?partNumber=1&...",
+          "uploadHeaders": {}
         },
         {
           "partNumber": 2,
-          "startByte": 10485760,
-          "endByteExclusive": 20971520,
-          "uploadUrl": "https://storage.example.com/uploads/doc_01xyz789/part/2?X-Signature=...",
-          "uploadHeaders": { "Content-Type": "application/octet-stream" }
+          "startByte": 33554432,
+          "endByteExclusive": 52428800,
+          "uploadUrl": "https://ACCOUNT.r2.cloudflarestorage.com/BUCKET/OBJECT?partNumber=2&...",
+          "uploadHeaders": {}
         }
       ]
     }
-  ],
-  "documents": []
+  ]
 }
 ```
+
+Upload every range, record each response `ETag`, and return the part list in `multipartUploads`.
+
+## Next step
+
+See [Complete Uploads](/api-reference/uploads/complete-uploads). Registration never starts ingestion by itself.

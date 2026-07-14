@@ -28,7 +28,7 @@ Plangrep is an async document processing API designed for construction workflows
     A project is a persistent container for processed results and source search. Provision one via `POST /api/open/v1/projects` and wait for its `status` to become `ready` (typically 1–2 minutes).
   </Step>
   <Step title="Create a job and upload files">
-    Create a processing job inside your project, upload your PDF or document files, then call the complete endpoint to kick off processing.
+    Create a processing job, hash and register each file, then either reuse verified content or upload bytes directly to signed storage. Complete the uploads to start processing.
   </Step>
   <Step title="Poll for completion">
     Poll `GET /api/open/v1/jobs/{jobId}` until the job `status` reaches `completed` or `completed_with_errors`. Subscribe to a webhook URL on job creation to receive push notifications instead.
@@ -47,8 +47,8 @@ Plangrep is an async document processing API designed for construction workflows
   <Card title="Source Search" icon="magnifying-glass">
     Run semantic, grep, or regex queries across project sources or search globally across your organization's projects.
   </Card>
-  <Card title="Flexible Uploads" icon="cloud-arrow-up">
-    Choose multipart form upload for simplicity or signed direct/multipart uploads for large files and API clients.
+  <Card title="Verified uploads" icon="cloud-arrow-up">
+    Deduplicate verified content within your organization, upload new bytes directly to storage, and verify every object before processing.
   </Card>
   <Card title="Scoped API Keys" icon="shield-halved">
     Create keys with granular scopes (`jobs:read`, `jobs:write`, `artifacts:read`) and optional expiration dates.

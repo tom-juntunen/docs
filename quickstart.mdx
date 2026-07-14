@@ -1,51 +1,31 @@
 ---
-title: "Quickstart: Process Your First Construction Document"
+title: "Quickstart: Process your first construction document"
 sidebarTitle: "Quickstart"
-description: "Step-by-step guide to creating a project, uploading a construction document, and retrieving normalized JSON results from the Plangrep API."
+description: "Create a project, hash and register a file, upload it directly to signed storage, and retrieve normalized Plangrep results."
 ---
 
-This guide walks you through the complete end-to-end flow for processing a construction document with the Plangrep API: create a project, create a job, upload a file, complete the upload, poll for job status, and fetch your normalized JSON results.
+This guide walks through the canonical Open API flow for one PDF: create a project and job, calculate the file's SHA-256, register it, follow the returned upload instruction, complete verification, and fetch the result.
 
 ## Prerequisites
 
 - A Plangrep account
-- An API key — see [Authentication](/authentication) to create one
-- A PDF file to process
-
-## Steps
+- An API key — see [Authentication](/authentication)
+- A PDF file named `drawings.pdf`
+- `curl`, `shasum`, and `wc`
 
 <Steps>
 
 <Step title="Create a project">
 
-Send a `POST` request to create a new project. Projects act as containers for all the jobs and documents you process together.
-
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/projects \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: create-first-project" \
   -d '{ "name": "My First Project" }'
 ```
 
-**Request body**
-
-```json
-{ "name": "My First Project" }
-```
-
-**Response (202)**
-
-```json
-{
-  "project": {
-    "id": "proj_abc123",
-    "status": "provisioning"
-  },
-  "billing": { }
-}
-```
-
-Project creation is asynchronous and takes 1–2 minutes to provision. Poll `GET /api/open/v1/projects/{projectId}` every 10 seconds until `project.status` equals `"ready"`. Stop polling and surface an error if the project has not reached `"ready"` within 5 minutes.
+The response has `202 Accepted` and starts with `project.status: "provisioning"`. Poll the project every 10 seconds until its status is `"ready"`:
 
 ```bash
 curl https://plangrep.com/api/open/v1/projects/proj_abc123 \
@@ -56,138 +36,118 @@ curl https://plangrep.com/api/open/v1/projects/proj_abc123 \
 
 <Step title="Create a job">
 
-Once your project is `"ready"`, create a job inside it. A job represents a single processing run over one or more uploaded files.
-
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: create-first-job" \
   -d '{}'
 ```
 
-**Request body**
-
-```json
-{}
-```
-
-All fields are optional. You can pass a `webhookUrl` here to receive a callback when the job finishes instead of polling. See [Polling and webhooks](/guides/polling-and-webhooks) for details.
-
-**Response (202)**
-
-```json
-{
-  "job": {
-    "id": "job_xyz789",
-    "status": "awaiting_uploads"
-  }
-}
-```
+Save the returned job ID. A new job has `status: "awaiting_uploads"`.
 
 </Step>
 
-<Step title="Upload a file">
+<Step title="Hash and register the file">
 
-Upload one or more files to the job using a `multipart/form-data` request. Include a `metadata` part (a JSON string) that describes each file part, followed by the file parts themselves named `file0`, `file1`, and so on.
+Calculate the exact byte length and SHA-256 before you send file bytes:
 
 ```bash
-curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/files \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -F 'metadata={"files":[{"partName":"file0","fileName":"drawings.pdf","contentType":"application/pdf"}]}' \
-  -F 'file0=@drawings.pdf'
+FILE_SIZE=$(wc -c < drawings.pdf | tr -d ' ')
+FILE_SHA256=$(shasum -a 256 drawings.pdf | awk '{print $1}')
 ```
 
-**Response**
+Register all four required declarations:
 
-The response includes an `uploads` array with a `documentId` for each file received. Save these IDs if you need to reference individual documents later.
+```bash
+curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"files\":[{\"fileName\":\"drawings.pdf\",\"fileSize\":${FILE_SIZE},\"contentType\":\"application/pdf\",\"sha256\":\"${FILE_SHA256}\"}]}"
+```
+
+Registration returns one item in `uploads`. Save its `documentId` and follow the returned branch:
+
+- `status: "reused"` means Plangrep already has matching verified content in your organization. Skip the byte upload.
+- `uploadMode: "direct_put"` returns one `uploadUrl`, exact `uploadHeaders`, and an `uploadToken`.
+- `uploadMode: "multipart"` returns signed part URLs. See [Hash-first, verified file uploads](/concepts/uploads).
 
 </Step>
 
-<Step title="Complete uploads and start processing">
+<Step title="Upload new bytes directly">
 
-Signal to Plangrep that all files have been uploaded and processing should begin.
+For `direct_put`, PUT the raw file to `uploadUrl`. Include every header from `uploadHeaders` without changing its value:
+
+```bash
+curl -X PUT "UPLOAD_URL_FROM_REGISTRATION" \
+  -H "content-type: application/pdf" \
+  -H "x-amz-checksum-sha256: BASE64_CHECKSUM_FROM_UPLOAD_HEADERS" \
+  --data-binary @drawings.pdf
+```
+
+The checksum header is signed into the URL. Do not replace its base64 value with the hexadecimal digest.
+
+If registration returned `status: "reused"`, do not make this PUT request.
+
+</Step>
+
+<Step title="Complete verification and start processing">
+
+For a direct PUT, return the document ID and upload token:
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads/complete \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -H "Idempotency-Key: complete-first-job" \
+  -d '{
+    "documentIds": ["doc_abc123"],
+    "directUploads": [
+      { "documentId": "doc_abc123", "uploadToken": "UPLOAD_TOKEN" }
+    ]
+  }'
 ```
 
-**Request body**
+For reused content, send only its document ID:
 
 ```json
-{}
+{ "documentIds": ["doc_abc123"] }
 ```
 
-An empty JSON body completes all server-stored files for this job.
-
-**Response (202)**
-
-```json
-{
-  "job": {
-    "status": "preflighting"
-  }
-}
-```
-
-Plangrep now validates each upload, analyzes its page families, calculates the billing counts, and begins processing.
+During completion, Plangrep streams the stored object and verifies its authoritative size, SHA-256, file magic/type, and known-malware hash status. Only verified content is attached to the logical file and sent to ingestion. The response has `202 Accepted` and the job transitions to `preflighting`.
 
 </Step>
 
 <Step title="Poll for completion">
-
-Poll `GET /api/open/v1/jobs/{jobId}` until the job reaches a terminal status.
 
 ```bash
 curl https://plangrep.com/api/open/v1/jobs/job_xyz789 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-**Job status values**
+Continue until `job.status` is `completed`, `completed_with_errors`, `failed`, `cancelled`, or `expired`.
 
 | Status | Description |
 |---|---|
-| `provisioning` | Job is being set up |
-| `awaiting_uploads` | Ready to receive file uploads |
-| `uploading` | File upload in progress |
-| `preflighting` | Validating files, analyzing page families, and reserving credits |
-| `blocked_insufficient_credits` | Job is paused — top up credits to continue |
-| `processing` | Actively extracting and normalizing data |
+| `awaiting_uploads` | Ready for file registration |
+| `uploading` | Waiting for direct uploads and completion |
+| `preflighting` | Verifying and analyzing registered files, then reserving credits |
+| `blocked_insufficient_credits` | Paused until your organization adds credits |
+| `processing` | Extracting and normalizing data |
 | `completed` | All documents processed successfully |
 | `completed_with_errors` | Processing finished with one or more document errors |
-| `failed` | Job failed and cannot be retried |
-| `cancelled` | Job was cancelled before completion |
-| `expired` | Job expired before processing completed |
-
-Continue polling until `job.status` is one of: `completed`, `completed_with_errors`, `failed`, `cancelled`, or `expired`.
-
-<Tip>
-  For webhook-driven workflows, pass a `webhookUrl` in the job creation request body instead of polling. Plangrep will `POST` the final job status to your endpoint as soon as processing finishes.
-</Tip>
+| `failed` | The job failed and cannot continue |
 
 </Step>
 
 <Step title="Fetch results">
-
-Once the job status is `completed` or `completed_with_errors`, fetch the normalized JSON output.
 
 ```bash
 curl https://plangrep.com/api/open/v1/jobs/job_xyz789/result \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-The response is a `Result` object with the following top-level fields:
-
-| Field | Description |
-|---|---|
-| `job` | Summary of the job and its final status |
-| `usage` | Credit usage breakdown for this job |
-| `documents` | Processed documents, each containing `sheets`, `specifications`, and `docs` arrays |
-| `evidence` | Citable source records — individual sheets, regions, and spec sections that back the extracted data |
-| `warnings` | Non-fatal issues encountered during processing |
-| `errors` | Errors for documents that could not be fully processed |
+The result contains job and usage summaries, normalized documents, source-backed evidence, warnings, and errors.
 
 </Step>
 
@@ -195,4 +155,6 @@ The response is a `Result` object with the following top-level fields:
 
 ## Next steps
 
-For a deeper look at upload options — including how to reference previously uploaded files and how to structure multi-file jobs — see the [Submit a Job](/guides/submit-a-job) guide.
+- Read [Hash-first, verified file uploads](/concepts/uploads) for browser hashing, zero-byte reuse, and multipart uploads.
+- Use [Polling and webhooks](/guides/polling-and-webhooks) to track long-running jobs.
+- See [Reading results](/guides/reading-results) for result schemas and artifact downloads.

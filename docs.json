@@ -91,10 +91,8 @@
           {
             "group": "Uploads",
             "pages": [
-              "api-reference/uploads/upload-files",
-              "api-reference/uploads/complete-uploads",
               "api-reference/uploads/register-uploads",
-              "api-reference/uploads/upload-registered-file"
+              "api-reference/uploads/complete-uploads"
             ]
           },
           {
@@ -139,6 +137,16 @@
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/api-reference/uploads/upload-files",
+      "destination": "/api-reference/uploads/register-uploads"
+    },
+    {
+      "source": "/api-reference/uploads/upload-registered-file",
+      "destination": "/api-reference/uploads/register-uploads"
+    }
+  ],
   "footer": {
     "socials": {
       "website": "https://plangrep.com"
