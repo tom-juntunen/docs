@@ -28,6 +28,22 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications/{specId
   When `true`, artifact URL fields are stripped from the response.
 </ParamField>
 
+<ParamField query="specId" type="string">
+  Exact match on the specification ID. The request returns `404` when it does not match the `specId` path parameter.
+</ParamField>
+
+<ParamField query="fileId" type="string">
+  Exact match on the specification file ID. The request returns `404` when it does not match the `specId` path parameter.
+</ParamField>
+
+<ParamField query="fileName" type="string">
+  Case-insensitive substring match on the specification file name. The request returns `404` when it does not match.
+</ParamField>
+
+<ParamField query="classification" type="string">
+  Exact, case-insensitive match on the specification classification. The request returns `404` when it does not match.
+</ParamField>
+
 ## Response
 
 Returns an object containing the matching specification document.

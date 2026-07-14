@@ -36,6 +36,10 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications
   Restrict results to a specific specification document ID.
 </ParamField>
 
+<ParamField query="fileId" type="string">
+  Restrict results to a specific specification file ID. This is an alias for `specId`.
+</ParamField>
+
 <ParamField query="fileName" type="string">
   Case-insensitive substring match on the uploaded specification file name.
 </ParamField>

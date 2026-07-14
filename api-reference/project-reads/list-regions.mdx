@@ -7,7 +7,7 @@ description: "GET /api/open/v1/projects/:projectId/regions — paginated list of
 Returns a paginated list of extracted drawing regions within a project. A region is a bounding-box-delimited area detected on a sheet—such as a detail, plan view, section cut, or title block—along with any text extracted from that area. Filter by canonical region metadata to focus on specific content patterns.
 
 <Tip>
-  **Sheet-scoped regions:** To list regions belonging to a specific sheet, use the sub-resource endpoint `GET /api/open/v1/projects/{projectId}/sheets/{sheetId}/regions`. It accepts the same filter and pagination parameters as this endpoint (except `sheetId` becomes a path parameter and the `sheets` allowlist param is not available on that route).
+  **Sheet-scoped regions:** To list regions belonging to a specific sheet, use the sub-resource endpoint `GET /api/open/v1/projects/{projectId}/sheets/{sheetId}/regions`. It accepts the same filter and pagination parameters as this endpoint, with the sheet identified by the `sheetId` path parameter.
 </Tip>
 
 ## Endpoint
@@ -36,12 +36,8 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/regions
   When `true`, artifact URL fields are stripped from each entity, reducing payload size.
 </ParamField>
 
-<ParamField query="sheets" type="string">
-  Comma-separated list of sheet IDs to restrict results to regions on those sheets.
-</ParamField>
-
-<ParamField query="sheetId" type="string">
-  Restrict results to regions belonging to a single sheet.
+<ParamField query="sheetNumber" type="string">
+  Exact, case-insensitive match on the parent sheet number (for example, `A5.01`).
 </ParamField>
 
 <ParamField query="fileId" type="string">
@@ -58,6 +54,10 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/regions
 
 <ParamField query="pageNumber" type="integer">
   Filter to regions on this specific 1-based page number. Minimum: `1`.
+</ParamField>
+
+<ParamField query="regionNumber" type="string">
+  Exact, case-insensitive match on the region number. Combine with `sheetNumber` to resolve a reference such as `3/A5.01`.
 </ParamField>
 
 <ParamField query="regionKind" type="string">

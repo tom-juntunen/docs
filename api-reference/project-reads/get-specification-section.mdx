@@ -36,6 +36,18 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/specifications/{specId
   When `true`, artifact URL fields are stripped from the response.
 </ParamField>
 
+<ParamField query="sectionNumber" type="string">
+  Exact, case-insensitive match on the section number. The request returns `404` when it does not match the `sectionId` path parameter.
+</ParamField>
+
+<ParamField query="pageStart" type="integer">
+  Exact match on the first page of the section. The request returns `404` when it does not match.
+</ParamField>
+
+<ParamField query="pageEnd" type="integer">
+  Exact match on the last page of the section. The request returns `404` when it does not match.
+</ParamField>
+
 ## Response
 
 Returns an object containing the full specification section detail.
