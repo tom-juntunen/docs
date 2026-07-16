@@ -14,7 +14,7 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}/exe
 
 Continue polling while status is `queued` or `running`. Stop at `completed`, `failed`, or `cancelled`.
 
-The `execution` includes user and assistant message IDs, failure information, timestamps, token `usage`, and Open API URLs. When status is `completed`, `execution.body` contains the full assistant response. Call [List Messages](/api-reference/reviews/list-messages) when you also need the conversation history or citations.
+The `execution` includes user and assistant message IDs, failure information, timestamps, token `usage`, and Open API URLs. `execution.streamUrl` opens the public [review event stream](/api-reference/reviews/stream-execution). `execution.url` is this polling endpoint. When status is `completed`, `execution.body` contains the full assistant response. Call [List Messages](/api-reference/reviews/list-messages) when you also need the conversation history or citations.
 
 The `body` field is `null` while the execution is not complete and for executions that fail or are cancelled.
 

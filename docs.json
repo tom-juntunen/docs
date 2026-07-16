@@ -97,6 +97,7 @@
               "api-reference/reviews/get-review",
               "api-reference/reviews/list-messages",
               "api-reference/reviews/create-message",
+              "api-reference/reviews/stream-execution",
               "api-reference/reviews/get-execution",
               "api-reference/reviews/cancel-execution"
             ]

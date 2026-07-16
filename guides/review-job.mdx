@@ -1,12 +1,12 @@
 ---
 title: "Run a Grounded Project Review"
 sidebarTitle: "Run a Review"
-description: "Create a review, submit a question, poll its durable execution, and read the cited assistant answer."
+description: "Create a review, submit a question, stream its durable execution, and read the cited assistant answer."
 ---
 
 Use a review when you want conversational answers over sources that Plangrep has already ingested and indexed. A review is separate from a document-processing job: it has messages, executions, citations, and token usage instead of uploads, page counts, and immutable result JSON.
 
-Your bearer key needs `reviews:write` to create reviews, submit questions, and cancel executions. It needs `reviews:read` to list and get reviews, poll executions, and read messages.
+Your bearer key needs `reviews:write` to create reviews, submit questions, and cancel executions. It needs `reviews:read` to list and get reviews, stream or poll executions, and read messages.
 
 <Steps>
 
@@ -36,18 +36,33 @@ ACCEPTED=$(curl -sS -X POST https://plangrep.com/api/open/v1/projects/$PROJECT_I
   -d '{"body":"Summarize the air-barrier requirements and cite the relevant sources."}')
 
 EXECUTION_URL=$(printf '%s' "$ACCEPTED" | jq -r '.execution.url')
+STREAM_URL=$(printf '%s' "$ACCEPTED" | jq -r '.execution.streamUrl')
 ```
 
 The response is `202 Accepted`. Submit another turn only after this execution becomes terminal; otherwise Plangrep returns `409 review_execution_active`.
 
-### Poll the durable execution
+### Stream the durable execution
+
+For Postman, create a `GET` request to `https://plangrep.com$STREAM_URL?after=-1`. Add bearer authorization and set `Accept: text/event-stream`. Postman opens its **EventStream** response view and shows each event as it arrives.
+
+For an NDJSON client, stream one JSON event per line:
+
+```bash
+curl -N -sS "https://plangrep.com$STREAM_URL?after=-1" \
+  -H "Authorization: Bearer $PLANGREP_API_KEY" \
+  -H "Accept: application/x-ndjson"
+```
+
+Stop after `response.completed` or `response.error`. If the connection closes early, reconnect with `after` set to the last event `sequence`. Disconnecting does not cancel the durable execution.
+
+### Poll as a fallback
 
 ```bash
 curl -sS "https://plangrep.com$EXECUTION_URL" \
   -H "Authorization: Bearer $PLANGREP_API_KEY"
 ```
 
-Poll while status is `queued` or `running`. Stop when it reaches `completed`, `failed`, or `cancelled`. The execution reports token usage after settlement. A completed execution also includes the full assistant response in `execution.body`.
+Use polling for terminal reconciliation or when your client cannot consume SSE or NDJSON. Poll while status is `queued` or `running`. Stop when it reaches `completed`, `failed`, or `cancelled`. The execution reports token usage after settlement. A completed execution also includes the full assistant response in `execution.body`.
 
 ### Read the answer and citations
 
@@ -66,6 +81,6 @@ Both mutation routes require `Idempotency-Key`, scoped by organization, API key,
 
 ## First-release boundaries
 
-Reviews currently supports text questions, polling, a server-selected model, the existing review-token credit policy, and sources already ingested and indexed in the project.
+Reviews currently supports text questions, public HTTPS streaming, polling, a server-selected model, the existing review-token credit policy, and sources already ingested and indexed in the project.
 
-It does not support browser or WebSocket streaming, voice, attachments, model selection, auto-runs, coverage graphs, exports, or document-job webhooks. Review responses only return `/api/open/v1/...` URLs. They never expose runtime session URLs, cookies, capability tokens, stream endpoints, orchestrator paths, or internal container job IDs.
+It does not expose the workspace's browser or WebSocket transport, voice, attachments, model selection, auto-runs, coverage graphs, exports, or document-job webhooks. Review responses only return `/api/open/v1/...` URLs. They never expose runtime session URLs, cookies, capability tokens, internal stream endpoints, orchestrator paths, model/session details, or internal container job IDs.

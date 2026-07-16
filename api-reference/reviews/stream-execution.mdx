@@ -1,0 +1,91 @@
+---
+title: "Stream a Review Execution"
+sidebarTitle: "Stream Execution"
+description: "GET /api/open/v1/projects/:projectId/reviews/:reviewId/executions/:executionId/stream — streams sanitized public review events with durable replay."
+---
+
+Stream a review answer and its progress without polling. Your API key needs the `reviews:read` scope. The endpoint uses the same bearer authentication, organization isolation, and rate limiting as the rest of the Open API.
+
+## Endpoint
+
+```http
+GET https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}/executions/{executionId}/stream
+```
+
+<ParamField header="Accept" type="string" required>
+  Use `text/event-stream` for Postman or another SSE client. Use `application/x-ndjson` for one JSON event per line.
+</ParamField>
+
+<ParamField query="after" type="integer" default="-1">
+  Last public event sequence you received. The server returns events with a greater sequence. Omit it or use `-1` to start at the beginning.
+</ParamField>
+
+## Stream in Postman
+
+1. Send [Submit a Review Question](/api-reference/reviews/create-message).
+2. Copy `execution.streamUrl` from the `202 Accepted` response.
+3. Set a Postman `streamUrl` variable to that returned path, then create a `GET {{baseUrl}}{{streamUrl}}?after=-1` request. The provided Plangrep collection instead builds the same URL from `projectId`, `reviewId`, and `executionId`.
+4. Select **Bearer Token** authorization and use your Open API key.
+5. Add `Accept: text/event-stream`, then click **Send**.
+
+Postman opens its **EventStream** response view. Every SSE message uses the public sequence as `id`, the event type as `event`, and the full public JSON event as `data`.
+
+```text
+id: 2
+event: response.text.delta
+data: {"version":1,"executionId":"review_execution_123","sequence":2,"createdAt":"2026-07-16T12:00:03.000Z","type":"response.text.delta","payload":{"delta":"The air barrier "}}
+```
+
+## Stream NDJSON
+
+```bash
+curl -N -sS \
+  "https://plangrep.com/api/open/v1/projects/$PROJECT_ID/reviews/$REVIEW_ID/executions/$EXECUTION_ID/stream?after=-1" \
+  -H "Authorization: Bearer $PLANGREP_API_KEY" \
+  -H "Accept: application/x-ndjson"
+```
+
+Each NDJSON line is the same JSON object carried in an SSE event's `data` field.
+
+## Event contract
+
+Every event contains `version`, `executionId`, `sequence`, `createdAt`, `type`, and a type-specific `payload`. Sequence values strictly increase, but they are not guaranteed to be contiguous.
+
+| Type | Meaning |
+|---|---|
+| `stream.ready` | The authenticated stream is open. |
+| `response.started` | Review processing started. |
+| `review.title.updated` | The review received a public title update. |
+| `tool.started`, `tool.completed` | A public review search/read tool changed state. |
+| `response.text.delta` | Sanitized incremental answer text. |
+| `source.reviewed` | The execution reviewed a public source record. |
+| `citation` | A public citation became available. |
+| `artifact.manifest` | A public artifact reference became available. |
+| `heartbeat` | The execution remains active. |
+| `response.completed` | Terminal success or partial completion with the canonical full answer. |
+| `response.error` | Terminal public error. |
+
+Stop reading after `response.completed` or `response.error`. Treat the terminal `response.completed.payload.text` as the canonical answer.
+
+## Reconnect safely
+
+Save the latest `sequence` you received. If the connection closes before a terminal event, reconnect to the same URL with `?after={lastSequence}`. Replay does not start a second execution. Disconnecting does not cancel the durable execution.
+
+Text deltas can combine internal chunks, and some sequence values can be omitted. This lets Plangrep sanitize URL-like tokens before advancing a public replay cursor.
+
+## Public-data boundary
+
+Plangrep validates and rebuilds each event before returning it. The stream does not expose capability tokens, runtime or orchestrator URLs, internal container job IDs, model/session details, internal tool metadata, or unknown internal error details. Runtime artifact references are rewritten to bearer-authenticated Open API artifact URLs when a valid public mapping exists. Reading those artifact URLs requires `artifacts:read`.
+
+## Errors
+
+| HTTP | Code | When it occurs |
+|---|---|---|
+| `400` | `invalid_review_stream_after` | `after` is not an integer greater than or equal to `-1`. |
+| `400` | `invalid_review_stream_query` | The request contains an unknown or duplicate query parameter. |
+| `400` | `review_stream_transport_unsupported` | The request attempted a WebSocket upgrade or another unsupported transport. |
+| `403` | `scope_required` | The API key lacks `reviews:read`. |
+| `404` | `review_execution_not_found` | The execution is not visible in the requested project and review. |
+| `406` | `review_stream_media_type_not_acceptable` | `Accept` allows neither SSE nor NDJSON. |
+| `502` | `review_stream_invalid_response` | The internal stream returned an invalid opening response. |
+| `502` / `503` | `review_stream_unavailable` | The durable stream is temporarily unavailable. Reconnect with the same `after` value or poll `execution.url`. |

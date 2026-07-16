@@ -42,6 +42,12 @@
       "type": "string"
     },
     {
+      "key": "streamAfter",
+      "value": "-1",
+      "description": "Last review stream sequence received. Use -1 to start from the beginning.",
+      "type": "string"
+    },
+    {
       "key": "fileId",
       "value": "",
       "description": "Project file ID.",
@@ -2798,7 +2804,7 @@
               ],
               "query": []
             },
-            "description": "Submits a text question and starts a durable execution. Requires reviews:write. Idempotency-Key is required.",
+            "description": "Submits a text question and starts a durable execution. Requires reviews:write. Idempotency-Key is required. Copy execution.id into executionId, then open the SSE stream request; the response also includes execution.streamUrl.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2850,7 +2856,58 @@
               ],
               "query": []
             },
-            "description": "Polls a durable review execution. Requires reviews:read.",
+            "description": "Polls a durable review execution. Requires reviews:read. The response includes streamUrl for SSE or NDJSON events.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Stream review execution (SSE)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews/{{reviewId}}/executions/{{executionId}}/stream?after={{streamAfter}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews",
+                "{{reviewId}}",
+                "executions",
+                "{{executionId}}",
+                "stream"
+              ],
+              "query": [
+                {
+                  "key": "after",
+                  "value": "{{streamAfter}}",
+                  "description": "Last public sequence received. Use -1 to replay from the beginning.",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Streams sanitized public review events. Requires reviews:read. Postman displays this request in its EventStream response view. Each event data field is the documented JSON event; save its sequence in streamAfter before reconnecting. Change Accept to application/x-ndjson for JSON lines.",
             "auth": {
               "type": "bearer",
               "bearer": [

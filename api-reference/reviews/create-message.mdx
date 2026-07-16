@@ -28,7 +28,21 @@ curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc/reviews/review_a
   -d '{"body":"Summarize the air-barrier requirements and cite the sources."}'
 ```
 
-The endpoint returns `202 Accepted` with the user `message`, durable `execution`, and `idempotent`. Poll `execution.url`; do not expect a stream URL. The execution status is initially `queued` or `running`; its terminal statuses are `completed`, `failed`, and `cancelled`.
+The endpoint returns `202 Accepted` with the user `message`, durable `execution`, and `idempotent`. Connect to `execution.streamUrl` to receive public events over SSE or NDJSON. Use `execution.url` as the polling fallback. The execution status is initially `queued` or `running`; its terminal statuses are `completed`, `failed`, and `cancelled`.
+
+```json
+{
+  "execution": {
+    "id": "review_execution_123",
+    "status": "queued",
+    "url": "/api/open/v1/projects/proj_abc/reviews/review_abc/executions/review_execution_123",
+    "streamUrl": "/api/open/v1/projects/proj_abc/reviews/review_abc/executions/review_execution_123/stream"
+  },
+  "idempotent": false
+}
+```
+
+See [Stream Review Execution](/api-reference/reviews/stream-execution) for Postman, replay, and event details.
 
 Only one execution can be active in a review. A second turn returns `409 review_execution_active`.
 

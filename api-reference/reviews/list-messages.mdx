@@ -24,4 +24,4 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}/mes
   Pagination direction: `after` or `before`.
 </ParamField>
 
-Each user message can include its `execution`. Assistant citations expose `label` and `sourceCatalogUri`; use the existing project source endpoints to read the cited evidence. Those endpoints require their existing permissions; `reviews:read` does not grant source-content access. Responses do not include runtime session URLs, cookies, browser credentials, stream endpoints, capability tokens, orchestrator paths, or internal container job IDs.
+Each user message can include its `execution`, including the public `streamUrl`. Assistant citations expose `label` and `sourceCatalogUri`; use the existing project source endpoints to read the cited evidence. Those endpoints require their existing permissions; `reviews:read` does not grant source-content access. Responses do not include runtime session URLs, cookies, browser credentials, internal stream endpoints, capability tokens, orchestrator paths, model/session details, or internal container job IDs.
