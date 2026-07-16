@@ -136,15 +136,6 @@
               "api-reference/artifacts/get-artifact-download",
               "api-reference/artifacts/head-artifact-download"
             ]
-          },
-          {
-            "group": "Workspace API Keys",
-            "pages": [
-              "api-reference/workspace-keys/list-keys",
-              "api-reference/workspace-keys/create-key",
-              "api-reference/workspace-keys/revoke-key",
-              "api-reference/workspace-keys/revoke-all-keys"
-            ]
           }
         ]
       }

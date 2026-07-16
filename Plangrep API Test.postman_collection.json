@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Plangrep API Test",
-    "description": "Drop-in collection for every endpoint documented in this repository. Set collection variables before sending requests. Open API routes use Bearer {{apiKey}}; workspace key-management routes use {{sessionCookie}}.",
+    "description": "Drop-in collection for every public Open API endpoint documented in this repository. Set collection variables before sending requests. Open API routes use Bearer {{apiKey}}.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,12 +15,6 @@
       "key": "apiKey",
       "value": "",
       "description": "Bearer token for Open API requests.",
-      "type": "string"
-    },
-    {
-      "key": "sessionCookie",
-      "value": "",
-      "description": "plangrep_session cookie for workspace API key management endpoints.",
       "type": "string"
     },
     {
@@ -99,12 +93,6 @@
       "key": "sourceCatalogUri",
       "value": "",
       "description": "Source catalog URI from search or citations.",
-      "type": "string"
-    },
-    {
-      "key": "workspaceKeyId",
-      "value": "",
-      "description": "Workspace API key ID.",
       "type": "string"
     },
     {
@@ -2916,164 +2904,6 @@
                   "type": "string"
                 }
               ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Workspace API keys",
-      "item": [
-        {
-          "name": "List workspace API keys",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Cookie",
-                "value": "plangrep_session={{sessionCookie}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/api-keys",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "api-keys"
-              ],
-              "query": []
-            },
-            "description": "Lists workspace API keys and profile. Uses session-cookie authentication, not bearer authentication.",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create workspace API key",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Cookie",
-                "value": "plangrep_session={{sessionCookie}}",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/api-keys",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "api-keys"
-              ],
-              "query": []
-            },
-            "description": "Creates a scoped workspace API key. Uses session-cookie authentication, not bearer authentication.",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"label\": \"My Integration Key\",\n  \"scopes\": [\n    \"jobs:read\",\n    \"jobs:write\",\n    \"artifacts:read\",\n    \"reviews:read\",\n    \"reviews:write\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Revoke workspace API key",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Cookie",
-                "value": "plangrep_session={{sessionCookie}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/api-keys/{{workspaceKeyId}}/revoke",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "api-keys",
-                "{{workspaceKeyId}}",
-                "revoke"
-              ],
-              "query": []
-            },
-            "description": "Revokes one workspace API key. Uses session-cookie authentication, not bearer authentication.",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Revoke all workspace API keys",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Cookie",
-                "value": "plangrep_session={{sessionCookie}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/api-keys/revoke-all",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "api-keys",
-                "revoke-all"
-              ],
-              "query": []
-            },
-            "description": "Revokes all active workspace API keys. Uses session-cookie authentication, not bearer authentication.",
-            "auth": {
-              "type": "noauth"
             }
           },
           "response": []
