@@ -142,7 +142,7 @@ See [Credits](/concepts/credits) for a full explanation of the billing model.
 
 ## Artifacts
 
-Artifacts are authenticated links to derived assets Plangrep generates during processing. They appear in result objects and project entity responses. Artifact objects include a canonical `type`, a `url`, and may include `readWith` to tell MCP-aware clients whether to open the artifact as an image or file.
+Artifacts are authenticated links to derived assets Plangrep generates during processing. They appear in result objects and project entity responses. Every artifact object includes a canonical `type`, a non-empty `contentType`, and a `url`; it may include `readWith` to tell MCP-aware clients whether to open the artifact as an image or file. File viewers use the parent source file's MIME type. When Plangrep cannot determine an artifact type, `contentType` is `application/octet-stream`.
 
 | Artifact type | Description |
 |---------------|-------------|

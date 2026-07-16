@@ -111,9 +111,9 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/sheets/sheet_
     "sheetName": "First Floor Plan",
     "sheetDisplayName": "A1.01 – First Floor Plan",
     "artifacts": [
-      { "type": "thumbnail", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
-      { "type": "sheet_render", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
-      { "type": "sheet_pdf", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
+      { "type": "thumbnail", "contentType": "image/png", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+      { "type": "sheet_render", "contentType": "image/png", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+      { "type": "sheet_pdf", "contentType": "application/pdf", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
     ]
   }
 }

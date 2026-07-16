@@ -150,8 +150,8 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/regions/regio
     "displayBox": { "left": 0.52, "top": 0.31, "right": 0.74, "bottom": 0.58 },
     "titleDisplayBox": { "left": 0.52, "top": 0.58, "right": 0.74, "bottom": 0.62 },
     "artifacts": [
-      { "type": "region_crop", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
-      { "type": "region_text", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
+      { "type": "region_crop", "contentType": "image/png", "url": "https://...", "readWith": "plangrep_show_artifact_image" },
+      { "type": "region_text", "contentType": "text/plain", "url": "https://...", "readWith": "plangrep_show_artifact_file" }
     ]
   }
 }

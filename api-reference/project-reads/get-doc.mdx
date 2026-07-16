@@ -99,9 +99,9 @@ curl -X GET "https://plangrep.com/api/open/v1/projects/proj_abc123/docs/doc_001"
     "docType": "submittal",
     "status": "complete",
     "artifacts": [
-      { "type": "doc_markdown", "url": "https://...", "readWith": "plangrep_show_artifact_file" },
-      { "type": "doc_pdf", "url": "https://...", "readWith": "plangrep_show_artifact_file" },
-      { "type": "thumbnail", "url": "https://...", "readWith": "plangrep_show_artifact_image" }
+      { "type": "doc_markdown", "contentType": "text/markdown", "url": "https://...", "readWith": "plangrep_show_artifact_file" },
+      { "type": "doc_pdf", "contentType": "application/pdf", "url": "https://...", "readWith": "plangrep_show_artifact_file" },
+      { "type": "thumbnail", "contentType": "image/png", "url": "https://...", "readWith": "plangrep_show_artifact_image" }
     ]
   }
 }

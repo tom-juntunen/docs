@@ -155,7 +155,7 @@ Plangrep generates several artifact types for each document and sheet:
 | `model` | Model or structured machine-readable output |
 | `artifact` | Generic artifact when a more specific type does not apply |
 
-Artifact objects can include `readWith`, either `plangrep_show_artifact_image` or `plangrep_show_artifact_file`.
+Every artifact object includes a non-empty `contentType`. File viewers use the parent source file's MIME type, and artifacts with an unknown type use `application/octet-stream`. Artifact objects can include `readWith`, either `plangrep_show_artifact_image` or `plangrep_show_artifact_file`.
 
 ---
 
