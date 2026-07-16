@@ -38,6 +38,10 @@ plangrep_show_source_images
 
 For organization-wide project discovery, `plangrep_search_projects` accepts `sourceSearchMode` with the same values.
 
+## Job tools
+
+`plangrep_list_project_jobs`, `plangrep_get_job`, and `plangrep_get_result` use the unified user-visible job feed. The list tool accepts pagination, status, and active filters and returns `nextCursor`. Review aggregates are included only when the MCP connection has `reviews:read` in addition to `jobs:read`.
+
 ## Artifact and source handles
 
 MCP clients should not fetch Open API artifact URLs directly. The MCP server converts source and artifact URLs into opaque handles. Pass image handles to `plangrep_show_artifact_image` or `plangrep_show_source_image`. Use `plangrep_read_source_text` to read expanded source content: it returns `normalizedData` when available, otherwise bounded text.

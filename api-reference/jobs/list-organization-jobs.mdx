@@ -1,10 +1,12 @@
 ---
 title: "List Jobs Across Your Organization"
 sidebarTitle: "List Organization Jobs"
-description: "GET /api/open/v1/jobs — returns processing jobs across all visible projects in your organization, with optional project, status, and active-only filters."
+description: "GET /api/open/v1/jobs — returns the user-visible job feed across your organization, with pagination and filters."
 ---
 
-Retrieve processing jobs across every project visible to the authenticated organization key. Jobs are ordered newest first and returned with an opaque pagination cursor.
+Retrieve the same user-visible job feed as the Plangrep app across every project visible to the authenticated organization key. It includes Open API ingestion jobs, workspace uploads, saved runs, and one aggregate record per review. Internal preflight, fan-out, and container records remain private. Jobs are ordered newest first and returned with an opaque pagination cursor.
+
+Keys with `jobs:read` receive Open API ingestion jobs, workspace uploads, and saved runs. Review aggregate records require both `jobs:read` and `reviews:read`; without `reviews:read`, they are omitted.
 
 Use this endpoint for dashboards, queues, recent-activity views, and billing reconciliation across projects. To list jobs for one project, use [List Jobs](/api-reference/jobs/list-jobs).
 
@@ -50,7 +52,7 @@ GET https://plangrep.com/api/open/v1/jobs
   Cursor to pass as `cursor` for the next page, or `null` when there are no more jobs.
 </ResponseField>
 
-Each job uses the same `Job` object documented in [Get Job](/api-reference/jobs/get-job).
+Each job uses the normalized app shape documented in [Get Job](/api-reference/jobs/get-job). `source` identifies the origin (`open_api` or `workspace`), while `jobType` and `jobKind` distinguish ingestion, saved-run, and review work. Jobs also include consumption, billing, page and file information when applicable, project metadata, status, timestamps, and a bearer-authenticated `resultUrl`.
 
 ## Example Request
 
@@ -69,6 +71,10 @@ curl "https://plangrep.com/api/open/v1/jobs?limit=10&activeOnly=true" \
       "displayName": "Downtown Tower - 2026-07-11",
       "activityLabel": "Downtown Tower - 2026-07-11",
       "externalId": null,
+      "source": "open_api",
+      "jobType": "document_ingestion",
+      "jobKind": "document_ingestion",
+      "consumption": { "type": "pages", "count": 87, "drawingPages": 87, "documentPages": 0 },
       "status": "processing",
       "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
       "project": {

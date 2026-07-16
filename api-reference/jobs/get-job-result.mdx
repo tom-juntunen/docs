@@ -1,10 +1,12 @@
 ---
-title: "Get Normalized Result JSON for a Plangrep Job"
+title: "Get a User-Visible Job Result"
 sidebarTitle: "Get Result"
-description: "GET /api/open/v1/jobs/:jobId/result — returns the immutable normalized v1 result JSON for a completed job, including documents, evidence, and usage."
+description: "GET /api/open/v1/jobs/:jobId/result — returns the normalized Open API result or a public-safe user-visible result envelope."
 ---
 
-Retrieve the normalized v1 result JSON for a job that has reached a completed terminal state. The result is immutable — its content never changes after the job finishes. It includes structured documents extracted from the source files, supporting evidence linking findings back to specific pages and regions, usage metrics, and any warnings or errors that arose during processing.
+Retrieve the result for a user-visible job. Open API ingestion jobs preserve the existing immutable normalized v1 result, including documents, evidence, usage, warnings, and errors. Workspace uploads, saved runs, and review aggregates return a public-safe envelope containing `schemaVersion`, the normalized `job`, and a public-safe `result` object.
+
+Review-derived results require both `jobs:read` and `reviews:read`. Without `reviews:read`, a review ID returns the normal not-found response. Artifact access remains behind the existing `artifacts:read` artifact routes.
 
 ## Authentication
 
@@ -19,7 +21,7 @@ GET https://plangrep.com/api/open/v1/jobs/{jobId}/result
 ## Path Parameters
 
 <ParamField path="jobId" type="string" required>
-  The unique identifier of the job whose result you want to retrieve. The job must have a `status` of `completed` or `completed_with_errors`.
+  The unique identifier of the user-visible job whose result you want to retrieve.
 </ParamField>
 
 ## Example Request
@@ -33,8 +35,28 @@ curl --request GET \
 
 ## Response Fields
 
+The response has two forms:
+
+- An Open API ingestion job returns the existing normalized v1 result described below.
+- A workspace upload, saved run, or review aggregate returns this public-safe envelope. `result` contains only public-safe source result data.
+
+```json
+{
+  "schemaVersion": "v1",
+  "job": {
+    "id": "job_01hy3m8qtn2e5r7k9p0w4x1def",
+    "source": "workspace",
+    "jobType": "agent_execution",
+    "jobKind": "saved_run",
+    "status": "completed",
+    "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result"
+  },
+  "result": {}
+}
+```
+
 <ResponseField name="schemaVersion" type='"v1"' required>
-  Always `"v1"`. Used by consumers to select the correct parsing logic as the schema evolves over time.
+  Always `"v1"`. Used by consumers to select the correct parsing logic as the schema evolves over time. Present in both response forms.
 </ResponseField>
 
 <ResponseField name="job" type="ResultJob" required>

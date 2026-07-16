@@ -4,7 +4,7 @@ sidebarTitle: "Resume Job"
 description: "POST /api/open/v1/jobs/:jobId/resume — resumes a job paused due to insufficient credits. Add credits to your account before calling this endpoint."
 ---
 
-Resume a job that has been paused with a `blocked_insufficient_credits` status. Plangrep automatically pauses processing when your organization runs out of credits mid-job. After adding credits to your account, call this endpoint to restart processing from where it left off — no re-upload is required.
+Resume an Open API ingestion job that has been paused with a `blocked_insufficient_credits` status. Plangrep automatically pauses processing when your organization runs out of credits mid-job. After adding credits to your account, call this endpoint to restart processing from where it left off — no re-upload is required. Workspace-upload, saved-run, and review aggregate IDs are read-only on the Open API surface and return the normal not-found response from this route.
 
 ## Authentication
 
@@ -19,7 +19,7 @@ POST https://plangrep.com/api/open/v1/jobs/{jobId}/resume
 ## Path Parameters
 
 <ParamField path="jobId" type="string" required>
-  The unique identifier of the job to resume. The job must currently have a `status` of `blocked_insufficient_credits`.
+  The unique identifier of an Open API ingestion job to resume. The job must currently have a `status` of `blocked_insufficient_credits`.
 </ParamField>
 
 ## Request Body

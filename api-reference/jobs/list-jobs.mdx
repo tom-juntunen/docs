@@ -1,10 +1,12 @@
 ---
-title: "List Jobs for a Plangrep API Project"
+title: "List User-Visible Jobs for a Plangrep Project"
 sidebarTitle: "List Jobs"
-description: "GET /api/open/v1/projects/:projectId/jobs — returns all processing jobs for an API project, ordered by creation time, newest first."
+description: "GET /api/open/v1/projects/:projectId/jobs — returns the user-visible job feed for a project, newest first."
 ---
 
-Retrieve all processing jobs associated with a specific project. The response is an array of Job objects ordered by creation time, newest first. Use this endpoint to audit job history, reconcile billing, or surface the current in-progress job for a project.
+Retrieve the same user-visible job feed as the Plangrep app for a project. It includes Open API ingestion jobs, workspace uploads, saved runs, and one aggregate record per review. Internal preflight, fan-out, and container records remain private. The response is ordered newest first and paginated.
+
+Keys with `jobs:read` receive Open API ingestion jobs, workspace uploads, and saved runs. Review aggregate records require both `jobs:read` and `reviews:read`; without `reviews:read`, they are omitted.
 
 ## Authentication
 
@@ -22,11 +24,29 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/jobs
   The unique identifier of the project whose jobs you want to list. Returned as `project.id` from [Create Project](/api-reference/projects/create-project) or [List Projects](/api-reference/projects/list-projects).
 </ParamField>
 
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum jobs to return. Must be between **1** and **100**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque pagination cursor returned as `nextCursor` from a previous response.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Restrict results to one job status.
+</ParamField>
+
+<ParamField query="activeOnly" type="boolean">
+  When `true`, returns only active jobs. `active_only` is accepted as a compatibility alias.
+</ParamField>
+
 ## Example Request
 
 ```bash
 curl --request GET \
-  --url https://plangrep.com/api/open/v1/projects/proj_01hx9z4kqr8e7m3p5n6w2v0abc/jobs \
+  --url "https://plangrep.com/api/open/v1/projects/proj_01hx9z4kqr8e7m3p5n6w2v0abc/jobs?limit=20&activeOnly=true" \
   --header "Authorization: Bearer YOUR_API_KEY" \
   --header "Accept: application/json"
 ```
@@ -34,7 +54,7 @@ curl --request GET \
 ## Response Fields
 
 <ResponseField name="jobs" type="Job[]" required>
-  Array of all jobs belonging to the specified project, ordered by creation time (newest first).
+  Normalized jobs belonging to the specified project, ordered newest first. Each job can represent an Open API ingestion, workspace upload, saved run, or review aggregate.
 
   <Expandable title="Job object fields">
     <ResponseField name="id" type="string" required>
@@ -55,6 +75,22 @@ curl --request GET \
 
     <ResponseField name="status" type="JobStatus" required>
       Current status of the job. One of: `provisioning`, `awaiting_uploads`, `uploading`, `preflighting`, `blocked_insufficient_credits`, `processing`, `completed`, `completed_with_errors`, `failed`, `cancelled`, `expired`.
+    </ResponseField>
+
+    <ResponseField name="source" type="string">
+      Origin of the job: `open_api` or `workspace`. Use `jobType` and `jobKind` to distinguish ingestion, saved-run, and review work.
+    </ResponseField>
+
+    <ResponseField name="jobType" type="string">
+      Normalized app job type.
+    </ResponseField>
+
+    <ResponseField name="jobKind" type="string">
+      Normalized app job kind.
+    </ResponseField>
+
+    <ResponseField name="consumption" type="object">
+      Consumption information when applicable.
     </ResponseField>
 
     <ResponseField name="projectId" type="string" required>
@@ -139,6 +175,10 @@ curl --request GET \
   </Expandable>
 </ResponseField>
 
+<ResponseField name="nextCursor" type="string | null" required>
+  Cursor to pass as `cursor` for the next page, or `null` when there are no more jobs.
+</ResponseField>
+
 ## Example Response
 
 ```json
@@ -149,6 +189,9 @@ curl --request GET \
       "displayName": "order-7890",
       "activityLabel": "order-7890",
       "externalId": "order-7890",
+      "source": "open_api",
+      "jobType": "document_ingestion",
+      "jobKind": "document_ingestion",
       "status": "completed",
       "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
       "project": {
@@ -220,10 +263,11 @@ curl --request GET \
       "completedAt": "2024-11-01T16:31:05.000Z",
       "expiresAt": "2024-11-08T16:30:00.000Z"
     }
-  ]
+  ],
+  "nextCursor": null
 }
 ```
 
 <Note>
-  Jobs are returned for the authenticated organization only. To retrieve full details or the result for a specific job, use [Get Job](/api-reference/jobs/get-job) or [Get Job Result](/api-reference/jobs/get-job-result) with the individual `jobId`.
+  To retrieve full details or the result for a specific job, use [Get Job](/api-reference/jobs/get-job) or [Get Job Result](/api-reference/jobs/get-job-result) with the individual `jobId`.
 </Note>
