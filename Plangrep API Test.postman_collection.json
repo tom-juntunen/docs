@@ -1,0 +1,3084 @@
+{
+  "info": {
+    "name": "Plangrep API Test",
+    "description": "Drop-in collection for every endpoint documented in this repository. Set collection variables before sending requests. Open API routes use Bearer {{apiKey}}; workspace key-management routes use {{sessionCookie}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://plangrep.com",
+      "description": "Plangrep API origin.",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "",
+      "description": "Bearer token for Open API requests.",
+      "type": "string"
+    },
+    {
+      "key": "sessionCookie",
+      "value": "",
+      "description": "plangrep_session cookie for workspace API key management endpoints.",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "description": "Open API project ID.",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "description": "Processing job ID.",
+      "type": "string"
+    },
+    {
+      "key": "reviewId",
+      "value": "",
+      "description": "Review ID.",
+      "type": "string"
+    },
+    {
+      "key": "executionId",
+      "value": "",
+      "description": "Review execution ID.",
+      "type": "string"
+    },
+    {
+      "key": "fileId",
+      "value": "",
+      "description": "Project file ID.",
+      "type": "string"
+    },
+    {
+      "key": "sheetId",
+      "value": "",
+      "description": "Project sheet ID.",
+      "type": "string"
+    },
+    {
+      "key": "regionId",
+      "value": "",
+      "description": "Project region ID.",
+      "type": "string"
+    },
+    {
+      "key": "docId",
+      "value": "",
+      "description": "Project document ID.",
+      "type": "string"
+    },
+    {
+      "key": "specId",
+      "value": "",
+      "description": "Project specification ID.",
+      "type": "string"
+    },
+    {
+      "key": "sectionId",
+      "value": "",
+      "description": "Specification section ID.",
+      "type": "string"
+    },
+    {
+      "key": "artifactPath",
+      "value": "",
+      "description": "Artifact path from an API response.",
+      "type": "string"
+    },
+    {
+      "key": "artifactDownloadToken",
+      "value": "",
+      "description": "One-time artifact download token.",
+      "type": "string"
+    },
+    {
+      "key": "sourceCatalogUri",
+      "value": "",
+      "description": "Source catalog URI from search or citations.",
+      "type": "string"
+    },
+    {
+      "key": "workspaceKeyId",
+      "value": "",
+      "description": "Workspace API key ID.",
+      "type": "string"
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "request-{{$guid}}",
+      "description": "Use a unique value for each new mutation; reuse the exact key when retrying.",
+      "type": "string"
+    },
+    {
+      "key": "fileName",
+      "value": "example.pdf",
+      "description": "Upload file name.",
+      "type": "string"
+    },
+    {
+      "key": "contentType",
+      "value": "application/pdf",
+      "description": "Upload MIME type.",
+      "type": "string"
+    },
+    {
+      "key": "fileSize",
+      "value": "12345",
+      "description": "Upload file size in bytes.",
+      "type": "string"
+    },
+    {
+      "key": "fileSha256",
+      "value": "",
+      "description": "Lowercase SHA-256 hex digest.",
+      "type": "string"
+    },
+    {
+      "key": "uploadDocumentId",
+      "value": "",
+      "description": "Document ID returned by Register uploads.",
+      "type": "string"
+    },
+    {
+      "key": "uploadToken",
+      "value": "",
+      "description": "Upload token returned by Register uploads.",
+      "type": "string"
+    },
+    {
+      "key": "multipartUploadId",
+      "value": "",
+      "description": "Multipart upload ID returned by Register uploads.",
+      "type": "string"
+    },
+    {
+      "key": "uploadUrl",
+      "value": "",
+      "description": "Signed direct-upload URL returned by Register uploads.",
+      "type": "string"
+    },
+    {
+      "key": "cursor",
+      "value": "",
+      "description": "Pagination cursor.",
+      "type": "string"
+    },
+    {
+      "key": "limit",
+      "value": "100",
+      "description": "Page size where supported.",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{apiKey}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "include",
+                  "value": "overview",
+                  "description": "Include overview data.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists projects visible to the organization. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects"
+              ],
+              "query": []
+            },
+            "description": "Creates an API project. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Customer API Project\",\n  \"disciplines\": [\n    \"Architecture\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get project",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}"
+              ],
+              "query": []
+            },
+            "description": "Gets a project state. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get project overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "overview"
+              ],
+              "query": []
+            },
+            "description": "Gets project and source-index readiness. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search projects",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "search"
+              ],
+              "query": []
+            },
+            "description": "Searches projects by name and indexed sources. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"air barrier requirements\",\n  \"sourceSearchMode\": \"auto\",\n  \"limit\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get project summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "summary"
+              ],
+              "query": []
+            },
+            "description": "Gets aliases, key files, disciplines, and counts. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reconcile source index",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/source-index/reconcile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "source-index",
+                "reconcile"
+              ],
+              "query": []
+            },
+            "description": "Reconciles missing or terminal source indexes. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Normalize regions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/regions/normalize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "regions",
+                "normalize"
+              ],
+              "query": []
+            },
+            "description": "Schedules repair for missing normalized region data. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"missing_normalized_regions\",\n  \"documentIds\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "List organization jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by status.",
+                  "disabled": true
+                },
+                {
+                  "key": "activeOnly",
+                  "value": "",
+                  "description": "Only active jobs.",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists jobs across visible projects. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List project jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "jobs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists jobs for a project. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "jobs"
+              ],
+              "query": []
+            },
+            "description": "Creates a document-processing job. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"externalId\": \"customer-project-123\",\n  \"webhookUrl\": \"https://your-app.example.com/webhooks/plangrep\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get job",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}"
+              ],
+              "query": []
+            },
+            "description": "Gets job state. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get job result",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/result",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "result"
+              ],
+              "query": []
+            },
+            "description": "Gets a completed job's normalized result. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resume job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/resume",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "resume"
+              ],
+              "query": []
+            },
+            "description": "Resumes a job blocked by insufficient credits. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "cancel"
+              ],
+              "query": []
+            },
+            "description": "Cancels a non-terminal job. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Register uploads",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/uploads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "uploads"
+              ],
+              "query": []
+            },
+            "description": "Registers file metadata before direct upload. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"files\": [\n    {\n      \"fileName\": \"{{fileName}}\",\n      \"fileSize\": {{fileSize}},\n      \"contentType\": \"{{contentType}}\",\n      \"sha256\": \"{{fileSha256}}\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload file bytes (signed URL)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "{{contentType}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{uploadUrl}}",
+              "host": [
+                "{{uploadUrl}}"
+              ],
+              "path": [],
+              "query": []
+            },
+            "description": "Uploads raw bytes to the signed URL returned by Register uploads. This is an R2 upload, not an Open API endpoint.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete uploads",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/uploads/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "uploads",
+                "complete"
+              ],
+              "query": []
+            },
+            "description": "Finalizes uploads and starts processing. Requires jobs:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentIds\": [\n    \"{{uploadDocumentId}}\"\n  ],\n  \"directUploads\": [\n    {\n      \"documentId\": \"{{uploadDocumentId}}\",\n      \"uploadToken\": \"{{uploadToken}}\"\n    }\n  ],\n  \"multipartUploads\": [],\n  \"failedUploads\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Project entities",
+      "item": [
+        {
+          "name": "List files",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/files",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "files"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheets",
+                  "value": "",
+                  "description": "Filter by sheet data.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by processing status.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists extracted files. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get file",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/files/{{fileId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "files",
+                "{{fileId}}"
+              ],
+              "query": [
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheets",
+                  "value": "",
+                  "description": "Filter by sheet data.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by processing status.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Gets an extracted file. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List sheets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/sheets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "sheets"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheets",
+                  "value": "",
+                  "description": "Filter by sheet data.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by processing status.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "",
+                  "description": "Filter by page number.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheetNumber",
+                  "value": "",
+                  "description": "Filter by sheet number.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists extracted drawing sheets. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get sheet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/sheets/{{sheetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "sheets",
+                "{{sheetId}}"
+              ],
+              "query": [
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheets",
+                  "value": "",
+                  "description": "Filter by sheet data.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by processing status.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "",
+                  "description": "Filter by page number.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheetNumber",
+                  "value": "",
+                  "description": "Filter by sheet number.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Gets a drawing sheet. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List regions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/regions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "regions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheetNumber",
+                  "value": "",
+                  "description": "Filter by sheet number.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "",
+                  "description": "Filter by page number.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionNumber",
+                  "value": "",
+                  "description": "Filter by region number.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionKind",
+                  "value": "",
+                  "description": "Filter by region kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionFamily",
+                  "value": "",
+                  "description": "Filter by region family.",
+                  "disabled": true
+                },
+                {
+                  "key": "placedViewKind",
+                  "value": "",
+                  "description": "Filter by placed view kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "tableKind",
+                  "value": "",
+                  "description": "Filter by table kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "partRole",
+                  "value": "",
+                  "description": "Filter by part role.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists extracted drawing regions. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get region",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/regions/{{regionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "regions",
+                "{{regionId}}"
+              ],
+              "query": [
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheetNumber",
+                  "value": "",
+                  "description": "Filter by sheet number.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "",
+                  "description": "Filter by page number.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionNumber",
+                  "value": "",
+                  "description": "Filter by region number.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionKind",
+                  "value": "",
+                  "description": "Filter by region kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionFamily",
+                  "value": "",
+                  "description": "Filter by region family.",
+                  "disabled": true
+                },
+                {
+                  "key": "placedViewKind",
+                  "value": "",
+                  "description": "Filter by placed view kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "tableKind",
+                  "value": "",
+                  "description": "Filter by table kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "partRole",
+                  "value": "",
+                  "description": "Filter by part role.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Gets a drawing region. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List sheet regions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/sheets/{{sheetId}}/regions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "sheets",
+                "{{sheetId}}",
+                "regions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheetNumber",
+                  "value": "",
+                  "description": "Filter by sheet number.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "",
+                  "description": "Filter by page number.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionNumber",
+                  "value": "",
+                  "description": "Filter by region number.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionKind",
+                  "value": "",
+                  "description": "Filter by region kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "regionFamily",
+                  "value": "",
+                  "description": "Filter by region family.",
+                  "disabled": true
+                },
+                {
+                  "key": "placedViewKind",
+                  "value": "",
+                  "description": "Filter by placed view kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "tableKind",
+                  "value": "",
+                  "description": "Filter by table kind.",
+                  "disabled": true
+                },
+                {
+                  "key": "partRole",
+                  "value": "",
+                  "description": "Filter by part role.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists regions on a sheet. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List specifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/specifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "specifications"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "specId",
+                  "value": "{{specId}}",
+                  "description": "Filter by specification ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists specification documents. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get specification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/specifications/{{specId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "specifications",
+                "{{specId}}"
+              ],
+              "query": [
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "specId",
+                  "value": "{{specId}}",
+                  "description": "Filter by specification ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Gets a specification document. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List specification sections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/specifications/{{specId}}/sections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "specifications",
+                "{{specId}}",
+                "sections"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sectionNumber",
+                  "value": "",
+                  "description": "Filter by section number.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageStart",
+                  "value": "",
+                  "description": "Filter by first page.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageEnd",
+                  "value": "",
+                  "description": "Filter by last page.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists sections in a specification. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get specification section",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/specifications/{{specId}}/sections/{{sectionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "specifications",
+                "{{specId}}",
+                "sections",
+                "{{sectionId}}"
+              ],
+              "query": [
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sectionNumber",
+                  "value": "",
+                  "description": "Filter by section number.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageStart",
+                  "value": "",
+                  "description": "Filter by first page.",
+                  "disabled": true
+                },
+                {
+                  "key": "pageEnd",
+                  "value": "",
+                  "description": "Filter by last page.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Gets full specification section text. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List docs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/docs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "docs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheets",
+                  "value": "",
+                  "description": "Filter by sheet data.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by processing status.",
+                  "disabled": true
+                },
+                {
+                  "key": "docType",
+                  "value": "",
+                  "description": "Filter by document type.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists processed document entities. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get doc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/docs/{{docId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "docs",
+                "{{docId}}"
+              ],
+              "query": [
+                {
+                  "key": "compact",
+                  "value": "",
+                  "description": "Return compact entities.",
+                  "disabled": true
+                },
+                {
+                  "key": "sheets",
+                  "value": "",
+                  "description": "Filter by sheet data.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileId",
+                  "value": "{{fileId}}",
+                  "description": "Filter by file ID.",
+                  "disabled": true
+                },
+                {
+                  "key": "fileName",
+                  "value": "",
+                  "description": "Filter by file name.",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "description": "Filter by classification.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by processing status.",
+                  "disabled": true
+                },
+                {
+                  "key": "docType",
+                  "value": "",
+                  "description": "Filter by document type.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Gets a processed document entity. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search sources",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/source-search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "source-search"
+              ],
+              "query": []
+            },
+            "description": "Searches indexed project sources. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"air barrier\",\n  \"mode\": \"auto\",\n  \"maxHits\": 20,\n  \"entityTypes\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Read source text",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/source-text",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "source-text"
+              ],
+              "query": []
+            },
+            "description": "Reads bounded text for a source catalog URI. Requires the existing source-read permission.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceCatalogUri\": \"{{sourceCatalogUri}}\",\n  \"maxChars\": 5000,\n  \"textKind\": \"text\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Artifacts",
+      "item": [
+        {
+          "name": "Get job artifact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/artifact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "artifact"
+              ],
+              "query": [
+                {
+                  "key": "path",
+                  "value": "{{artifactPath}}",
+                  "description": "Artifact path.",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Fetches bytes from a job result snapshot. Requires artifacts:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get project artifact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/artifact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "artifact"
+              ],
+              "query": [
+                {
+                  "key": "path",
+                  "value": "{{artifactPath}}",
+                  "description": "Artifact path.",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Fetches bytes from a project entity or source catalog. Requires artifacts:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get artifact download",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/artifact-downloads/{{artifactDownloadToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "artifact-downloads",
+                "{{artifactDownloadToken}}"
+              ],
+              "query": []
+            },
+            "description": "Streams artifact bytes using a one-time token. This route is unauthenticated.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Head artifact download",
+          "request": {
+            "method": "HEAD",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/artifact-downloads/{{artifactDownloadToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "artifact-downloads",
+                "{{artifactDownloadToken}}"
+              ],
+              "query": []
+            },
+            "description": "Validates an artifact download token without consuming it. This route is unauthenticated.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "List reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists project reviews. Requires reviews:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews"
+              ],
+              "query": []
+            },
+            "description": "Creates a named review. Requires reviews:write. Idempotency-Key is required.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Envelope review\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get review",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews",
+                "{{reviewId}}"
+              ],
+              "query": []
+            },
+            "description": "Gets a review. Requires reviews:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List review messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews/{{reviewId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews",
+                "{{reviewId}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum results to return.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from a prior response.",
+                  "disabled": true
+                },
+                {
+                  "key": "direction",
+                  "value": "after",
+                  "description": "Pagination direction: after or before.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists review messages and assistant citations. Requires reviews:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit review question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews/{{reviewId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews",
+                "{{reviewId}}",
+                "messages"
+              ],
+              "query": []
+            },
+            "description": "Submits a text question and starts a durable execution. Requires reviews:write. Idempotency-Key is required.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Summarize the air-barrier requirements and cite the relevant sources.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get review execution",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews/{{reviewId}}/executions/{{executionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews",
+                "{{reviewId}}",
+                "executions",
+                "{{executionId}}"
+              ],
+              "query": []
+            },
+            "description": "Polls a durable review execution. Requires reviews:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel review execution",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/projects/{{projectId}}/reviews/{{reviewId}}/executions/{{executionId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "reviews",
+                "{{reviewId}}",
+                "executions",
+                "{{executionId}}",
+                "cancel"
+              ],
+              "query": []
+            },
+            "description": "Requests asynchronous cancellation. Continue polling until status is cancelled. Requires reviews:write.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Workspace API keys",
+      "item": [
+        {
+          "name": "List workspace API keys",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Cookie",
+                "value": "plangrep_session={{sessionCookie}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys"
+              ],
+              "query": []
+            },
+            "description": "Lists workspace API keys and profile. Uses session-cookie authentication, not bearer authentication.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create workspace API key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Cookie",
+                "value": "plangrep_session={{sessionCookie}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys"
+              ],
+              "query": []
+            },
+            "description": "Creates a scoped workspace API key. Uses session-cookie authentication, not bearer authentication.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"My Integration Key\",\n  \"scopes\": [\n    \"jobs:read\",\n    \"jobs:write\",\n    \"artifacts:read\",\n    \"reviews:read\",\n    \"reviews:write\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke workspace API key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Cookie",
+                "value": "plangrep_session={{sessionCookie}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/{{workspaceKeyId}}/revoke",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys",
+                "{{workspaceKeyId}}",
+                "revoke"
+              ],
+              "query": []
+            },
+            "description": "Revokes one workspace API key. Uses session-cookie authentication, not bearer authentication.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke all workspace API keys",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Cookie",
+                "value": "plangrep_session={{sessionCookie}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/revoke-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys",
+                "revoke-all"
+              ],
+              "query": []
+            },
+            "description": "Revokes all active workspace API keys. Uses session-cookie authentication, not bearer authentication.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
