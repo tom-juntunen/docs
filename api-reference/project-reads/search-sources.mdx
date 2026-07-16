@@ -1,10 +1,10 @@
 ---
 title: "Search Project Sources"
 sidebarTitle: "Search Sources"
-description: "POST /api/open/v1/projects/:projectId/source-search — semantic, exact, grep, regex, or auto search across all indexed sources in a project. Returns hits with snippets."
+description: "POST /api/open/v1/projects/:projectId/source-search — semantic, exact, grep, regex, or auto search across all indexed sources in a project. Returns source metadata and normalized data when available."
 ---
 
-Searches indexed sources within a project, including drawing regions, specification sections, and document entities. Use `mode: "semantic"` for vector search, `mode: "exact"` for case-insensitive exact phrase search, `mode: "grep"` for keyword and boolean prepared-text search, `mode: "regex"` for regular expression search, or `mode: "auto"` for semantic-first behavior with keyword follow-up guidance. Exact search normalizes whitespace before matching the full phrase. Returns hits with snippets, source metadata, and any artifacts exposed for that source. For specification hits, use the returned `source.documentId` and the section ID encoded in `source.id` or `sourceCatalogUri` with the specification section endpoints to retrieve full text and structured evidence.
+Searches indexed sources within a project, including drawing regions, specification sections, and document entities. Use `mode: "semantic"` for vector search, `mode: "exact"` for case-insensitive exact phrase search, `mode: "grep"` for keyword and boolean prepared-text search, `mode: "regex"` for regular expression search, or `mode: "auto"` for semantic-first behavior with keyword follow-up guidance. Exact search normalizes whitespace before matching the full phrase. Hits include source metadata and, for sources with structured normalized region data, a top-level `normalizedData` object. For hits without `normalizedData`, use `sourceCatalogUri` with [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve the bounded text fallback. Search ranking is unchanged; snippets were presentation-only and are not returned. For specification hits, use the returned `source.documentId` and the section ID encoded in `source.id` or `sourceCatalogUri` with the specification section endpoints to retrieve full text and structured evidence.
 
 <Warning>
   **409 — Source index not ready.** `mode: "semantic"` returns `409 Conflict` when the vector index has not finished building. `mode: "exact"` returns `409 Conflict` when the exact index has not finished building. Both return `error.code: "source_index_not_ready"`. `mode: "auto"` returns `status: "keyword_search_required"` and next actions instead of a `409`, so agent clients can issue a focused `grep` or `regex` follow-up.
@@ -138,13 +138,13 @@ Returns a `SourceSearchResponse` object.
     <ResponseField name="score" type="number">
       Relevance score for semantic hits. Higher is more relevant.
     </ResponseField>
-    <ResponseField name="snippet" type="string">
-      A short excerpt of text from the matched source, suitable for display in a results list.
+    <ResponseField name="normalizedData" type="object">
+      Full public normalized source data when available. This is a top-level hit field and is not duplicated in `source`.
     </ResponseField>
     <ResponseField name="sourceCatalogUri" type="string">
-      Opaque `source-catalog://...` URI that uniquely identifies this source. For non-specification sources, pass this to [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve bounded source text. For specification section sources, use the section API instead.
+      Opaque `source-catalog://...` URI that uniquely identifies this source. When the hit has no `normalizedData`, pass this to [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve bounded source text. For specification section sources, use the section API instead.
     </ResponseField>
-    <ResponseField name="source" type="ProjectSource">
+    <ResponseField name="source" type="SourceSearchSource">
       Structured object describing the matched source entity.
 
       <Expandable title="ProjectSource fields">
@@ -174,9 +174,6 @@ Returns a `SourceSearchResponse` object.
         </ResponseField>
         <ResponseField name="partRole" type="string">
           Present for source parts when available.
-        </ResponseField>
-        <ResponseField name="normalizedData" type="object">
-          Structured region data for normalized region hits. Shape varies by region kind.
         </ResponseField>
         <ResponseField name="sectionNumber" type="string">
           Present for specification hits when available.
@@ -224,7 +221,6 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
   "hits": [
     {
       "score": 0.941,
-      "snippet": "...self-adhering sheet waterproofing membrane applied to all below-grade foundation walls per ASTM D1970...",
       "sourceCatalogUri": "source-catalog://project_specification:section_003",
       "source": {
         "type": "project_specification",
@@ -236,6 +232,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
         "fileArtifacts": [
           {
             "type": "specification_file",
+            "contentType": "application/pdf",
             "url": "https://...",
             "readWith": "plangrep_show_artifact_file"
           }
@@ -244,16 +241,16 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
     },
     {
       "score": 0.887,
-      "snippet": "...apply waterproofing membrane to exterior face of below-grade concrete walls. See Detail 4/A8.02...",
       "sourceCatalogUri": "source-catalog://project_sheet_region:region_204",
+      "normalizedData": {},
       "source": {
         "type": "project_sheet_region",
         "id": "project_sheet_region:region_204",
         "regionId": "region_204",
         "label": "DETAIL 4/A8.02",
-        "normalizedData": {},
         "imageArtifact": {
           "type": "region_crop",
+          "contentType": "image/png",
           "url": "https://...",
           "readWith": "plangrep_show_artifact_image"
         }
