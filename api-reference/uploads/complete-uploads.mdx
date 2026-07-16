@@ -6,7 +6,7 @@ description: "POST /api/open/v1/jobs/:jobId/uploads/complete — finalize signed
 
 ## Overview
 
-Complete a job after every accepted registration has either reused verified content or finished its signed R2 upload. Completion assembles multipart objects, verifies new stored bytes, attaches only verified clean content to logical files, and starts preflight.
+Complete an Open API ingestion job after every accepted registration has either reused verified content or finished its signed R2 upload. Workspace-upload, saved-run, and review aggregate IDs are read-only on the Open API surface and return the normal not-found response from this route. Completion assembles multipart objects, verifies new stored bytes, attaches only verified clean content to logical files, and starts preflight.
 
 New content stays quarantined until Plangrep confirms:
 

@@ -6,7 +6,7 @@ description: "POST /api/open/v1/jobs/:jobId/uploads — register file metadata a
 
 ## Overview
 
-Register every file before sending bytes. For each declaration, Plangrep returns one of these results:
+Register every file for an Open API ingestion job before sending bytes. Workspace-upload, saved-run, and review aggregate IDs are read-only on the Open API surface and return the normal not-found response from this route. For each declaration, Plangrep returns one of these results:
 
 - An organization-scoped verified content reference with `status: "reused"` and no byte upload.
 - A signed `direct_put` instruction with an enforced SHA-256 checksum header.
