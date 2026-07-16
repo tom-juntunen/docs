@@ -47,7 +47,7 @@ curl -sS "https://plangrep.com$EXECUTION_URL" \
   -H "Authorization: Bearer $PLANGREP_API_KEY"
 ```
 
-Poll while status is `queued` or `running`. Stop when it reaches `completed`, `failed`, or `cancelled`. The execution reports token usage after settlement.
+Poll while status is `queued` or `running`. Stop when it reaches `completed`, `failed`, or `cancelled`. The execution reports token usage after settlement. A completed execution also includes the full assistant response in `execution.body`.
 
 ### Read the answer and citations
 
@@ -56,7 +56,7 @@ curl -sS https://plangrep.com/api/open/v1/projects/$PROJECT_ID/reviews/$REVIEW_I
   -H "Authorization: Bearer $PLANGREP_API_KEY"
 ```
 
-Find the assistant message whose ID matches `execution.assistantMessageId`. Each citation includes a `label` and `sourceCatalogUri`; use source search, source text, and project entity endpoints to read the cited source. Those existing source endpoints keep their own permission requirements.
+Use `execution.body` as the completed answer. Fetch the messages endpoint when you need conversation history or citations. Find the assistant message whose ID matches `execution.assistantMessageId`; each citation includes a `label` and `sourceCatalogUri`. Use source search, source text, and project entity endpoints to read the cited source. Those existing source endpoints keep their own permission requirements.
 
 </Steps>
 
