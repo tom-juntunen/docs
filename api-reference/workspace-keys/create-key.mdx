@@ -38,6 +38,8 @@ POST https://plangrep.com/api/api-keys
   | `jobs:read` | Read job state and results |
   | `jobs:write` | Create jobs, upload files, complete uploads, resume and cancel jobs |
   | `artifacts:read` | Fetch authenticated artifact download URLs |
+  | `reviews:read` | List reviews, poll executions, and read messages and citations |
+  | `reviews:write` | Create reviews, submit questions, and cancel executions |
 </ParamField>
 
 <ParamField body="expiresAt" type="string">
@@ -73,7 +75,7 @@ Returns an `OpenApiKeyCreateResponse` object.
     </ResponseField>
 
     <ResponseField name="scopes" type="OpenApiKeyScope[]">
-      The permission scopes granted to this key. Possible values: `jobs:read`, `jobs:write`, `artifacts:read`.
+      The permission scopes granted to this key. Possible values: `jobs:read`, `jobs:write`, `artifacts:read`, `reviews:read`, `reviews:write`.
     </ResponseField>
 
     <ResponseField name="createdByUserId" type="string">
@@ -123,9 +125,11 @@ Returns an `OpenApiKeyCreateResponse` object.
 | `jobs:read` | Read job state, status, and results |
 | `jobs:write` | Create jobs, upload files, complete uploads, resume and cancel jobs |
 | `artifacts:read` | Fetch authenticated artifact download URLs |
+| `reviews:read` | List reviews, poll executions, and read messages and citations |
+| `reviews:write` | Create reviews, submit questions, and cancel executions |
 
 <Tip>
-  Follow the principle of least privilege — only grant the scopes your integration actually needs. For a read-only reporting integration, `jobs:read` alone is sufficient.
+  Follow the principle of least privilege — only grant the scopes your integration actually needs. Review scopes are independent of job scopes. Reading cited source content still requires the permissions for the source endpoint you call.
 </Tip>
 
 ---
@@ -140,7 +144,7 @@ curl -X POST https://plangrep.com/api/api-keys \
   -H "Content-Type: application/json" \
   -d '{
     "label": "My Integration Key",
-    "scopes": ["jobs:read", "jobs:write", "artifacts:read"]
+    "scopes": ["jobs:read", "jobs:write", "artifacts:read", "reviews:read", "reviews:write"]
   }'
 ```
 
@@ -155,7 +159,7 @@ curl -X POST https://plangrep.com/api/api-keys \
     "label": "My Integration Key",
     "keyPrefix": "abc123",
     "keyLast4": "9f3a",
-    "scopes": ["jobs:read", "jobs:write", "artifacts:read"],
+    "scopes": ["jobs:read", "jobs:write", "artifacts:read", "reviews:read", "reviews:write"],
     "createdByUserId": "usr_01hx3y...",
     "hashVersion": "v1",
     "createdAt": "2025-01-20T14:30:00Z",

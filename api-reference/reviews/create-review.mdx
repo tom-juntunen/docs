@@ -1,0 +1,43 @@
+---
+title: "Create a Review"
+sidebarTitle: "Create Review"
+description: "POST /api/open/v1/projects/:projectId/reviews — creates a named review conversation."
+---
+
+Create a named review over a project's indexed sources. Your API key needs the `reviews:write` scope.
+
+## Endpoint
+
+```http
+POST https://plangrep.com/api/open/v1/projects/{projectId}/reviews
+```
+
+<ParamField path="projectId" type="string" required>
+  Ready project that owns the review.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string" required>
+  Client-generated key, up to 256 characters. Reuse it only with the identical request.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Conversation name, from 1 to 120 characters.
+</ParamField>
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc/reviews \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Idempotency-Key: create-envelope-review" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Envelope review"}'
+```
+
+The endpoint returns `201 Created` with `review` and `idempotent`. An identical retry returns the same review with `idempotent: true`; changing the payload for that key returns `409 idempotency_key_conflict`.
+
+## Errors
+
+| HTTP | Code | When it occurs |
+|---|---|---|
+| `400` | `idempotency_key_required` | The required `Idempotency-Key` header is missing. |
+| `400` | `invalid_review` | The review payload is invalid. |
+| `409` | `idempotency_key_conflict` | The key was previously used for a different create-review request. |

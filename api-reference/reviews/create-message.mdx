@@ -1,0 +1,46 @@
+---
+title: "Submit a Review Question"
+sidebarTitle: "Submit Question"
+description: "POST /api/open/v1/projects/:projectId/reviews/:reviewId/messages — submits a text question and starts a durable review execution."
+---
+
+Submit one text question against the project's indexed sources. Your API key needs the `reviews:write` scope. Plangrep uses the existing durable review engine, server-selected model, token accounting, citation finalization, and current credit policy.
+
+## Endpoint
+
+```http
+POST https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}/messages
+```
+
+<ParamField header="Idempotency-Key" type="string" required>
+  Client-generated key, up to 256 characters. Identical retries return the original execution.
+</ParamField>
+
+<ParamField body="body" type="string" required>
+  Text question, from 1 to 131,072 characters. Attachments, voice, and model options are not accepted.
+</ParamField>
+
+```bash
+curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc/reviews/review_abc/messages \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Idempotency-Key: envelope-question-1" \
+  -H "Content-Type: application/json" \
+  -d '{"body":"Summarize the air-barrier requirements and cite the sources."}'
+```
+
+The endpoint returns `202 Accepted` with the user `message`, durable `execution`, and `idempotent`. Poll `execution.url`; do not expect a stream URL. The execution status is initially `queued` or `running`; its terminal statuses are `completed`, `failed`, and `cancelled`.
+
+Only one execution can be active in a review. A second turn returns `409 review_execution_active`.
+
+## Errors
+
+| HTTP | Code | When it occurs |
+|---|---|---|
+| `400` | `idempotency_key_required` | The required `Idempotency-Key` header is missing. |
+| `400` | `invalid_message` | The message payload is invalid. |
+| `402` | `insufficient_credits` | The project does not have enough review-token credits. |
+| `409` | `idempotency_key_conflict` | The key was previously used for a different submit-question request. |
+| `409` | `review_execution_active` | Another execution is queued or running for this review. |
+| `409` | `review_sources_unavailable` | Project sources cannot be used for review. |
+| `409` | `review_sources_not_ready` | Project sources have not finished ingestion and indexing. |
+| `502` / `503` | — | The runtime response or durable execution start failed. Retry with the same idempotency key when the outcome is unclear. |

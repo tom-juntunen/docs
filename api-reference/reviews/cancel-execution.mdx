@@ -1,0 +1,24 @@
+---
+title: "Cancel a Review Execution"
+sidebarTitle: "Cancel Execution"
+description: "POST /api/open/v1/projects/:projectId/reviews/:reviewId/executions/:executionId/cancel — requests cancellation of a durable review execution."
+---
+
+Request cancellation using the public review and execution IDs. Your API key needs the `reviews:write` scope.
+
+## Endpoint
+
+```http
+POST https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}/executions/{executionId}/cancel
+```
+
+A `202 Accepted` response includes `cancellationRequested: true`. Keep polling the execution until it reports `cancelled`; cancellation is asynchronous. If the execution is already terminal, the endpoint returns its current state with `idempotent: true`.
+
+The contract never asks you to provide, store, or poll an internal container job ID.
+
+## Errors
+
+| HTTP | Code | When it occurs |
+|---|---|---|
+| `404` | `review_not_found` | The project or review does not exist. |
+| `404` | `review_execution_not_found` | The execution does not exist in this review. |

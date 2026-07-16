@@ -1,0 +1,27 @@
+---
+title: "List Review Messages"
+sidebarTitle: "List Messages"
+description: "GET /api/open/v1/projects/:projectId/reviews/:reviewId/messages — lists user and assistant messages."
+---
+
+Read the conversation in sequence. Your API key needs the `reviews:read` scope. After an execution completes, its assistant answer and public citations appear here.
+
+## Endpoint
+
+```http
+GET https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}/messages
+```
+
+<ParamField query="limit" type="integer">
+  Maximum messages to return, from 1 to 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Cursor returned by a previous message list.
+</ParamField>
+
+<ParamField query="direction" type="string">
+  Pagination direction: `after` or `before`.
+</ParamField>
+
+Each user message can include its `execution`. Assistant citations expose `label` and `sourceCatalogUri`; use the existing project source endpoints to read the cited evidence. Those endpoints require their existing permissions; `reviews:read` does not grant source-content access. Responses do not include runtime session URLs, cookies, browser credentials, stream endpoints, capability tokens, orchestrator paths, or internal container job IDs.

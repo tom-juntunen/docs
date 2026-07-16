@@ -1,0 +1,29 @@
+---
+title: "Get a Review"
+sidebarTitle: "Get Review"
+description: "GET /api/open/v1/projects/:projectId/reviews/:reviewId — gets one review conversation."
+---
+
+Get a review and its current message count. Your API key needs the `reviews:read` scope.
+
+## Endpoint
+
+```http
+GET https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}
+```
+
+<ParamField path="projectId" type="string" required>
+  Project that owns the review.
+</ParamField>
+
+<ParamField path="reviewId" type="string" required>
+  Review identifier returned by [Create Review](/api-reference/reviews/create-review).
+</ParamField>
+
+The response wraps the review in `review`. Use `messagesUrl` to read turns and citations.
+
+## Errors
+
+| HTTP | Code |
+|---|---|
+| `404` | `review_not_found` |

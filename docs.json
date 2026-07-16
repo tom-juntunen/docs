@@ -55,6 +55,7 @@
               "guides/polling-and-webhooks",
               "guides/reading-results",
               "guides/searching-sources",
+              "guides/review-job",
               "guides/mcp-setup"
             ]
           }
@@ -86,6 +87,18 @@
               "api-reference/jobs/get-job-result",
               "api-reference/jobs/resume-job",
               "api-reference/jobs/cancel-job"
+            ]
+          },
+          {
+            "group": "Reviews",
+            "pages": [
+              "api-reference/reviews/list-reviews",
+              "api-reference/reviews/create-review",
+              "api-reference/reviews/get-review",
+              "api-reference/reviews/list-messages",
+              "api-reference/reviews/create-message",
+              "api-reference/reviews/get-execution",
+              "api-reference/reviews/cancel-execution"
             ]
           },
           {

@@ -1,0 +1,71 @@
+---
+title: "Run a Grounded Project Review"
+sidebarTitle: "Run a Review"
+description: "Create a review, submit a question, poll its durable execution, and read the cited assistant answer."
+---
+
+Use a review when you want conversational answers over sources that Plangrep has already ingested and indexed. A review is separate from a document-processing job: it has messages, executions, citations, and token usage instead of uploads, page counts, and immutable result JSON.
+
+Your bearer key needs `reviews:write` to create reviews, submit questions, and cancel executions. It needs `reviews:read` to list and get reviews, poll executions, and read messages.
+
+<Steps>
+
+### Confirm the project is ready
+
+Create and process project sources through the Open API first. Wait until the project is ready and its source index reports ready before submitting a review question.
+
+### Create a review
+
+```bash
+REVIEW_ID=$(curl -sS -X POST https://plangrep.com/api/open/v1/projects/$PROJECT_ID/reviews \
+  -H "Authorization: Bearer $PLANGREP_API_KEY" \
+  -H "Idempotency-Key: review-$PROJECT_ID-envelope" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Envelope review"}' | jq -r '.review.id')
+```
+
+Store the review ID. Repeating this request with the same key and body returns the same conversation.
+
+### Submit one text question
+
+```bash
+ACCEPTED=$(curl -sS -X POST https://plangrep.com/api/open/v1/projects/$PROJECT_ID/reviews/$REVIEW_ID/messages \
+  -H "Authorization: Bearer $PLANGREP_API_KEY" \
+  -H "Idempotency-Key: envelope-question-1" \
+  -H "Content-Type: application/json" \
+  -d '{"body":"Summarize the air-barrier requirements and cite the relevant sources."}')
+
+EXECUTION_URL=$(printf '%s' "$ACCEPTED" | jq -r '.execution.url')
+```
+
+The response is `202 Accepted`. Submit another turn only after this execution becomes terminal; otherwise Plangrep returns `409 review_execution_active`.
+
+### Poll the durable execution
+
+```bash
+curl -sS "https://plangrep.com$EXECUTION_URL" \
+  -H "Authorization: Bearer $PLANGREP_API_KEY"
+```
+
+Poll while status is `queued` or `running`. Stop when it reaches `completed`, `failed`, or `cancelled`. The execution reports token usage after settlement.
+
+### Read the answer and citations
+
+```bash
+curl -sS https://plangrep.com/api/open/v1/projects/$PROJECT_ID/reviews/$REVIEW_ID/messages \
+  -H "Authorization: Bearer $PLANGREP_API_KEY"
+```
+
+Find the assistant message whose ID matches `execution.assistantMessageId`. Each citation includes a `label` and `sourceCatalogUri`; use source search, source text, and project entity endpoints to read the cited source. Those existing source endpoints keep their own permission requirements.
+
+</Steps>
+
+## Retry safely
+
+Both mutation routes require `Idempotency-Key`, scoped by organization, API key, and operation. Keys can be up to 256 characters. Keep the same key and exact body when a network retry leaves the outcome unclear. An identical retry returns the original resource with `idempotent: true`; a different body with that key returns `409 idempotency_key_conflict`.
+
+## First-release boundaries
+
+Reviews currently supports text questions, polling, a server-selected model, the existing review-token credit policy, and sources already ingested and indexed in the project.
+
+It does not support browser or WebSocket streaming, voice, attachments, model selection, auto-runs, coverage graphs, exports, or document-job webhooks. Review responses only return `/api/open/v1/...` URLs. They never expose runtime session URLs, cookies, capability tokens, stream endpoints, orchestrator paths, or internal container job IDs.

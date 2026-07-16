@@ -34,6 +34,10 @@ When you create an API key, select the minimum set of scopes your integration re
 | `jobs:read` | Read job state and results |
 | `jobs:write` | Create jobs, upload files, complete uploads, resume and cancel jobs |
 | `artifacts:read` | Fetch authenticated artifact URLs |
+| `reviews:read` | List and get reviews, list messages, and poll executions |
+| `reviews:write` | Create reviews, submit text questions, and cancel review executions |
+
+Review permissions are separate from document-processing job permissions. A review citation can link to project source content, but reading that content through an existing source endpoint still requires the scope that endpoint requires.
 
 <Note>
   Always create keys with the minimum scopes your integration needs. Narrowly scoped keys limit the blast radius if a key is ever leaked or compromised.
