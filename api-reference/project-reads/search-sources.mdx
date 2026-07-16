@@ -1,13 +1,13 @@
 ---
 title: "Search Project Sources"
 sidebarTitle: "Search Sources"
-description: "POST /api/open/v1/projects/:projectId/source-search — semantic, grep, regex, or auto search across all indexed sources in a project. Returns hits with snippets."
+description: "POST /api/open/v1/projects/:projectId/source-search — semantic, exact, grep, regex, or auto search across all indexed sources in a project. Returns hits with snippets."
 ---
 
-Searches indexed sources within a project, including drawing regions, specification sections, and document entities. Use `mode: "semantic"` for vector search, `mode: "grep"` for keyword and boolean prepared-text search, `mode: "regex"` for regular expression search, or `mode: "auto"` for semantic-first behavior with keyword follow-up guidance. Returns hits with snippets, source metadata, and any artifacts exposed for that source. For specification hits, use the returned `source.documentId` and the section ID encoded in `source.id` or `sourceCatalogUri` with the specification section endpoints to retrieve full text and structured evidence.
+Searches indexed sources within a project, including drawing regions, specification sections, and document entities. Use `mode: "semantic"` for vector search, `mode: "exact"` for case-insensitive exact phrase search, `mode: "grep"` for keyword and boolean prepared-text search, `mode: "regex"` for regular expression search, or `mode: "auto"` for semantic-first behavior with keyword follow-up guidance. Exact search normalizes whitespace before matching the full phrase. Returns hits with snippets, source metadata, and any artifacts exposed for that source. For specification hits, use the returned `source.documentId` and the section ID encoded in `source.id` or `sourceCatalogUri` with the specification section endpoints to retrieve full text and structured evidence.
 
 <Warning>
-  **409 — Vector index not ready.** `mode: "semantic"` returns `409 Conflict` when the project has searchable sources but the vector index has not finished building. `mode: "auto"` returns `status: "keyword_search_required"` and next actions instead of a `409`, so agent clients can issue a focused `grep` or `regex` follow-up.
+  **409 — Source index not ready.** `mode: "semantic"` returns `409 Conflict` when the vector index has not finished building. `mode: "exact"` returns `409 Conflict` when the exact index has not finished building. Both return `error.code: "source_index_not_ready"`. `mode: "auto"` returns `status: "keyword_search_required"` and next actions instead of a `409`, so agent clients can issue a focused `grep` or `regex` follow-up.
 </Warning>
 
 ## Endpoint
@@ -27,11 +27,11 @@ POST https://plangrep.com/api/open/v1/projects/{projectId}/source-search
 Content-Type: `application/json`
 
 <ParamField body="query" type="string" required>
-  The search query string. Must be at least **1 character**. For `grep` and `regex`, this can be a plain string or a JSON string with keys such as `all`, `any`, `not`, `regex`, `patterns`, `sourceTypes`, and `query`.
+  The search query string. Must be at least **1 character**. For `exact`, provide the phrase to match. For `grep` and `regex`, this can be a plain string or a JSON string with keys such as `all`, `any`, `not`, `regex`, `patterns`, `sourceTypes`, and `query`.
 </ParamField>
 
 <ParamField body="mode" type="enum">
-  Search mode. Accepted values: `semantic`, `grep`, `regex`, `auto`. Defaults to `semantic`.
+  Search mode. Accepted values: `semantic`, `exact`, `grep`, `regex`, `auto`. Defaults to `semantic`.
 </ParamField>
 
 <ParamField body="reviewId" type="string">
@@ -91,7 +91,7 @@ Returns a `SourceSearchResponse` object.
 </ResponseField>
 
 <ResponseField name="queryMode" type="string">
-  The mode used for this response: `semantic`, `grep`, `regex`, or `auto`.
+  The mode used for this response: `semantic`, `exact`, `grep`, `regex`, or `auto`.
 </ResponseField>
 
 <ResponseField name="query" type="string">
@@ -104,6 +104,31 @@ Returns a `SourceSearchResponse` object.
 
 <ResponseField name="searchedChunkCount" type="integer">
   Total number of indexed content chunks that were searched.
+</ResponseField>
+
+<ResponseField name="exactIndex" type="object">
+  Present for `mode: "exact"`. Describes the exact index used for the response.
+
+  <Expandable title="Exact index fields">
+    <ResponseField name="revision" type="integer">
+      Exact-index revision used for this search.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Exact-index status: `ready`, `updating`, or `failed`.
+    </ResponseField>
+    <ResponseField name="readyDocumentCount" type="integer">
+      Number of documents currently available in the exact index.
+    </ResponseField>
+    <ResponseField name="pendingDocumentCount" type="integer">
+      Number of documents waiting for exact indexing.
+    </ResponseField>
+    <ResponseField name="failedDocumentCount" type="integer">
+      Number of documents whose exact indexing failed.
+    </ResponseField>
+    <ResponseField name="cacheHit" type="boolean">
+      Whether Plangrep returned a cached result for the normalized exact phrase.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="hits" type="object[]">
@@ -245,4 +270,4 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
 | `400`  | Invalid request body — `query` missing or empty, invalid regex, `maxHits` out of range, etc. |
 | `401`  | Missing or invalid Bearer token. |
 | `404`  | Project not found. |
-| `409`  | `mode: "semantic"` only: searchable sources exist but the vector index is not ready yet. Retry after a short wait or use `mode: "auto"` for keyword follow-up guidance. Response body: `{ "error": { "code": "source_index_not_ready", "message": "<string>" } }` |
+| `409`  | `mode: "semantic"` or `mode: "exact"`: searchable sources exist but the selected vector or exact index is not ready. Retry after a short wait. For semantic queries, use `mode: "auto"` for keyword follow-up guidance. Response body: `{ "error": { "code": "source_index_not_ready", "message": "<string>", "readyDocumentCount": 0, "pendingDocumentCount": 1, "failedDocumentCount": 0, "totalDocumentCount": 1 } }` |

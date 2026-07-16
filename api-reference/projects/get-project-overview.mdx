@@ -50,16 +50,38 @@ GET https://plangrep.com/api/open/v1/projects/{projectId}/overview
       Detected discipline summaries, each with `code`, `label`, and `count`.
     </ResponseField>
 
+    <ResponseField name="searchReadiness" type="object" required>
+      Durable readiness for both exact and vector source indexes. Use this object as the completion signal after processing or source-index reconciliation.
+
+      <Expandable title="Search readiness fields">
+        <ResponseField name="state" type="string" required>
+          Current search state: `empty` when there are no searchable files, `not_ready` when index work has not started or is missing, `indexing` while work is in progress, `ready` when every searchable file has both indexes, or `failed` when terminal index work failed.
+        </ResponseField>
+        <ResponseField name="action" type="string | null" required>
+          Suggested recovery action: `start` for `not_ready`, `retry` for `failed`, or `null` when no recovery action is needed.
+        </ResponseField>
+        <ResponseField name="counts" type="object" required>
+          Searchable-file counts: `total`, `ready`, `pending`, and `failed`.
+        </ResponseField>
+        <ResponseField name="failedFiles" type="object[]" required>
+          Files with terminal exact or vector index failures. Each item includes `documentId`, `fileName`, and `failedIndexes`, whose values are `exact` and/or `vector`.
+        </ResponseField>
+        <ResponseField name="updatedAt" type="string | null" required>
+          Most recent source-file or index update timestamp used to calculate readiness.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
     <ResponseField name="latestJob" type="object | null" required>
       Latest processing job for this project, or `null` if no jobs exist.
     </ResponseField>
 
     <ResponseField name="nextAction" type="string | null" required>
-      Suggested next action. Common values are `wait`, `upload`, `vectorize`, `normalize`, or `null`.
+      Suggested next action. Common values are `wait`, `upload`, `reconcile`, `normalize`, or `null`. When search readiness is `failed` or `not_ready`, call [Reconcile Project Source Index](/api-reference/projects/reconcile-source-index) instead of starting vectorization directly.
     </ResponseField>
 
     <ResponseField name="capabilities" type="object" required>
-      Booleans indicating what the project can currently do: `canCreateJob`, `canUpload`, `canSearch`, `canVectorize`, and `canNormalize`.
+      Booleans indicating what the project can currently do: `canCreateJob`, `canUpload`, `canSearch`, `canVectorize`, and `canNormalize`. `canSearch` is `true` only when `searchReadiness.state` is `ready`.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -105,6 +127,18 @@ curl https://plangrep.com/api/open/v1/projects/proj_abc123/overview \
       { "code": "ARCH", "label": "Architectural", "count": 1 },
       { "code": "MECH", "label": "Mechanical", "count": 1 }
     ],
+    "searchReadiness": {
+      "state": "ready",
+      "action": null,
+      "counts": {
+        "total": 2,
+        "ready": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "failedFiles": [],
+      "updatedAt": "2026-07-11T18:45:00.000Z"
+    },
     "latestJob": {
       "id": "open_api_job_abc123",
       "status": "completed",

@@ -1,12 +1,12 @@
 ---
 title: "Reconcile Project Source Index"
 sidebarTitle: "Reconcile Source Index"
-description: "POST /api/open/v1/projects/:projectId/source-index/reconcile — asks the project runtime to reconcile missing or stale source-index records."
+description: "POST /api/open/v1/projects/:projectId/source-index/reconcile — recovers missing or terminal source indexes and runs a targeted reconciliation pass."
 ---
 
-Ask a project runtime to reconcile its source index. This is a maintenance endpoint for projects whose files and entities exist but source search is not yet available or appears stale.
+Ask a project runtime to reconcile its source index. Before its targeted reconciliation pass, this endpoint persists recovery for missing or terminal exact and vector index work. Use it for projects whose files and entities exist but source search is not yet available or appears stale.
 
-Most integrations do not need to call this during the normal upload flow. Use it when a project overview shows source rows but search capability is not ready.
+Most integrations do not need to call this during the normal upload flow. Use it when `overview.searchReadiness.state` is `not_ready` or `failed`. The endpoint returns `200 OK` only when search is `ready` or `empty`; otherwise it returns `202 Accepted` while durable reconciliation continues. Poll [Get Project Overview](/api-reference/projects/get-project-overview) and use `overview.searchReadiness` as the durable completion signal.
 
 ## Authentication
 
@@ -37,7 +37,16 @@ POST https://plangrep.com/api/open/v1/projects/{projectId}/source-index/reconcil
 </ResponseField>
 
 <ResponseField name="sourceIndex" type="object" required>
-  Runtime source-index reconciliation result.
+  Source-index recovery and targeted reconciliation results.
+
+  <Expandable title="Source index fields">
+    <ResponseField name="recovery" type="object" required>
+      Persisted recovery result for missing or terminal exact/vector index work. Includes the resulting search-readiness fields (`state`, `action`, `counts`, `failedFiles`, and `updatedAt`) and `queued`, which indicates whether recovery work was queued.
+    </ResponseField>
+    <ResponseField name="reconciliation" type="object" required>
+      Targeted reconciliation-pass result. Includes `status`, `limit`, vector `processedCount`, `failedCount`, and `results`, plus `unifiedExact` counts and results for exact-index work.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="overview" type="ProjectOverview" required>
@@ -71,7 +80,31 @@ curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/source-index/
     "updatedAt": "2026-07-11T18:02:00.000Z"
   },
   "sourceIndex": {
-    "status": "ok"
+    "recovery": {
+      "state": "indexing",
+      "action": null,
+      "counts": {
+        "total": 2,
+        "ready": 0,
+        "pending": 2,
+        "failed": 0
+      },
+      "failedFiles": [],
+      "updatedAt": "2026-07-11T18:45:00.000Z",
+      "queued": true
+    },
+    "reconciliation": {
+      "status": "ok",
+      "limit": 10,
+      "processedCount": 2,
+      "failedCount": 0,
+      "results": [],
+      "unifiedExact": {
+        "processedCount": 2,
+        "failedCount": 0,
+        "results": []
+      }
+    }
   },
   "overview": {
     "status": "ready",
@@ -87,6 +120,18 @@ curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/source-index/
       "docs": 4
     },
     "disciplines": [],
+    "searchReadiness": {
+      "state": "ready",
+      "action": null,
+      "counts": {
+        "total": 2,
+        "ready": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "failedFiles": [],
+      "updatedAt": "2026-07-11T18:45:00.000Z"
+    },
     "latestJob": null,
     "nextAction": null,
     "capabilities": {

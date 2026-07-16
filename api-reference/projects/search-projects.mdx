@@ -27,7 +27,7 @@ POST https://plangrep.com/api/open/v1/projects/search
 </ParamField>
 
 <ParamField body="sourceSearchMode" type="enum">
-  Runtime source search mode for source hits. Accepted values: `semantic`, `grep`, `regex`, `auto`. Defaults to `semantic`.
+  Runtime source search mode for source hits. Accepted values: `semantic`, `exact`, `grep`, `regex`, `auto`. Defaults to `semantic`.
 </ParamField>
 
 <ParamField body="limit" type="integer">
@@ -113,7 +113,7 @@ curl --request POST \
 
       <Expandable title="matchReasons fields">
         <ResponseField name="type" type="string">
-          Reason type. Current values include `projectName` and `sourceSemantic`. Source matches can come from `semantic`, `grep`, `regex`, or `auto` source search modes.
+          Reason type. Current values include `projectName` and `sourceSemantic`. Source matches can come from `semantic`, `exact`, `grep`, `regex`, or `auto` source search modes.
         </ResponseField>
         <ResponseField name="value" type="string">
           Present for project name matches.
@@ -147,7 +147,7 @@ curl --request POST \
           Human-readable source label.
         </ResponseField>
         <ResponseField name="queryMode" type="string">
-          Source search mode used for this match: `semantic`, `grep`, or `regex`.
+          Source search mode used for this match: `semantic`, `exact`, `grep`, or `regex`.
         </ResponseField>
         <ResponseField name="score" type="number">
           Match score when available.
