@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Plangrep API Test",
+    "name": "Plangrep API",
     "description": "Runnable collection for every public Plangrep Open API endpoint. Set apiKey and the request variables before sending requests. Open API routes use Bearer {{apiKey}}. For each new mutation, replace idempotencyKey with a unique client-generated value and keep that value unchanged when retrying the identical request. Successful create, upload-registration, source-search, and review-message requests save commonly reused IDs and upload values as collection variables.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
