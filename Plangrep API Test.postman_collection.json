@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Plangrep API Test",
-    "description": "Drop-in collection for every public Open API endpoint documented in this repository. Set collection variables before sending requests. Open API routes use Bearer {{apiKey}}.",
+    "description": "Runnable collection for every public Plangrep Open API endpoint. Set apiKey and the request variables before sending requests. Open API routes use Bearer {{apiKey}}. For each new mutation, replace idempotencyKey with a unique client-generated value and keep that value unchanged when retrying the identical request. Successful create, upload-registration, source-search, and review-message requests save commonly reused IDs and upload values as collection variables.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -103,8 +103,8 @@
     },
     {
       "key": "idempotencyKey",
-      "value": "request-{{$guid}}",
-      "description": "Use a unique value for each new mutation; reuse the exact key when retrying.",
+      "value": "replace-with-a-stable-unique-key",
+      "description": "Set a unique client-generated value before each new mutation. Leave it unchanged when retrying the identical request.",
       "type": "string"
     },
     {
@@ -153,6 +153,42 @@
       "key": "uploadUrl",
       "value": "",
       "description": "Signed direct-upload URL returned by Register uploads.",
+      "type": "string"
+    },
+    {
+      "key": "uploadChecksumSha256",
+      "value": "",
+      "description": "Base64 SHA-256 checksum copied from a direct upload's returned x-amz-checksum-sha256 header.",
+      "type": "string"
+    },
+    {
+      "key": "multipartPartUrl",
+      "value": "",
+      "description": "Signed URL for the multipart part selected from Register uploads.",
+      "type": "string"
+    },
+    {
+      "key": "multipartPartNumber",
+      "value": "1",
+      "description": "Part number for the current multipart upload request.",
+      "type": "string"
+    },
+    {
+      "key": "multipartPartStartByte",
+      "value": "0",
+      "description": "Inclusive start byte for the current multipart part.",
+      "type": "string"
+    },
+    {
+      "key": "multipartPartEndByteExclusive",
+      "value": "",
+      "description": "Exclusive end byte for the current multipart part.",
+      "type": "string"
+    },
+    {
+      "key": "multipartPartEtag",
+      "value": "",
+      "description": "ETag returned after uploading the current multipart part.",
       "type": "string"
     },
     {
@@ -261,7 +297,7 @@
               ],
               "query": []
             },
-            "description": "Creates an API project. Requires jobs:write.",
+            "description": "Creates an API project. Requires jobs:write and a stable Idempotency-Key. A successful response saves project.id as projectId.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -282,7 +318,23 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const payload = pm.response.json();",
+                  "  if (payload.project && payload.project.id) {",
+                  "    pm.collectionVariables.set('projectId', payload.project.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get project",
@@ -393,7 +445,7 @@
               ],
               "query": []
             },
-            "description": "Searches projects by name and indexed sources. Requires jobs:read.",
+            "description": "Searches projects by name and indexed sources. sourceSearchMode supports auto, semantic, exact, and grep. regex is unsupported and returns 400 source_search_regex_unsupported. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -406,7 +458,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"air barrier requirements\",\n  \"sourceSearchMode\": \"auto\",\n  \"limit\": 20\n}",
+              "raw": "{\n  \"query\": \"air barrier requirements\",\n  \"sourceSearchMode\": \"exact\",\n  \"limit\": 20\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -626,7 +678,7 @@
                 }
               ]
             },
-            "description": "Lists jobs across visible projects. Requires jobs:read.",
+            "description": "Lists jobs across visible projects. Job progress uses work-unit envelopes: progress includes mode, phase, message, identity, an optional step, a nullable percent, and overall completed, total, unit, and percent when known. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -676,10 +728,22 @@
                   "value": "{{cursor}}",
                   "description": "Cursor from a prior response.",
                   "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "processing",
+                  "description": "Filter by one job status.",
+                  "disabled": true
+                },
+                {
+                  "key": "activeOnly",
+                  "value": "true",
+                  "description": "Return only active jobs. active_only is accepted as a compatibility alias.",
+                  "disabled": true
                 }
               ]
             },
-            "description": "Lists jobs for a project. Requires jobs:read.",
+            "description": "Lists jobs for a project. progress reports mode, phase, message, identity, an optional step, and a nullable percent. When overall progress is known, progress.overall contains completed, total, unit, and percent. failedPageCount remains 0 while work is active, cancelled, or expired; it is non-zero only for completed_with_errors and failed jobs. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -729,7 +793,7 @@
               ],
               "query": []
             },
-            "description": "Creates a document-processing job. Requires jobs:write.",
+            "description": "Creates a document-processing job. The returned job uses the work-unit progress envelope and failedPageCount is 0 while work is active. Requires jobs:write and a stable Idempotency-Key. A successful response saves job.id as jobId.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -750,7 +814,23 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const payload = pm.response.json();",
+                  "  if (payload.job && payload.job.id) {",
+                  "    pm.collectionVariables.set('jobId', payload.job.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get job",
@@ -777,7 +857,7 @@
               ],
               "query": []
             },
-            "description": "Gets job state. Requires jobs:read.",
+            "description": "Gets job state. progress reports mode, phase, message, identity, an optional step, and a nullable percent. When overall progress is known, progress.overall contains completed, total, unit, and percent. Current phases include preparation, normalizing, rendering, indexing, and finalizing. failedPageCount remains 0 while work is active, cancelled, or expired; it is non-zero only for completed_with_errors and failed jobs. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -817,7 +897,7 @@
               ],
               "query": []
             },
-            "description": "Gets a completed job's normalized result. Requires jobs:read.",
+            "description": "Gets a completed job's normalized result and final job envelope. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -857,7 +937,7 @@
               ],
               "query": []
             },
-            "description": "Resumes a job blocked by insufficient credits. Requires jobs:write.",
+            "description": "Resumes a job blocked by insufficient credits and returns the current work-unit progress envelope. Requires jobs:write.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -897,7 +977,7 @@
               ],
               "query": []
             },
-            "description": "Cancels a non-terminal job. Requires jobs:write.",
+            "description": "Cancels a non-terminal job. The returned job has failedPageCount 0. Requires jobs:write.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -915,6 +995,7 @@
     },
     {
       "name": "Uploads",
+      "description": "Run Register uploads first, then follow exactly one branch for each result: reused sends no bytes, direct_put sends the complete file with every returned header, and multipart sends every returned byte range and records every ETag. Complete the job only after each accepted result is ready. Use failedUploads to report a client-side transport failure.",
       "item": [
         {
           "name": "Register uploads",
@@ -952,7 +1033,7 @@
               ],
               "query": []
             },
-            "description": "Registers file metadata before direct upload. Requires jobs:write.",
+            "description": "Registers file metadata for verified reuse, direct PUT, or multipart upload. Requires jobs:write and a stable Idempotency-Key. A successful response saves the first upload's document ID, token, signed URL, direct upload headers, multipart ID, and first part range as collection variables. For additional files or parts, copy the corresponding response values into the variables before sending the upload request.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -973,21 +1054,54 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const payload = pm.response.json();",
+                  "  const upload = Array.isArray(payload.uploads) ? payload.uploads[0] : null;",
+                  "  ['uploadDocumentId', 'uploadToken', 'uploadUrl', 'uploadChecksumSha256', 'multipartUploadId', 'multipartPartUrl', 'multipartPartEndByteExclusive', 'multipartPartEtag'].forEach((key) => pm.collectionVariables.set(key, ''));",
+                  "  pm.collectionVariables.set('multipartPartNumber', '1');",
+                  "  pm.collectionVariables.set('multipartPartStartByte', '0');",
+                  "  if (upload) {",
+                  "    if (upload.documentId) pm.collectionVariables.set('uploadDocumentId', upload.documentId);",
+                  "    if (upload.uploadToken) pm.collectionVariables.set('uploadToken', upload.uploadToken);",
+                  "    if (upload.uploadUrl) pm.collectionVariables.set('uploadUrl', upload.uploadUrl);",
+                  "    if (upload.multipartUploadId) pm.collectionVariables.set('multipartUploadId', upload.multipartUploadId);",
+                  "    const headers = upload.uploadHeaders || {};",
+                  "    if (headers['content-type']) pm.collectionVariables.set('contentType', headers['content-type']);",
+                  "    pm.collectionVariables.set('uploadChecksumSha256', headers['x-amz-checksum-sha256'] || '');",
+                  "    const part = Array.isArray(upload.parts) ? upload.parts[0] : null;",
+                  "    if (part) {",
+                  "      if (part.uploadUrl) pm.collectionVariables.set('multipartPartUrl', part.uploadUrl);",
+                  "      pm.collectionVariables.set('multipartPartNumber', String(part.partNumber));",
+                  "      pm.collectionVariables.set('multipartPartStartByte', String(part.startByte));",
+                  "      pm.collectionVariables.set('multipartPartEndByteExclusive', String(part.endByteExclusive));",
+                  "    }",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Upload file bytes (signed URL)",
+          "name": "Upload direct file bytes (signed URL)",
           "request": {
             "method": "PUT",
             "header": [
               {
-                "key": "Accept",
-                "value": "application/json",
+                "key": "Content-Type",
+                "value": "{{contentType}}",
                 "type": "text"
               },
               {
-                "key": "Content-Type",
-                "value": "{{contentType}}",
+                "key": "x-amz-checksum-sha256",
+                "value": "{{uploadChecksumSha256}}",
                 "type": "text"
               }
             ],
@@ -999,15 +1113,61 @@
               "path": [],
               "query": []
             },
-            "description": "Uploads raw bytes to the signed URL returned by Register uploads. This is an R2 upload, not an Open API endpoint.",
+            "description": "Uploads the complete file to a direct_put signed URL. Select the exact file whose name, size, MIME type, and SHA-256 digest you registered. Send every uploadHeaders entry returned by Register uploads; the response script copies the current content-type and x-amz-checksum-sha256 values. This signed request is not an Open API endpoint and must not use Bearer authentication.",
             "auth": {
               "type": "noauth"
+            },
+            "body": {
+              "mode": "file",
+              "file": {
+                "src": ""
+              }
             }
           },
           "response": []
         },
         {
-          "name": "Complete uploads",
+          "name": "Upload multipart part (signed URL)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{multipartPartUrl}}",
+              "host": [
+                "{{multipartPartUrl}}"
+              ],
+              "path": [],
+              "query": []
+            },
+            "description": "Uploads one byte range to a multipart signed URL without Bearer authentication. Select a file containing exactly bytes multipartPartStartByte through multipartPartEndByteExclusive minus one. Send every uploadHeaders entry returned for that part. After a successful request, the test script saves the response ETag as multipartPartEtag. Repeat for every returned part and include every {partNumber, etag} pair when completing the upload.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "file",
+              "file": {
+                "src": ""
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const etag = pm.response.headers.get('ETag');",
+                  "  if (etag) pm.collectionVariables.set('multipartPartEtag', etag);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete direct upload",
           "request": {
             "method": "POST",
             "header": [
@@ -1043,7 +1203,7 @@
               ],
               "query": []
             },
-            "description": "Finalizes uploads and starts processing. Requires jobs:write.",
+            "description": "Finalizes a completed direct PUT and starts processing. Requires jobs:write and a stable Idempotency-Key.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1057,6 +1217,126 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"documentIds\": [\n    \"{{uploadDocumentId}}\"\n  ],\n  \"directUploads\": [\n    {\n      \"documentId\": \"{{uploadDocumentId}}\",\n      \"uploadToken\": \"{{uploadToken}}\"\n    }\n  ],\n  \"multipartUploads\": [],\n  \"failedUploads\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete reused upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/uploads/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "uploads",
+                "complete"
+              ],
+              "query": []
+            },
+            "description": "Completes an upload whose registration status is reused. Send no file bytes and include the document only in documentIds. Requires jobs:write and a stable Idempotency-Key.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentIds\": [\n    \"{{uploadDocumentId}}\"\n  ],\n  \"directUploads\": [],\n  \"multipartUploads\": [],\n  \"failedUploads\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete multipart upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/uploads/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "uploads",
+                "complete"
+              ],
+              "query": []
+            },
+            "description": "Finalizes a multipart upload and starts processing. Include every uploaded part exactly once, in ascending part-number order, with the ETag returned by that signed PUT. Duplicate the sample part object for every returned part. Requires jobs:write and a stable Idempotency-Key.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentIds\": [\n    \"{{uploadDocumentId}}\"\n  ],\n  \"directUploads\": [],\n  \"multipartUploads\": [\n    {\n      \"documentId\": \"{{uploadDocumentId}}\",\n      \"multipartUploadId\": \"{{multipartUploadId}}\",\n      \"uploadToken\": \"{{uploadToken}}\",\n      \"parts\": [\n        {\n          \"partNumber\": {{multipartPartNumber}},\n          \"etag\": \"{{multipartPartEtag}}\"\n        }\n      ]\n    }\n  ],\n  \"failedUploads\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1540,7 +1820,7 @@
                 }
               ]
             },
-            "description": "Lists extracted drawing regions. Requires jobs:read.",
+            "description": "Lists extracted drawing regions. Region results include the visual object when a visual is available. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1654,7 +1934,7 @@
                 }
               ]
             },
-            "description": "Gets a drawing region. Requires jobs:read.",
+            "description": "Gets a drawing region, including its visual object when a visual is available. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1781,7 +2061,7 @@
                 }
               ]
             },
-            "description": "Lists regions on a sheet. Requires jobs:read.",
+            "description": "Lists regions on a sheet. Region results include the visual object when a visual is available. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2307,7 +2587,7 @@
               ],
               "query": []
             },
-            "description": "Searches indexed project sources. Requires jobs:read.",
+            "description": "Searches indexed project sources. mode supports auto, semantic, exact, and grep. Exact performs a case-insensitive, whitespace-normalized phrase match. regex is unsupported and returns 400 source_search_regex_unsupported; use literal or boolean grep instead. Region hits include the visual object when a visual is available. A successful response saves the first hit's sourceCatalogUri. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2320,7 +2600,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"air barrier\",\n  \"mode\": \"auto\",\n  \"maxHits\": 20,\n  \"entityTypes\": []\n}",
+              "raw": "{\n  \"query\": \"air barrier\",\n  \"mode\": \"exact\",\n  \"maxHits\": 20,\n  \"entityTypes\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2328,7 +2608,24 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const payload = pm.response.json();",
+                  "  const firstHit = Array.isArray(payload.hits) ? payload.hits[0] : null;",
+                  "  if (firstHit && firstHit.sourceCatalogUri) {",
+                  "    pm.collectionVariables.set('sourceCatalogUri', firstHit.sourceCatalogUri);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Read source text",
@@ -2641,7 +2938,7 @@
               ],
               "query": []
             },
-            "description": "Creates a named review. Requires reviews:write. Idempotency-Key is required.",
+            "description": "Creates a named review. Requires reviews:write and a stable Idempotency-Key. A successful response saves review.id as reviewId.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2662,7 +2959,23 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const payload = pm.response.json();",
+                  "  if (payload.review && payload.review.id) {",
+                  "    pm.collectionVariables.set('reviewId', payload.review.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get review",
@@ -2804,7 +3117,7 @@
               ],
               "query": []
             },
-            "description": "Submits a text question and starts a durable execution. Requires reviews:write. Idempotency-Key is required. Copy execution.id into executionId, then open the SSE stream request; the response also includes execution.streamUrl.",
+            "description": "Submits a text question and starts a durable execution. After trimming, body may contain up to 524,288 characters and 524,288 UTF-8 bytes; the complete JSON request body may be up to 4 MiB. Requires reviews:write and a stable Idempotency-Key. A successful response saves execution.id as executionId; then open the stream request or poll execution.url.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2825,7 +3138,23 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "  const payload = pm.response.json();",
+                  "  if (payload.execution && payload.execution.id) {",
+                  "    pm.collectionVariables.set('executionId', payload.execution.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get review execution",
@@ -2856,7 +3185,7 @@
               ],
               "query": []
             },
-            "description": "Polls a durable review execution. Requires reviews:read. The response includes streamUrl for SSE or NDJSON events.",
+            "description": "Polls a durable review execution until status is completed, failed, or cancelled. Requires reviews:read. The response includes streamUrl for SSE or NDJSON events.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2907,7 +3236,7 @@
                 }
               ]
             },
-            "description": "Streams sanitized public review events. Requires reviews:read. Postman displays this request in its EventStream response view. Each event data field is the documented JSON event; save its sequence in streamAfter before reconnecting. Change Accept to application/x-ndjson for JSON lines.",
+            "description": "Streams sanitized public review events. Requires reviews:read. Postman displays this request in its EventStream response view. response.started.payload.responseTargetMs is a non-terminal response target. Tool events use review_sources, read_source, or search_sources and can report modes, pageCount, and continuationCount. response.completed is terminal and its completion value is complete. Each event data field is the documented JSON event; save its sequence in streamAfter before reconnecting. Change Accept to application/x-ndjson for JSON lines.",
             "auth": {
               "type": "bearer",
               "bearer": [
