@@ -79,6 +79,14 @@ curl --request POST \
       Number of pages successfully processed before cancellation.
     </ResponseField>
 
+    <ResponseField name="failedPageCount" type="integer" required>
+      Always `0` for a cancelled job. Failed-page counts are reported only for `completed_with_errors` and `failed` jobs.
+    </ResponseField>
+
+    <ResponseField name="progress" type="object" required>
+      Work-unit progress envelope. See [Job progress](/concepts/jobs#job-progress).
+    </ResponseField>
+
     <ResponseField name="billing" type="object" required>
       Final billing snapshot. Pages processed before cancellation may have been charged.
     </ResponseField>
@@ -128,12 +136,13 @@ curl --request POST \
     },
     "pageCount": 204,
     "successfulPageCount": 63,
-    "failedPageCount": 141,
+    "failedPageCount": 0,
     "progress": {
-      "processedPages": 63,
-      "totalPages": 204,
-      "percent": 31,
-      "phase": "complete",
+      "mode": "determinate",
+      "identity": { "overallRevision": "job:job_01hy3m8qtn2e5r7k9p0w4x1def:file_xyz789", "stepRevision": null },
+      "overall": { "completed": 1, "total": 1, "unit": "files", "percent": 99 },
+      "percent": 99,
+      "phase": "error",
       "message": "Job was cancelled.",
       "updatedAt": "2024-11-02T09:22:17.000Z"
     },

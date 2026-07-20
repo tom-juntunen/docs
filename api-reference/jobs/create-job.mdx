@@ -108,11 +108,11 @@ The endpoint returns `202 Accepted`.
     </ResponseField>
 
     <ResponseField name="failedPageCount" type="integer" required>
-      Number of pages that have failed or have not completed successfully.
+      `0` unless the job reaches `completed_with_errors` or `failed`; then the number of failed pages.
     </ResponseField>
 
     <ResponseField name="progress" type="object" required>
-      Dashboard-friendly progress summary with `processedPages`, `totalPages`, `percent`, `phase`, `message`, and `updatedAt`.
+      Work-unit progress envelope. See [Job progress](/concepts/jobs#job-progress).
     </ResponseField>
 
     <ResponseField name="billing" type="object" required>
@@ -192,12 +192,14 @@ The endpoint returns `202 Accepted`.
     "successfulPageCount": 0,
     "failedPageCount": 0,
     "progress": {
-      "processedPages": 0,
-      "totalPages": 0,
-      "percent": 0,
+      "mode": "indeterminate",
       "phase": "upload",
       "message": "Waiting for uploads.",
-      "updatedAt": "2024-11-02T09:00:01.000Z"
+      "identity": { "overallRevision": "job:job_01hy3m8qtn2e5r7k9p0w4x1def", "stepRevision": null },
+      "overall": null,
+      "step": null,
+      "updatedAt": "2024-11-02T09:00:01.000Z",
+      "percent": null
     },
     "billing": {},
     "files": [],

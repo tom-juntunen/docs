@@ -15,6 +15,14 @@ curl https://plangrep.com/api/open/v1/jobs/job_xyz789 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
+## Reading progress
+
+Use `job.progress.overall` when it is present. Its `completed`, `total`, `unit`, and `percent` fields describe the current aggregate work unit. A job can move through `preparation`, `normalizing`, `rendering`, `indexing`, and `finalizing`, so do not calculate progress from page counts.
+
+When `overall` is `null`, use the optional `step` counter only as a current-stage indicator. `progress.percent` is `null` in that case. Save `progress.identity`; reset any local progress display when its revision changes. See [Jobs: Processing Units](/concepts/jobs#job-progress) for the complete envelope.
+
+`failedPageCount` stays `0` while work is active, cancelled, or expired. It becomes non-zero only for `completed_with_errors` and `failed`.
+
 ### Job status reference
 
 | Status | Terminal? | Description |

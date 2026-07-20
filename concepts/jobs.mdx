@@ -92,9 +92,31 @@ The `expiresAt` field on a job shows when result data will be permanently delete
 | `displayName` | string | Human-readable job label for UI and logs |
 | `activityLabel` | string | Activity-feed label, currently matching `displayName` |
 | `project` | object | Parent project summary when available |
-| `progress` | object | Processed page count, total pages, percent, phase, message, and update timestamp |
-| `failedPageCount` | number | Pages that failed or have not completed successfully |
+| `progress` | object | Work-unit progress envelope. See [Job progress](#job-progress). |
+| `failedPageCount` | number | Pages that failed after the job reached `completed_with_errors` or `failed`; otherwise `0`. |
 | `resultUrl` | string | API path to fetch result JSON after completion |
 | `expiresAt` | string \| null | ISO 8601 timestamp when result data expires |
 | `createdAt` | string | ISO 8601 timestamp when the job was created |
 | `updatedAt` | string | ISO 8601 timestamp of the most recent update |
+
+## Job progress
+
+`progress` reports the current unit of work. Do not derive progress from page counts: preparation, normalization, rendering, indexing, and finalization can use different units.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `mode` | `determinate` \| `indeterminate` | Whether Plangrep can report a current work counter. |
+| `phase` | string | Current phase: `provisioning`, `upload`, `preflight`, `preparation`, `processing`, `normalizing`, `rendering`, `indexing`, `finalizing`, `complete`, or `error`. |
+| `message` | string | Human-readable progress message. |
+| `identity.overallRevision` | string | Revision identifier for the overall counter. Reset local progress state when it changes. |
+| `identity.stepRevision` | string \| null | Revision identifier for `step`. It is `null` when `overall` is present. |
+| `overall` | object \| null | Aggregate counter, when Plangrep can calculate one. |
+| `overall.completed` | integer | Completed work units. |
+| `overall.total` | integer | Total work units. |
+| `overall.unit` | `files` \| `pages` \| `regions` \| `steps` | Unit used by the aggregate counter. |
+| `overall.percent` | integer | Aggregate completion percentage. Non-terminal work is capped at `99`. |
+| `step` | object \| null | Current-stage counter. It is present only when `overall` is `null`; it has the same counter fields as `overall`. |
+| `percent` | integer \| null | Convenience copy of `overall.percent`, or `null` when no aggregate counter is available. |
+| `updatedAt` | string | ISO 8601 timestamp for the latest progress update. |
+
+`failedPageCount` remains `0` while a job is active, cancelled, or expired. It is populated only after `completed_with_errors` or `failed`.

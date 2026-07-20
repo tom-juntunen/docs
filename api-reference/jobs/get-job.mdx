@@ -116,31 +116,39 @@ curl --request GET \
     </ResponseField>
 
     <ResponseField name="failedPageCount" type="integer" required>
-      Number of pages that have failed or have not completed successfully.
+      `0` unless the job reaches `completed_with_errors` or `failed`; then the number of failed pages.
     </ResponseField>
 
     <ResponseField name="progress" type="object" required>
       Dashboard-friendly progress summary for the job.
 
       <Expandable title="progress fields">
-        <ResponseField name="processedPages" type="integer" required>
-          Number of pages processed successfully.
-        </ResponseField>
-
-        <ResponseField name="totalPages" type="integer" required>
-          Total pages submitted for processing.
-        </ResponseField>
-
-        <ResponseField name="percent" type="integer" required>
-          Completion percentage from `0` to `100`.
+        <ResponseField name="mode" type="string" required>
+          `determinate` when a counter is available; otherwise `indeterminate`.
         </ResponseField>
 
         <ResponseField name="phase" type="string" required>
-          Coarse progress phase: `provisioning`, `upload`, `preflight`, `processing`, or `complete`.
+          Current phase: `provisioning`, `upload`, `preflight`, `preparation`, `processing`, `normalizing`, `rendering`, `indexing`, `finalizing`, `complete`, or `error`.
         </ResponseField>
 
         <ResponseField name="message" type="string" required>
           Human-readable status message.
+        </ResponseField>
+
+        <ResponseField name="identity" type="object" required>
+          Revisions for the progress counters. Reset local progress state when `overallRevision` or `stepRevision` changes.
+        </ResponseField>
+
+        <ResponseField name="overall" type="object | null" required>
+          Aggregate counter with `completed`, `total`, `unit` (`files`, `pages`, `regions`, or `steps`), and `percent`. `null` when no aggregate counter is available.
+        </ResponseField>
+
+        <ResponseField name="step" type="object | null">
+          Optional current-stage counter with the same fields as `overall`. Present only when `overall` is `null`.
+        </ResponseField>
+
+        <ResponseField name="percent" type="integer | null" required>
+          Convenience copy of `overall.percent`, or `null` when `overall` is `null`.
         </ResponseField>
 
         <ResponseField name="updatedAt" type="string" required>
@@ -233,10 +241,11 @@ Jobs in these states will not change further. Results (if any) can be retrieved.
     },
     "pageCount": 204,
     "successfulPageCount": 87,
-    "failedPageCount": 117,
+    "failedPageCount": 0,
     "progress": {
-      "processedPages": 87,
-      "totalPages": 204,
+      "mode": "determinate",
+      "identity": { "overallRevision": "job:job_01hy3m8qtn2e5r7k9p0w4x1def:file_xyz789", "stepRevision": null },
+      "overall": { "completed": 87, "total": 204, "unit": "pages", "percent": 43 },
       "percent": 43,
       "phase": "processing",
       "message": "Files are being processed.",
