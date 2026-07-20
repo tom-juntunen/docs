@@ -17,7 +17,7 @@ POST https://plangrep.com/api/open/v1/projects/{projectId}/reviews/{reviewId}/me
 </ParamField>
 
 <ParamField body="body" type="string" required>
-  Text question, from 1 to 131,072 characters. Attachments, voice, and model options are not accepted.
+  Text question, from 1 to 524,288 characters and no more than 524,288 UTF-8 bytes after trimming. The complete JSON request body may be up to 4 MiB. Attachments, voice, and model options are not accepted.
 </ParamField>
 
 ```bash
