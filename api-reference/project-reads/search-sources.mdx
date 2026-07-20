@@ -184,9 +184,6 @@ Returns a `SourceSearchResponse` object.
         <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
           Artifact objects associated with this source, when available.
         </ResponseField>
-        <ResponseField name="imageArtifact" type="ProjectEntityArtifact">
-          Primary image artifact for this source, when available.
-        </ResponseField>
         <ResponseField name="fileArtifacts" type="ProjectEntityArtifact[]">
           File-oriented artifacts for this source, when available.
         </ResponseField>
@@ -247,13 +244,7 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
         "type": "project_sheet_region",
         "id": "project_sheet_region:region_204",
         "regionId": "region_204",
-        "label": "DETAIL 4/A8.02",
-        "imageArtifact": {
-          "type": "region_crop",
-          "contentType": "image/png",
-          "url": "https://...",
-          "readWith": "plangrep_show_artifact_image"
-        }
+        "label": "DETAIL 4/A8.02"
       }
     }
   ]
