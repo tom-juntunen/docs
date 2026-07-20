@@ -1,10 +1,10 @@
 ---
 title: "Search Construction Document Sources with Plangrep"
 sidebarTitle: "Searching Sources"
-description: "Learn how to run semantic, exact, grep, and regex searches across processed project sources using Plangrep's source search and project search endpoints."
+description: "Learn how to run semantic, exact, grep, and auto searches across processed project sources using Plangrep's source search and project search endpoints."
 ---
 
-After Plangrep processes your files, you can search extracted sources with explicit modes. Use `semantic` for vector search, `exact` for a case-insensitive exact phrase, `grep` for keyword and boolean prepared-text search, `regex` for regular expressions, or `auto` when an agent should try semantic search first and receive keyword follow-up guidance if the vector index is not ready. Use per-project source search for targeted queries within a single project, or organization-wide project search to find relevant projects and sources across your library.
+After Plangrep processes your files, you can search extracted sources with explicit modes. Use `semantic` for vector search, `exact` for a case-insensitive exact phrase, `grep` for literal and boolean prepared-text search, or `auto` when an agent should try semantic search first and receive keyword follow-up guidance if the vector index is not ready. Use per-project source search for targeted queries within a single project, or organization-wide project search to find relevant projects and sources across your library.
 
 ## Search within a project
 
@@ -50,7 +50,7 @@ The response includes a ranked list of matching source records:
 Each hit includes a relevance `score` for semantic search, a `snippet` of matching text, and source metadata. For specification hits, use `source.documentId` as the specification document ID and the section ID encoded in `source.id` or `sourceCatalogUri` with [Get Spec Section](/api-reference/project-reads/get-specification-section) to retrieve full section text and structured evidence. For non-specification hits, you can use `sourceCatalogUri` with [reading bounded source text](#read-bounded-source-text).
 
 <Note>
-  `mode: "semantic"` returns `409 Conflict` when the vector index is not ready. `mode: "exact"` returns the same `409` with `error.code: "source_index_not_ready"` when the exact index is not ready. `mode: "auto"` returns `status: "keyword_search_required"` with next actions so agent clients can issue a focused `grep` or `regex` follow-up.
+  `mode: "semantic"` returns `409 Conflict` when the vector index is not ready. `mode: "exact"` returns the same `409` with `error.code: "source_index_not_ready"` when the exact index is not ready. `mode: "auto"` returns `status: "keyword_search_required"` with next actions so agent clients can issue a focused `grep` follow-up.
 </Note>
 
 ### Search modes
@@ -59,11 +59,14 @@ Each hit includes a relevance `score` for semantic search, a `snippet` of matchi
 |---|---|
 | `semantic` | You want vector search over source meaning. This is the default for direct Open API calls. |
 | `exact` | You want a case-insensitive exact phrase match. Whitespace in the query is normalized before matching. |
-| `grep` | You want required terms, boolean-style `all` / `any` / `not`, or metadata and prepared-text keyword search. |
-| `regex` | You need case-insensitive multiline regular expression search over prepared source text. |
+| `grep` | You want literal terms, boolean-style `all` / `any` / `not`, or metadata and prepared-text keyword search. |
 | `auto` | An agent should try semantic search first and receive keyword follow-up guidance if vectors are not ready. |
 
-For exact search, supply the phrase as `query`; exact responses include `queryMode: "exact"` and `exactIndex` metadata. For grep and regex, `query` can be a plain string or a JSON string with keys such as `all`, `any`, `not`, `regex`, `patterns`, `sourceTypes`, and `query`.
+For exact search, supply the phrase as `query`; exact responses include `queryMode: "exact"` and `exactIndex` metadata. For grep, `query` can be a plain string or a JSON string with keys such as `all`, `any`, `not`, `sourceTypes`, and `query`.
+
+<Warning>
+  Regular-expression source search is not supported. `mode: "regex"` returns `400 source_search_regex_unsupported`; use literal or boolean `grep` instead.
+</Warning>
 
 ### Source search filters
 

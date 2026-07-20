@@ -27,8 +27,12 @@ POST https://plangrep.com/api/open/v1/projects/search
 </ParamField>
 
 <ParamField body="sourceSearchMode" type="enum">
-  Runtime source search mode for source hits. Accepted values: `semantic`, `exact`, `grep`, `regex`, `auto`. Defaults to `semantic`.
+  Runtime source search mode for source hits. Accepted values: `semantic`, `exact`, `grep`, `auto`. Defaults to `semantic`. Use `grep` for literal or boolean source search.
 </ParamField>
+
+<Note>
+  `sourceSearchMode: "regex"` returns `400 source_search_regex_unsupported`.
+</Note>
 
 <ParamField body="limit" type="integer">
   Maximum number of projects to return per page. Accepted range: `1`–`100`. Defaults to `25`.
@@ -113,7 +117,7 @@ curl --request POST \
 
       <Expandable title="matchReasons fields">
         <ResponseField name="type" type="string">
-          Reason type. Current values include `projectName` and `sourceSemantic`. Source matches can come from `semantic`, `exact`, `grep`, `regex`, or `auto` source search modes.
+          Reason type. Current values include `projectName` and `sourceSemantic`. Source matches can come from `semantic`, `exact`, `grep`, or `auto` source search modes.
         </ResponseField>
         <ResponseField name="value" type="string">
           Present for project name matches.
@@ -147,7 +151,7 @@ curl --request POST \
           Human-readable source label.
         </ResponseField>
         <ResponseField name="queryMode" type="string">
-          Source search mode used for this match: `semantic`, `exact`, `grep`, or `regex`.
+          Source search mode used for this match: `semantic`, `exact`, or `grep`.
         </ResponseField>
         <ResponseField name="score" type="number">
           Match score when available.
@@ -166,9 +170,6 @@ curl --request POST \
         </ResponseField>
         <ResponseField name="artifacts" type="ProjectEntityArtifact[]">
           Artifact objects associated with this source match, when available.
-        </ResponseField>
-        <ResponseField name="imageArtifact" type="ProjectEntityArtifact">
-          Primary image artifact for this source match, when available.
         </ResponseField>
         <ResponseField name="fileArtifacts" type="ProjectEntityArtifact[]">
           File-oriented artifacts for this source match, when available.
@@ -243,12 +244,6 @@ curl --request POST \
           "fileName": "drawings.pdf",
           "sheetNumber": "A-201",
           "pageNumber": 14,
-          "imageArtifact": {
-            "type": "region_crop",
-            "contentType": "image/png",
-            "url": "https://...",
-            "readWith": "plangrep_show_artifact_image"
-          },
           "fileArtifacts": [
             {
               "type": "sheet_pdf",

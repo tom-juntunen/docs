@@ -73,7 +73,7 @@ Projects support two search scopes:
 | POST `/api/open/v1/projects/{projectId}/source-search` | Searches sources indexed within this project |
 | POST `/api/open/v1/projects/search` | Organization-wide search across all projects |
 
-Both endpoints accept a query and return ranked evidence records. Use semantic mode for vector search, grep mode for keyword and boolean prepared-text search, and regex mode for regular expression search.
+Both endpoints accept a query and return ranked evidence records. Use semantic mode for vector search, exact mode for a case-insensitive exact phrase, grep mode for literal and boolean prepared-text search, and auto mode for semantic-first guidance. Regular-expression source search is not supported; use `grep` instead.
 
 ## Project Fields
 

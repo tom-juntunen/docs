@@ -1,13 +1,13 @@
 ---
 title: "Search Project Sources"
 sidebarTitle: "Search Sources"
-description: "POST /api/open/v1/projects/:projectId/source-search — semantic, exact, grep, regex, or auto search across all indexed sources in a project. Returns source metadata and normalized data when available."
+description: "POST /api/open/v1/projects/:projectId/source-search — semantic, exact, grep, or auto search across all indexed sources in a project. Returns source metadata and normalized data when available."
 ---
 
-Searches indexed sources within a project, including drawing regions, specification sections, and document entities. Use `mode: "semantic"` for vector search, `mode: "exact"` for case-insensitive exact phrase search, `mode: "grep"` for keyword and boolean prepared-text search, `mode: "regex"` for regular expression search, or `mode: "auto"` for semantic-first behavior with keyword follow-up guidance. Exact search normalizes whitespace before matching the full phrase. Hits include source metadata and, for sources with structured normalized region data, a top-level `normalizedData` object. For hits without `normalizedData`, use `sourceCatalogUri` with [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve the bounded text fallback. Search ranking is unchanged; snippets were presentation-only and are not returned. For specification hits, use the returned `source.documentId` and the section ID encoded in `source.id` or `sourceCatalogUri` with the specification section endpoints to retrieve full text and structured evidence.
+Searches indexed sources within a project, including drawing regions, specification sections, and document entities. Use `mode: "semantic"` for vector search, `mode: "exact"` for case-insensitive exact phrase search, `mode: "grep"` for literal and boolean prepared-text search, or `mode: "auto"` for semantic-first behavior with keyword follow-up guidance. Exact search normalizes whitespace before matching the full phrase. Hits include source metadata and, for sources with structured normalized region data, a top-level `normalizedData` object. For hits without `normalizedData`, use `sourceCatalogUri` with [Read Source Text](/api-reference/project-reads/read-source-text) to retrieve the bounded text fallback. Search ranking is unchanged; snippets were presentation-only and are not returned. For specification hits, use the returned `source.documentId` and the section ID encoded in `source.id` or `sourceCatalogUri` with the specification section endpoints to retrieve full text and structured evidence.
 
 <Warning>
-  **409 — Source index not ready.** `mode: "semantic"` returns `409 Conflict` when the vector index has not finished building. `mode: "exact"` returns `409 Conflict` when the exact index has not finished building. Both return `error.code: "source_index_not_ready"`. `mode: "auto"` returns `status: "keyword_search_required"` and next actions instead of a `409`, so agent clients can issue a focused `grep` or `regex` follow-up.
+  **409 — Source index not ready.** `mode: "semantic"` returns `409 Conflict` when the vector index has not finished building. `mode: "exact"` returns `409 Conflict` when the exact index has not finished building. Both return `error.code: "source_index_not_ready"`. `mode: "auto"` returns `status: "keyword_search_required"` and next actions instead of a `409`, so agent clients can issue a focused `grep` follow-up.
 </Warning>
 
 ## Endpoint
@@ -27,11 +27,11 @@ POST https://plangrep.com/api/open/v1/projects/{projectId}/source-search
 Content-Type: `application/json`
 
 <ParamField body="query" type="string" required>
-  The search query string. Must be at least **1 character**. For `exact`, provide the phrase to match. For `grep` and `regex`, this can be a plain string or a JSON string with keys such as `all`, `any`, `not`, `regex`, `patterns`, `sourceTypes`, and `query`.
+  The search query string. Must be at least **1 character**. For `exact`, provide the phrase to match. For `grep`, this can be a plain string or a JSON string with literal or boolean keys such as `all`, `any`, `not`, `sourceTypes`, and `query`.
 </ParamField>
 
 <ParamField body="mode" type="enum">
-  Search mode. Accepted values: `semantic`, `exact`, `grep`, `regex`, `auto`. Defaults to `semantic`.
+  Search mode. Accepted values: `semantic`, `exact`, `grep`, `auto`. Defaults to `semantic`. Use `grep` for literal or boolean source search.
 </ParamField>
 
 <ParamField body="reviewId" type="string">
@@ -91,7 +91,7 @@ Returns a `SourceSearchResponse` object.
 </ResponseField>
 
 <ResponseField name="queryMode" type="string">
-  The mode used for this response: `semantic`, `exact`, `grep`, `regex`, or `auto`.
+  The mode used for this response: `semantic`, `exact`, `grep`, or `auto`.
 </ResponseField>
 
 <ResponseField name="query" type="string">
@@ -255,7 +255,8 @@ curl -X POST "https://plangrep.com/api/open/v1/projects/proj_abc123/source-searc
 
 | Status | Description |
 |--------|-------------|
-| `400`  | Invalid request body — `query` missing or empty, invalid regex, `maxHits` out of range, etc. |
+| `400`  | Invalid request body — `query` missing or empty, or `maxHits` is out of range. |
+| `400`  | `source_search_regex_unsupported` — regular-expression source search is not supported; use literal or boolean `grep`. |
 | `401`  | Missing or invalid Bearer token. |
 | `404`  | Project not found. |
 | `409`  | `mode: "semantic"` or `mode: "exact"`: searchable sources exist but the selected vector or exact index is not ready. Retry after a short wait. For semantic queries, use `mode: "auto"` for keyword follow-up guidance. Response body: `{ "error": { "code": "source_index_not_ready", "message": "<string>", "readyDocumentCount": 0, "pendingDocumentCount": 1, "failedDocumentCount": 0, "totalDocumentCount": 1 } }` |

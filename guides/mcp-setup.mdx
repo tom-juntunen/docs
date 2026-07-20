@@ -32,9 +32,11 @@ plangrep_show_source_images
 | Mode | Use when |
 |---|---|
 | `semantic` | You want vector search over source meaning. This is the default. |
+| `exact` | You want a case-insensitive exact phrase match. |
 | `grep` | You want keyword or boolean prepared-text search. |
-| `regex` | You need case-insensitive multiline regex search over prepared source text. |
 | `auto` | An agent should try semantic search first and receive keyword follow-up guidance if vectors are not ready. |
+
+Regular-expression source search is not supported. Use literal or boolean `grep` instead.
 
 For organization-wide project discovery, `plangrep_search_projects` accepts `sourceSearchMode` with the same values.
 
