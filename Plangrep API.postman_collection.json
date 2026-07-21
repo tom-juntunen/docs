@@ -3141,16 +3141,42 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "for (const name of [\"baseUrl\", \"apiKey\", \"projectId\", \"reviewId\"]) {",
+                  "  if (!pm.variables.get(name)) {",
+                  "    throw new Error(`Missing variable: ${name}`);",
+                  "  }",
+                  "}",
+                  "",
+                  "if (!pm.variables.get(\"streamAfter\")) {",
+                  "  pm.collectionVariables.set(\"streamAfter\", \"-1\");",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 202) {",
-                  "  const payload = pm.response.json();",
-                  "  if (payload.execution && payload.execution.id) {",
-                  "    pm.collectionVariables.set('executionId', payload.execution.id);",
-                  "  }",
-                  "}"
+                  "pm.test(\"Review execution accepted\", () => {",
+                  "  pm.expect(pm.response.code).to.eql(202);",
+                  "});",
+                  "",
+                  "const payload = pm.response.json();",
+                  "",
+                  "if (!payload.execution?.id) {",
+                  "  throw new Error(\"Response did not contain execution.id\");",
+                  "}",
+                  "",
+                  "pm.collectionVariables.set(\"executionId\", payload.execution.id);",
+                  "pm.collectionVariables.set(\"streamAfter\", \"-1\");",
+                  "",
+                  "console.log(\"Review execution:\", payload.execution.id);",
+                  "console.log(\"Stream URL:\", payload.execution.streamUrl);"
                 ]
               }
             }
@@ -3248,7 +3274,26 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "for (const name of [\"baseUrl\", \"apiKey\", \"projectId\", \"reviewId\", \"executionId\"]) {",
+                  "  if (!pm.variables.get(name)) {",
+                  "    throw new Error(`Missing collection variable: ${name}`);",
+                  "  }",
+                  "}",
+                  "",
+                  "if (!pm.variables.get(\"streamAfter\")) {",
+                  "  pm.variables.set(\"streamAfter\", \"-1\");",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Cancel review execution",
