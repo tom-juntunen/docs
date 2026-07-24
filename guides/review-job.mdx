@@ -83,4 +83,4 @@ Both mutation routes require `Idempotency-Key`, scoped by organization, API key,
 
 Reviews currently supports text questions, public HTTPS streaming, polling, a server-selected model, the existing review-token credit policy, and sources already ingested and indexed in the project.
 
-It does not expose the workspace's browser or WebSocket transport, voice, attachments, model selection, auto-runs, coverage graphs, exports, or document-job webhooks. Review responses only return `/api/open/v1/...` URLs. They never expose runtime session URLs, cookies, capability tokens, internal stream endpoints, orchestrator paths, model/session details, or internal container job IDs.
+It does not expose the workspace's browser or WebSocket transport, voice, attachments, model selection, auto-runs, coverage graphs, or exports. Review responses only return `/api/open/v1/...` URLs. They never expose runtime session URLs, cookies, capability tokens, internal stream endpoints, orchestrator paths, model/session details, or internal container job IDs.

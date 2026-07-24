@@ -70,7 +70,7 @@ curl -I "https://plangrep.com/api/open/v1/jobs/JOB_ID/artifact?path=ARTIFACT_PAT
 
 ## Typical Workflow
 
-1. Poll or receive a webhook for job completion.
+1. Poll for job completion.
 2. Retrieve the job result — it includes artifact URLs with embedded `path` values.
 3. Call this endpoint with each `path` to download the corresponding artifact bytes.
 

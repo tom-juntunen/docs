@@ -1,10 +1,10 @@
 ---
-title: "Poll for Job Status or Receive Webhook Notifications"
-sidebarTitle: "Polling & Webhooks"
-description: "Learn how to track Plangrep job progress by polling the job status endpoint or by receiving push notifications via a registered webhook URL."
+title: "Poll for job status"
+sidebarTitle: "Poll job status"
+description: "Learn how to track Plangrep job progress by polling the job status endpoint."
 ---
 
-After completing uploads, Plangrep processes your files asynchronously. You can track progress by polling the job state endpoint or by receiving push notifications via a webhook URL you configure when creating the job.
+After completing uploads, Plangrep processes your files asynchronously. Track progress by polling the job status endpoint.
 
 ## Polling
 
@@ -67,24 +67,6 @@ def poll_job(job_id, api_key, timeout=600):
 
     raise TimeoutError("Job did not complete in time")
 ```
-
----
-
-## Webhooks
-
-Register a webhook URL at job creation time to receive push notifications instead of polling:
-
-```json
-{
-  "webhookUrl": "https://myapp.example.com/webhooks/plangrep"
-}
-```
-
-Plangrep sends an HTTP `POST` request to your URL whenever the job status changes. Use the `webhookSigningSecret` returned at job creation time to verify that each request originated from Plangrep before processing it.
-
-<Warning>
-  Your webhook endpoint must respond with a `2xx` status code within a reasonable timeout. Failed deliveries may not be retried — use polling as a fallback for critical workflows.
-</Warning>
 
 ---
 

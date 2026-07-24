@@ -30,12 +30,11 @@ curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: job-my-order-123" \
   -d '{
-    "externalId": "my-order-123",
-    "webhookUrl": "https://myapp.example.com/webhooks/plangrep"
+    "externalId": "my-order-123"
   }'
 ```
 
-The job starts in `awaiting_uploads`. If you supplied a webhook URL, save the one-time `webhookSigningSecret` from the response.
+The job starts in `awaiting_uploads`.
 
 ### Validate and hash every file
 
@@ -136,7 +135,7 @@ Only then does Plangrep attach the verified physical content to the logical proj
 
 ### Track processing
 
-The job transitions through `preflighting` and `processing`. Poll `GET /api/open/v1/jobs/{jobId}` or use your webhook. See [Polling and webhooks](/guides/polling-and-webhooks).
+The job transitions through `preflighting` and `processing`. Poll `GET /api/open/v1/jobs/{jobId}` until it reaches a terminal status. See [Poll job status](/guides/polling-and-webhooks).
 
 </Steps>
 

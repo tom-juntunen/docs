@@ -31,10 +31,10 @@ Plangrep is an async document processing API designed for construction workflows
     Create a processing job, hash and register each file, then either reuse verified content or upload bytes directly to signed storage. Complete the uploads to start processing.
   </Step>
   <Step title="Poll for completion">
-    Poll `GET /api/open/v1/jobs/{jobId}` until the job `status` reaches `completed` or `completed_with_errors`. Subscribe to a webhook URL on job creation to receive push notifications instead.
+    Poll `GET /api/open/v1/jobs/{jobId}` until the job `status` reaches `completed` or `completed_with_errors`.
   </Step>
   <Step title="Retrieve results">
-    Fetch the normalized JSON result from `GET /api/open/v1/jobs/{jobId}/result`. Query extracted sheets, regions, specifications, and docs through the project entity endpoints, and run semantic, exact, grep, or regex search across all processed sources.
+    Fetch the normalized JSON result from `GET /api/open/v1/jobs/{jobId}/result`. Query extracted sheets, regions, specifications, and docs through the project entity endpoints, and run semantic, exact, grep, or auto search across all processed sources.
   </Step>
 </Steps>
 
@@ -45,7 +45,7 @@ Plangrep is an async document processing API designed for construction workflows
     Extracts sheets, drawing regions, and specification sections from PDFs — with bounding boxes, labels, and raw text.
   </Card>
   <Card title="Source Search" icon="magnifying-glass">
-    Run semantic, exact, grep, or regex queries across project sources or search globally across your organization's projects.
+    Run semantic, exact, grep, or auto queries across project sources or search globally across your organization's projects.
   </Card>
   <Card title="Verified uploads" icon="cloud-arrow-up">
     Deduplicate verified content within your organization, upload new bytes directly to storage, and verify every object before processing.
