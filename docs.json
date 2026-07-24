@@ -84,6 +84,7 @@
               "api-reference/jobs/list-jobs",
               "api-reference/jobs/create-job",
               "api-reference/jobs/get-job",
+              "api-reference/jobs/list-job-files",
               "api-reference/jobs/get-job-result",
               "api-reference/jobs/resume-job",
               "api-reference/jobs/cancel-job"

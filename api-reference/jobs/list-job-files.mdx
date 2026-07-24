@@ -1,0 +1,87 @@
+---
+title: "List Files in a Processing Job"
+sidebarTitle: "List Job Files"
+description: "GET /api/open/v1/jobs/:jobId/files — returns a cursor-paginated page of files attached to an Open API ingestion job."
+---
+
+List files attached to an Open API ingestion job. Use this endpoint when `filesTruncated` is `true` on a job response, or when you need to filter files by status.
+
+## Authentication
+
+Include an API key with the `jobs:read` scope as `Authorization: Bearer YOUR_API_KEY`.
+
+## Endpoint
+
+```http
+GET https://plangrep.com/api/open/v1/jobs/{jobId}/files
+```
+
+## Path parameters
+
+<ParamField path="jobId" type="string" required>
+  The Open API ingestion job ID.
+</ParamField>
+
+## Query parameters
+
+<ParamField query="limit" type="integer" default="100">
+  Maximum files to return. Request a value from **1** to **200**.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `nextCursor` from the previous response. Omit it for the first page.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Restrict the page to one file status, such as `processing`, `ready`, `error`, or `cancelled`.
+</ParamField>
+
+## Example request
+
+```bash
+curl "https://plangrep.com/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/files?limit=200" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Response fields
+
+<ResponseField name="cursor" type="string" required>
+  Cursor used to produce this page.
+</ResponseField>
+
+<ResponseField name="fileCount" type="integer" required>
+  Total matching files across all pages. When you pass `status`, this is the total after that filter.
+</ResponseField>
+
+<ResponseField name="files" type="JobFile[]" required>
+  File metadata for this page. A page contains at most 200 files.
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string | null" required>
+  Pass this value as `cursor` to retrieve the next page. It is `null` on the final page.
+</ResponseField>
+
+## Example response
+
+```json
+{
+  "cursor": "0",
+  "fileCount": 5000,
+  "files": [
+    {
+      "id": "file_001",
+      "documentId": "document_001",
+      "fileName": "architectural-drawings.pdf",
+      "contentType": "application/pdf",
+      "fileSize": 52428800,
+      "classification": "plans",
+      "pageCount": 24,
+      "successfulPageCount": 24,
+      "status": "ready",
+      "uploadStatus": "uploaded",
+      "error": null
+    }
+  ],
+  "nextCursor": "200"
+}
+```

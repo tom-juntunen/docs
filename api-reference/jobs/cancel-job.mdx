@@ -61,12 +61,24 @@ curl --request POST \
       Processing limits that were applied to this job.
 
       <Expandable title="limits fields">
-        <ResponseField name="maxDeclaredBytes" type="integer" required>
-          Maximum total bytes that could be uploaded to this job.
+        <ResponseField name="maxBytesPerFile" type="integer" required>
+          Maximum declared bytes for one file. The default is 2 GiB.
         </ResponseField>
 
-        <ResponseField name="maxFiles" type="integer" required>
-          Maximum number of files that could be uploaded to this job.
+        <ResponseField name="maxBytesPerRun" type="integer" required>
+          Maximum declared bytes across the job. The default is 10 GiB.
+        </ResponseField>
+
+        <ResponseField name="maxFilesPerRun" type="integer" required>
+          Maximum files across the job. The default is 5,000.
+        </ResponseField>
+
+        <ResponseField name="maxPagesPerPdf" type="integer" required>
+          Maximum pages in one PDF. The default is 3,000.
+        </ResponseField>
+
+        <ResponseField name="maxPagesPerRun" type="integer" required>
+          Maximum prepared pages across the job. The default is 50,000.
         </ResponseField>
       </Expandable>
     </ResponseField>
@@ -92,7 +104,23 @@ curl --request POST \
     </ResponseField>
 
     <ResponseField name="files" type="object[]" required>
-      Metadata for each file that was attached to the job.
+      The first page of attached-file metadata. At most 100 files are returned inline.
+    </ResponseField>
+
+    <ResponseField name="fileCount" type="integer" required>
+      Total files attached to the job.
+    </ResponseField>
+
+    <ResponseField name="filesNextCursor" type="string | null" required>
+      Cursor for [List Job Files](/api-reference/jobs/list-job-files), or `null` when the inline page contains every file.
+    </ResponseField>
+
+    <ResponseField name="filesTruncated" type="boolean" required>
+      Whether more files are available from [List Job Files](/api-reference/jobs/list-job-files).
+    </ResponseField>
+
+    <ResponseField name="counters" type="object">
+      File-state counts for this Open API ingestion job, including `total`, `uploaded`, `queued`, `preflighting`, `processing`, `ready`, `failed`, `cancelled`, and `blockedCredits`.
     </ResponseField>
 
     <ResponseField name="resultUrl" type="string">
@@ -131,8 +159,11 @@ curl --request POST \
     "status": "cancelled",
     "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
     "limits": {
-      "maxDeclaredBytes": 10000000000,
-      "maxFiles": 100
+      "maxBytesPerFile": 2147483648,
+      "maxBytesPerRun": 10737418240,
+      "maxFilesPerRun": 5000,
+      "maxPagesPerPdf": 3000,
+      "maxPagesPerRun": 50000
     },
     "pageCount": 204,
     "successfulPageCount": 63,
@@ -156,6 +187,10 @@ curl --request POST \
         "status": "cancelled"
       }
     ],
+    "fileCount": 1,
+    "filesNextCursor": null,
+    "filesTruncated": false,
+    "counters": { "total": 1, "uploaded": 1, "queued": 0, "preflighting": 0, "processing": 0, "ready": 0, "failed": 0, "cancelled": 1, "blockedCredits": 0 },
     "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result",
     "error": null,
     "createdAt": "2024-11-02T09:00:00.000Z",

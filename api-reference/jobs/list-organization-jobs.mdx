@@ -99,9 +99,16 @@ curl "https://plangrep.com/api/open/v1/jobs?limit=10&activeOnly=true" \
         "creditsReserved": 2040
       },
       "files": [],
+      "fileCount": 0,
+      "filesNextCursor": null,
+      "filesTruncated": false,
+      "counters": { "total": 0, "uploaded": 0, "queued": 0, "preflighting": 0, "processing": 0, "ready": 0, "failed": 0, "cancelled": 0, "blockedCredits": 0 },
       "limits": {
-        "maxDeclaredBytes": 10000000000,
-        "maxFiles": 100
+        "maxBytesPerFile": 2147483648,
+        "maxBytesPerRun": 10737418240,
+        "maxFilesPerRun": 5000,
+        "maxPagesPerPdf": 3000,
+        "maxPagesPerRun": 50000
       },
       "error": null,
       "createdAt": "2026-07-11T18:00:00.000Z",

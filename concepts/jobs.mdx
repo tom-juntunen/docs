@@ -16,15 +16,13 @@ Content-Type: application/json
 
 ```json
 {
-  "externalId": "your-internal-ref-456",
-  "webhookUrl": "https://your-app.example.com/webhooks/plangrep"
+  "externalId": "your-internal-ref-456"
 }
 ```
 
-Both fields are optional:
+This field is optional:
 
 - **`externalId`** (max 180 chars) — correlate this job with a record in your own system. Plangrep stores and returns this value but does not enforce uniqueness.
-- **`webhookUrl`** — Plangrep posts job status change notifications to this URL as the job progresses. Use this to avoid polling.
 
 ### Idempotent Job Creation
 
@@ -58,10 +56,13 @@ Idempotency-Key: your-unique-key-here
 
 | Limit | Production Default |
 |-------|--------------------|
-| `limits.maxDeclaredBytes` | 10 GB total file size per job |
-| `limits.maxFiles` | 100 files per job |
+| `limits.maxBytesPerFile` | 2 GiB per file |
+| `limits.maxBytesPerRun` | 10 GiB total declared file bytes per job |
+| `limits.maxFilesPerRun` | 5,000 files per job |
+| `limits.maxPagesPerPdf` | 3,000 pages per PDF |
+| `limits.maxPagesPerRun` | 50,000 prepared pages per job |
 
-These limits are enforced when you register files, before any new bytes are transferred. Requests that would exceed either limit are rejected with a 4xx error.
+The byte and file limits are enforced when you register files, before any new bytes are transferred. Preflight enforces the PDF and prepared-page limits. Requests that exceed a limit are rejected with a 4xx error.
 
 ## Fetching Results
 
@@ -85,14 +86,20 @@ The `expiresAt` field on a job shows when result data will be permanently delete
 | `id` | string | Unique job identifier |
 | `projectId` | string | The project this job belongs to |
 | `externalId` | string \| null | Your correlation ID (max 180 chars) |
-| `webhookUrl` | string \| null | Webhook URL for status push notifications |
 | `status` | string | Current job status (see table above) |
-| `limits.maxDeclaredBytes` | number | Max total file size in bytes |
-| `limits.maxFiles` | number | Max number of files |
+| `limits.maxBytesPerFile` | number | Max declared bytes for one file |
+| `limits.maxBytesPerRun` | number | Max declared bytes across the job |
+| `limits.maxFilesPerRun` | number | Max files across the job |
+| `limits.maxPagesPerPdf` | number | Max pages in one PDF |
+| `limits.maxPagesPerRun` | number | Max prepared pages across the job |
 | `displayName` | string | Human-readable job label for UI and logs |
 | `activityLabel` | string | Activity-feed label, currently matching `displayName` |
 | `project` | object | Parent project summary when available |
 | `progress` | object | Work-unit progress envelope. See [Job progress](#job-progress). |
+| `fileCount` | number | Total files attached to the job |
+| `filesNextCursor` | string \| null | Cursor for [List Job Files](/api-reference/jobs/list-job-files) when `files` is truncated |
+| `filesTruncated` | boolean | Whether the inline `files` page omits additional files |
+| `counters` | object | File-state counts for Open API ingestion jobs |
 | `failedPageCount` | number | Pages that failed after the job reached `completed_with_errors` or `failed`; otherwise `0`. |
 | `resultUrl` | string | API path to fetch result JSON after completion |
 | `expiresAt` | string \| null | ISO 8601 timestamp when result data expires |

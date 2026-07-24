@@ -16,7 +16,7 @@ Register every file for an Open API ingestion job before sending bytes. Workspac
 This is the only Open API endpoint for starting file uploads.
 
 <Note>
-  A job accepts up to **100 files** and **10 GB** of declared bytes. Each file can be up to **2 GB**.
+  A job accepts up to **5,000 files** and **10 GiB** of declared bytes. Each file can be up to **2 GiB**. Registration rejects a declaration that exceeds the per-file limit; preflight enforces the page limits.
 </Note>
 
 ## Endpoint
@@ -41,7 +41,7 @@ Content-Type: application/json
 ## Request body
 
 <ParamField body="files" type="array" required>
-  Contains between 1 and 100 file declarations.
+  Contains one or more file declarations. Across all registrations, a job can contain at most 5,000 files.
 
   <ParamField body="files[].fileName" type="string" required>
     The original filename, including a supported extension.

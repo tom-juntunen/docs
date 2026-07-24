@@ -115,12 +115,24 @@ curl --request GET \
       Processing limits applied to this job.
 
       <Expandable title="limits fields">
-        <ResponseField name="maxDeclaredBytes" type="integer" required>
-          Maximum total bytes that may be uploaded to this job. Default: `10000000000` (10 GB).
+        <ResponseField name="maxBytesPerFile" type="integer" required>
+          Maximum declared bytes for one file. The default is 2 GiB.
         </ResponseField>
 
-        <ResponseField name="maxFiles" type="integer" required>
-          Maximum number of files that may be uploaded to this job. Default: `100`.
+        <ResponseField name="maxBytesPerRun" type="integer" required>
+          Maximum declared bytes across the job. The default is 10 GiB.
+        </ResponseField>
+
+        <ResponseField name="maxFilesPerRun" type="integer" required>
+          Maximum files across the job. The default is 5,000.
+        </ResponseField>
+
+        <ResponseField name="maxPagesPerPdf" type="integer" required>
+          Maximum pages in one PDF. The default is 3,000.
+        </ResponseField>
+
+        <ResponseField name="maxPagesPerRun" type="integer" required>
+          Maximum prepared pages across the job. The default is 50,000.
         </ResponseField>
       </Expandable>
     </ResponseField>
@@ -146,7 +158,23 @@ curl --request GET \
     </ResponseField>
 
     <ResponseField name="files" type="object[]" required>
-      Metadata for each file attached to the job.
+      The first page of attached-file metadata. At most 100 files are returned inline.
+    </ResponseField>
+
+    <ResponseField name="fileCount" type="integer" required>
+      Total files attached to the job.
+    </ResponseField>
+
+    <ResponseField name="filesNextCursor" type="string | null" required>
+      Cursor for [List Job Files](/api-reference/jobs/list-job-files), or `null` when the inline page contains every file.
+    </ResponseField>
+
+    <ResponseField name="filesTruncated" type="boolean" required>
+      Whether more files are available from [List Job Files](/api-reference/jobs/list-job-files).
+    </ResponseField>
+
+    <ResponseField name="counters" type="object">
+      File-state counts for Open API ingestion jobs, including `total`, `uploaded`, `queued`, `preflighting`, `processing`, `ready`, `failed`, `cancelled`, and `blockedCredits`.
     </ResponseField>
 
     <ResponseField name="resultUrl" type="string">
@@ -199,8 +227,11 @@ curl --request GET \
         "name": "Downtown Office Tower"
       },
       "limits": {
-        "maxDeclaredBytes": 10000000000,
-        "maxFiles": 100
+        "maxBytesPerFile": 2147483648,
+        "maxBytesPerRun": 10737418240,
+        "maxFilesPerRun": 5000,
+        "maxPagesPerPdf": 3000,
+        "maxPagesPerRun": 50000
       },
       "pageCount": 204,
       "successfulPageCount": 204,
@@ -224,6 +255,10 @@ curl --request GET \
           "status": "completed"
         }
       ],
+      "fileCount": 1,
+      "filesNextCursor": null,
+      "filesTruncated": false,
+      "counters": { "total": 1, "uploaded": 1, "queued": 0, "preflighting": 0, "processing": 0, "ready": 1, "failed": 0, "cancelled": 0, "blockedCredits": 0 },
       "resultUrl": "/api/open/v1/jobs/job_01hy3m8qtn2e5r7k9p0w4x1def/result",
       "error": null,
       "createdAt": "2024-11-02T09:00:00.000Z",
@@ -239,8 +274,11 @@ curl --request GET \
       "status": "cancelled",
       "projectId": "proj_01hx9z4kqr8e7m3p5n6w2v0abc",
       "limits": {
-        "maxDeclaredBytes": 10000000000,
-        "maxFiles": 100
+        "maxBytesPerFile": 2147483648,
+        "maxBytesPerRun": 10737418240,
+        "maxFilesPerRun": 5000,
+        "maxPagesPerPdf": 3000,
+        "maxPagesPerRun": 50000
       },
       "pageCount": 0,
       "successfulPageCount": 0,
@@ -258,6 +296,10 @@ curl --request GET \
         "creditsDebited": 0
       },
       "files": [],
+      "fileCount": 0,
+      "filesNextCursor": null,
+      "filesTruncated": false,
+      "counters": { "total": 0, "uploaded": 0, "queued": 0, "preflighting": 0, "processing": 0, "ready": 0, "failed": 0, "cancelled": 0, "blockedCredits": 0 },
       "resultUrl": "/api/open/v1/jobs/job_01hx9z5abc2d3e4f5g6h7i8jkl/result",
       "error": null,
       "createdAt": "2024-11-01T16:30:00.000Z",
