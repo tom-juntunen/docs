@@ -117,7 +117,7 @@
     "Semantic source search across projects and individual project sources",
     "Multi-mode file upload: multipart form, signed direct PUT, and multipart signed",
     "Per-page credit billing with separate rates for drawings and documents",
-    "Webhook notifications and idempotent job creation",
+    "Idempotent job creation and polling for job progress",
     "Short-lived unauthenticated artifact download tokens",
     "Workspace API key management with scoped permissions"
   ],
@@ -145,8 +145,7 @@
     "GET /api/open/v1/projects/{projectId}/artifact",
     "GET /api/open/v1/jobs/{jobId}",
     "POST /api/open/v1/jobs/{jobId}/uploads",
-    "POST /api/open/v1/jobs/{jobId}/files",
-    "POST /api/open/v1/jobs/{jobId}/uploads/{documentId}/content",
+    "GET /api/open/v1/jobs/{jobId}/files",
     "POST /api/open/v1/jobs/{jobId}/uploads/complete",
     "POST /api/open/v1/jobs/{jobId}/resume",
     "POST /api/open/v1/jobs/{jobId}/cancel",

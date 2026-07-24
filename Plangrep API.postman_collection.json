@@ -325,7 +325,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 201) {",
+                  "if (pm.response.code === 202) {",
                   "  const payload = pm.response.json();",
                   "  if (payload.project && payload.project.id) {",
                   "    pm.collectionVariables.set('projectId', payload.project.id);",
@@ -806,7 +806,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"externalId\": \"customer-project-123\",\n  \"webhookUrl\": \"https://your-app.example.com/webhooks/plangrep\"\n}",
+              "raw": "{\n  \"externalId\": \"customer-project-123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -821,7 +821,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 201) {",
+                  "if (pm.response.code === 202) {",
                   "  const payload = pm.response.json();",
                   "  if (payload.job && payload.job.id) {",
                   "    pm.collectionVariables.set('jobId', payload.job.id);",
@@ -858,6 +858,65 @@
               "query": []
             },
             "description": "Gets job state. progress reports mode, phase, message, identity, an optional step, and a nullable percent. When overall progress is known, progress.overall contains completed, total, unit, and percent. Current phases include preparation, normalizing, rendering, indexing, and finalizing. failedPageCount remains 0 while work is active, cancelled, or expired; it is non-zero only for completed_with_errors and failed jobs. Requires jobs:read.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{apiKey}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List job files",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/open/v1/jobs/{{jobId}}/files?limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "open",
+                "v1",
+                "jobs",
+                "{{jobId}}",
+                "files"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}",
+                  "description": "Maximum files to return. Use 1 through 200.",
+                  "disabled": false
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{cursor}}",
+                  "description": "Cursor from the previous page.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Optional file-status filter.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists files attached to an Open API ingestion job. Job responses include only the first 100 files; use this endpoint for subsequent pages. Requires jobs:read.",
             "auth": {
               "type": "bearer",
               "bearer": [
