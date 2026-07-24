@@ -4,7 +4,7 @@ sidebarTitle: "Search Projects"
 description: "POST /api/open/v1/projects/search — searches organization projects by name and source content. Supports source search modes, filtering, and pagination."
 ---
 
-Search across all projects visible to your organization key using a combination of name matching and source search against ingested content. Results include the matching project, the reasons it was matched, and the specific source hits that contributed to the match score. Supports rich filtering by entity type, drawing metadata, and file classification, as well as cursor-based pagination for large result sets.
+Search across all projects visible to your organization key using a combination of name matching and source search against ingested content. Results include the matching project, the reasons it matched, and the source hits that contributed to the match score. Supports rich filtering by entity type, drawing metadata, and file classification, as well as cursor-based pagination.
 
 ## Authentication
 
@@ -27,12 +27,16 @@ POST https://plangrep.com/api/open/v1/projects/search
 </ParamField>
 
 <ParamField body="sourceSearchMode" type="enum">
-  Runtime source search mode for source hits. Accepted values: `semantic`, `exact`, `grep`, `auto`. Defaults to `semantic`. Use `grep` for literal or boolean source search.
+  Source search mode for source hits. Accepted values: `semantic`, `exact`, `grep`, and `auto`. Defaults to `semantic`. Use `grep` for literal or boolean source search. `exact` uses the literal source-search path.
 </ParamField>
 
 <Note>
   `sourceSearchMode: "regex"` returns `400 source_search_regex_unsupported`.
 </Note>
+
+<ParamField body="minScore" type="number">
+  Minimum semantic source-match score from `0` through `1`. Defaults to `0.30`. This threshold applies when Plangrep uses organization-wide semantic search. It does not apply when `sourceSearchMode` is `exact` or `grep`, or when you filter by `fileName`.
+</ParamField>
 
 <ParamField body="limit" type="integer">
   Maximum number of projects to return per page. Accepted range: `1`–`100`. Defaults to `25`.
@@ -71,7 +75,7 @@ POST https://plangrep.com/api/open/v1/projects/search
 </ParamField>
 
 <ParamField body="fileName" type="string">
-  Filter source matches to a specific file name.
+  Filter source matches to a file name. This uses the project source-search path instead of organization-wide semantic search.
 </ParamField>
 
 <ParamField body="classification" type="enum">
@@ -94,6 +98,7 @@ curl --request POST \
     "query": "fire-rated door assembly",
     "sourceSearchMode": "semantic",
     "classification": "plans",
+    "minScore": 0.4,
     "limit": 10
   }'
 ```
@@ -102,6 +107,10 @@ curl --request POST \
 
 <ResponseField name="query" type="string" required>
   The search query string echoed back from the request.
+</ResponseField>
+
+<ResponseField name="minimumScore" type="number | null" required>
+  The semantic score threshold applied to this response. It is `null` when Plangrep uses the project source-search path for `exact`, `grep`, or `fileName` searches.
 </ResponseField>
 
 <ResponseField name="projects" type="array" required>
@@ -151,7 +160,7 @@ curl --request POST \
           Human-readable source label.
         </ResponseField>
         <ResponseField name="queryMode" type="string">
-          Source search mode used for this match: `semantic`, `exact`, or `grep`.
+          Source search mode reported for this match.
         </ResponseField>
         <ResponseField name="score" type="number">
           Match score when available.
@@ -187,8 +196,8 @@ curl --request POST \
   The page size limit applied to this response.
 </ResponseField>
 
-<ResponseField name="cursor" type="string | null" required>
-  The cursor value that was used for this page, or `null` for the first page.
+<ResponseField name="cursor" type="string" required>
+  The cursor value that was used for this page. The first page returns `"0"`.
 </ResponseField>
 
 <ResponseField name="nextCursor" type="string | null" required>
@@ -212,6 +221,7 @@ curl --request POST \
 ```json
 {
   "query": "fire-rated door assembly",
+  "minimumScore": 0.4,
   "projects": [
     {
       "project": {
@@ -258,7 +268,7 @@ curl --request POST \
   ],
   "total": 1,
   "limit": 10,
-  "cursor": null,
+  "cursor": "0",
   "nextCursor": null,
   "returnedCount": 1,
   "hasMore": false,
@@ -269,3 +279,11 @@ curl --request POST \
 <Tip>
   Use `projectIds` to scope source searches to a known subset of projects. This significantly reduces latency when you already know which projects are candidates.
 </Tip>
+
+## Error responses
+
+| Status | Code | Description |
+| --- | --- | --- |
+| `400` | `invalid_min_score` | `minScore` is not a number from `0` through `1`. |
+| `400` | `source_search_regex_unsupported` | `sourceSearchMode` is `regex`. Use `grep` for literal or boolean source search. |
+| `502` | `source_vector_search_failed` | Organization-wide semantic source search could not be completed. |
