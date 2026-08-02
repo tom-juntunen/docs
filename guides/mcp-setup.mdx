@@ -40,6 +40,24 @@ Regular-expression source search is not supported. Use literal or boolean `grep`
 
 For organization-wide project discovery, `plangrep_search_projects` accepts `sourceSearchMode` with the same values.
 
+## Process uploaded attachments
+
+Use one processing job for the complete attachment batch:
+
+```text
+plangrep_create_project({ name })
+plangrep_get_project({ projectId }) until status is ready
+plangrep_create_processing_job({ projectId })
+plangrep_upload_job_files({ jobId, file: <uploaded chat attachment> }) once per attachment
+plangrep_start_processing_job({ jobId }) once after every attachment is ready
+plangrep_get_job({ jobId }) until terminal
+plangrep_get_result({ jobId })
+```
+
+Pass the actual ChatGPT or Codex attachment to `plangrep_upload_job_files`. Do not type a filename, local path, file ID, URL, or base64 payload. The tool validates and hashes the selected attachment, then registers it and transfers new bytes through signed storage instructions.
+
+Each upload call stages one attachment without closing the job's upload set. After every attachment returns `uploaded`, `reused`, or `skipped`, call `plangrep_start_processing_job` exactly once. Do not start processing while attachments are still being added.
+
 ## Job tools
 
 `plangrep_list_project_jobs`, `plangrep_get_job`, and `plangrep_get_result` use the unified user-visible job feed. The list tool accepts pagination, status, and active filters and returns `nextCursor`. Review aggregates are included only when the MCP connection has `reviews:read` in addition to `jobs:read`.

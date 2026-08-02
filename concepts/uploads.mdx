@@ -1,42 +1,31 @@
 ---
-title: "Hash-first, verified file uploads"
+title: "Hash-first verified file uploads"
 sidebarTitle: "Uploads"
-description: "Learn Plangrep's canonical upload flow: hash and register files, reuse verified content or upload directly to R2, then complete verification and start processing."
+description: "Register a file, upload it directly to signed storage, and let Plangrep verify and process it automatically."
 ---
 
-Every Plangrep upload surface uses one canonical flow. Your client validates and hashes each file before it sends bytes. Registration then returns either an organization-scoped verified content reference, which sends zero upload bytes, or signed direct-to-R2 upload instructions.
+Every Plangrep upload uses one integrity path. Your client declares the file name, byte size, MIME type, and SHA-256, then sends the bytes directly to the returned signed R2 URL. Plangrep independently verifies the stored bytes before processing.
 
 ```mermaid
 flowchart LR
-  A["Validate size and type"] --> B["Hash SHA-256 incrementally"]
-  B --> C["Register name, size, type, and hash"]
-  C -->|"Verified content exists"| D["Reuse with zero upload bytes"]
-  C -->|"New content"| E["PUT directly to signed R2 URL(s)"]
-  D --> F["Complete upload"]
-  E --> F
-  F --> G["Authoritative verification in quarantine"]
-  G -->|"Pass"| H["Attach logical file and start ingestion"]
-  G -->|"Fail"| I["Reject content; do not ingest"]
+  A["Validate name, size, and type"] --> B["Hash SHA-256 incrementally"]
+  B --> C["Register metadata and hash"]
+  C --> D["PUT bytes to signed R2 URL"]
+  D --> E["R2 confirms object creation"]
+  E --> F["Plangrep verifies quarantined bytes and hash"]
+  F -->|"Pass"| G["Attach file and start ingestion"]
+  F -->|"Fail"| H["Reject content"]
 ```
 
 <Note>
   Each job allows up to **5,000 files** and **10 GiB** of declared file bytes. Each file can be up to **2 GiB**. Preflight also enforces **3,000 pages per PDF** and **50,000 prepared pages per job**.
 </Note>
 
-## Why hashing happens first
+## Why the client sends a hash
 
-Calculate SHA-256 from the exact file bytes immediately after file selection and before registration.
+A client-computed digest gives the registration a stable identity and lets Plangrep detect a transfer mismatch. Calculate it incrementally so large files never need to occupy one browser or WASM buffer.
 
-- **Zero-byte reuse:** Plangrep can reuse matching verified content within your organization.
-- **Transfer integrity:** Plangrep compares your declaration with a SHA-256 digest calculated from the stored object.
-- **Signed checksums:** Direct PUT instructions include a signed `x-amz-checksum-sha256` header.
-- **Stable retries:** The digest identifies the intended bytes independently of the filename.
-
-In a browser, hash incrementally in a worker. Read bounded slices such as 4 MiB chunks instead of loading the full file into browser or WASM memory. Hash small files through the same worker path so every file follows the same contract.
-
-<Warning>
-  A client-provided hash is a declaration, not trusted proof. Plangrep independently streams and hashes the object before it can leave quarantine.
-</Warning>
+The digest remains an untrusted declaration. Plangrep computes SHA-256 again while streaming the complete quarantined object. Only the verified server-computed digest becomes the canonical content identity.
 
 ## Supported file types
 
@@ -54,11 +43,9 @@ The declared file extension and MIME type must agree. Plangrep accepts:
 | Text | `.txt` | `text/plain` |
 | JSON | `.json` | `application/json`, `text/json`, `text/plain` |
 
-Do not send `classification`. Plangrep determines whether a file contains plans, specifications, documents, or mixed page families during preflight.
+Do not send `classification`. Plangrep determines plans, specifications, documents, or mixed page families during preflight.
 
-## Step 1: Register every file
-
-Send declarations before file bytes:
+## Step 1: Register the file
 
 ```http
 POST /api/open/v1/jobs/{jobId}/uploads
@@ -79,98 +66,34 @@ Content-Type: application/json
 }
 ```
 
-`fileSize` must be the exact non-negative integer byte length. `sha256` must be the complete 64-character hexadecimal digest of those bytes.
+`fileSize` must equal the stored object's final byte count. `sha256` must be the lowercase 64-character digest of the exact bytes you upload.
 
-## Step 2: Follow the returned branch
+## Step 2: Upload the bytes
 
-Inspect each item in `uploads` independently. A batch can contain reused, direct PUT, multipart, and skipped items.
-
-| Response | What you do |
-|---|---|
-| `status: "reused"` | Send no file bytes. Save `documentId` for completion. |
-| `uploadMode: "direct_put"` | PUT the complete file to `uploadUrl` with every returned `uploadHeaders` entry. |
-| `uploadMode: "multipart"` | PUT each specified byte range to its part URL and save every response `ETag`. |
-| `status: "skipped"` | Do not upload or complete that item. Inspect `skippedReason`. |
-
-### Reused verified content
-
-A reuse response contains `documentId`, `contentBlobId`, `status: "reused"`, and `requiresCompletion`. It intentionally has no signed URL or upload token.
-
-Reuse is scoped to your organization. Registration does not reveal whether the same bytes exist in another organization. Different logical files can reuse one verified object while retaining their own filename, project, review, folder, and version semantics.
-
-Include the reused `documentId` in completion when the job should process it. No bytes are uploaded again.
-
-### Signed direct PUT
-
-Files below the multipart threshold receive one signed R2 URL. Use the returned headers exactly as provided:
+For every accepted registration, PUT the complete file to `uploadUrl` and send every returned `uploadHeaders` entry exactly:
 
 ```bash
 curl -X PUT "UPLOAD_URL" \
   -H "content-type: application/pdf" \
-  -H "x-amz-checksum-sha256: BASE64_CHECKSUM_FROM_UPLOAD_HEADERS" \
   --data-binary @A101-floor-plan.pdf
 ```
 
-`x-amz-checksum-sha256` is the base64-encoded SHA-256 checksum returned in `uploadHeaders`, not the hexadecimal registration value. When `checksumEnforced` is `true`, R2 rejects a request that omits or changes this signed header.
+Signed URLs expire at `expiresAt`. Register a new upload if an instruction expires.
 
-### Signed multipart upload
+## Automatic verification and processing
 
-Files at or above 32 MiB receive `uploadMode: "multipart"`, a `multipartUploadId`, a target `partSize`, and a `parts` array. For every part:
+There is no completion request. R2 notifies Plangrep after the complete object is stored. Plangrep then:
 
-1. Read local bytes from `startByte` through `endByteExclusive - 1`.
-2. PUT that slice to `uploadUrl` with every returned `uploadHeaders` entry.
-3. Record the response `ETag` with its `partNumber`.
+1. Confirms the object belongs to an active, unexpired registration.
+2. Streams the complete object from quarantine.
+3. Verifies the stored byte count against `fileSize`.
+4. Computes the canonical SHA-256.
+5. Checks file magic and detected type.
+6. Checks the canonical digest against the configured malware blocklist.
+7. Attaches clean content and starts ingestion.
 
-Multipart responses currently set `checksumEnforced: false`. Plangrep still calculates the authoritative SHA-256 across the assembled R2 object during completion.
+Queue delivery is idempotent. Repeated storage notifications cannot create duplicate files or duplicate processing admission.
 
-Signed URLs expire at `expiresAt`. Re-register the file if an instruction expires. Never store signed URLs for later reuse.
+## Poll the job
 
-## Step 3: Complete and verify
-
-After all required PUT requests succeed, complete the upload window:
-
-```http
-POST /api/open/v1/jobs/{jobId}/uploads/complete
-Authorization: Bearer {your_api_key}
-Content-Type: application/json
-Idempotency-Key: {unique_completion_key}
-```
-
-For a batch containing reused, direct, and multipart content, send:
-
-```json
-{
-  "documentIds": ["doc_reused", "doc_direct", "doc_multipart"],
-  "directUploads": [
-    { "documentId": "doc_direct", "uploadToken": "token-direct" }
-  ],
-  "multipartUploads": [
-    {
-      "documentId": "doc_multipart",
-      "multipartUploadId": "multipart-id",
-      "uploadToken": "token-multipart",
-      "parts": [
-        { "partNumber": 1, "etag": "\"etag-value-1\"" },
-        { "partNumber": 2, "etag": "\"etag-value-2\"" }
-      ]
-    }
-  ]
-}
-```
-
-Reused documents appear only in `documentIds`. Newly transferred documents also need their matching direct or multipart completion record.
-
-## What completion verifies
-
-New objects remain quarantined until Plangrep verifies all of the following from the stored bytes:
-
-- The authoritative byte count equals the registered `fileSize`.
-- The authoritative SHA-256 equals the registered `sha256`.
-- File magic and detected type agree with the declared extension and MIME type.
-- The SHA-256 does not match the configured known-malware blocklist.
-
-Only a verified, clean content object can be attached to the logical project or review file and passed to ingestion. A failure rejects the quarantined object and returns an error instead of starting processing.
-
-<Tip>
-  Use a unique `Idempotency-Key` for completion. If the response is lost, retry the same request with the same key.
-</Tip>
+Poll `GET /api/open/v1/jobs/{jobId}` after the PUT. The job advances automatically through upload verification, `preflighting`, and `processing`.

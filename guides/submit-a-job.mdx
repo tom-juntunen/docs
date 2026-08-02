@@ -1,12 +1,10 @@
 ---
-title: "Hash files and submit a processing job"
-sidebarTitle: "Submit a Job"
-description: "Create a Plangrep job, register SHA-256 file declarations, upload new bytes directly to R2, and complete authoritative verification."
+title: "Upload files and submit a processing job"
+sidebarTitle: "Submit a job"
+description: "Create a Plangrep job, register file declarations, upload directly to R2, and poll automatic processing."
 ---
 
-This guide covers the full multi-file submission workflow. Browser uploads, review attachments, and Open API uploads use the same content lifecycle: validate, hash, register, reuse or transfer, verify, then ingest.
-
-All Open API requests use `https://plangrep.com` as the base URL.
+This guide covers the complete multi-file submission workflow. All Open API requests use `https://plangrep.com`.
 
 <Steps>
 
@@ -20,7 +18,7 @@ curl -X POST https://plangrep.com/api/open/v1/projects \
   -d '{"name":"My Construction Project"}'
 ```
 
-Project creation returns `202 Accepted`. Poll `GET /api/open/v1/projects/{projectId}` until `project.status` is `"ready"` before creating a job.
+Poll `GET /api/open/v1/projects/{projectId}` until `project.status` is `"ready"`.
 
 ### Create a job
 
@@ -29,29 +27,14 @@ curl -X POST https://plangrep.com/api/open/v1/projects/proj_abc123/jobs \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: job-my-order-123" \
-  -d '{
-    "externalId": "my-order-123"
-  }'
+  -d '{"externalId":"my-order-123"}'
 ```
 
 The job starts in `awaiting_uploads`.
 
-### Validate and hash every file
+### Register the files
 
-Before registration, validate the local filename, exact byte size, and MIME type. Then calculate SHA-256 from the exact bytes you will upload.
-
-In a browser or WASM client, hash in the existing worker for every file, including small files. Read bounded slices instead of materializing the full file in memory. A 4 MiB chunk size is a practical default.
-
-```text
-for each selected file:
-  validate file.name, file.size, and file.type
-  sha256 = worker.hashIncrementally(file, chunkSize = 4 MiB)
-  declaration = { fileName, fileSize, contentType, sha256 }
-```
-
-Treat the client digest as an untrusted declaration. Plangrep calculates its own authoritative digest from R2 during completion.
-
-### Register the complete batch
+Validate each local filename, exact byte size, and MIME type. Calculate the SHA-256 digest of each exact file before registration.
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads \
@@ -75,70 +58,31 @@ curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads \
   }'
 ```
 
-Do not include `classification`. Plangrep assigns `plans`, `specifications`, `documents`, or `mixed` from page evidence during preflight.
+Do not include `classification`. Plangrep determines page families during preflight.
 
-Registration can return a different branch for each file:
+### Upload each accepted file
 
-- **Reused:** `status: "reused"`. Send no bytes. The verified physical content belongs to your organization and can back this new logical file.
-- **Direct PUT:** `uploadMode: "direct_put"`. PUT the full file to `uploadUrl` with every exact `uploadHeaders` value.
-- **Multipart:** `uploadMode: "multipart"`. PUT every declared byte range, then collect its `ETag`.
-- **Skipped:** `status: "skipped"`. Do not transfer or complete it.
-
-### Transfer only new content
-
-For direct PUT instructions:
+An accepted registration returns `uploadMode: "direct_put"`, a signed `uploadUrl`, and `uploadHeaders`.
 
 ```bash
 curl -X PUT "UPLOAD_URL" \
   -H "content-type: application/pdf" \
-  -H "x-amz-checksum-sha256: BASE64_CHECKSUM_FROM_UPLOAD_HEADERS" \
   --data-binary @A101-floor-plan.pdf
 ```
 
-The signed checksum value comes from `uploadHeaders`. Send it exactly as returned.
+Send every returned header exactly. A `status: "skipped"` result requires no PUT.
 
-For multipart instructions, upload each local slice `[startByte, endByteExclusive)` to its signed part URL. Preserve the part number and response `ETag`. Do not concatenate, base64-encode, or proxy the bytes through the Plangrep API.
+### Track automatic processing
 
-### Complete the selected documents
+There is no completion request. R2 notifies Plangrep after each object is stored. Plangrep computes the canonical SHA-256, validates the byte count and file type in quarantine, checks the malware blocklist, and starts processing clean content.
 
-Build one completion request from all accepted branches:
+Poll `GET /api/open/v1/jobs/{jobId}` until the job reaches a terminal status:
 
 ```bash
-curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads/complete \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: complete-my-order-123" \
-  -d '{
-    "documentIds": ["doc_reused", "doc_direct", "doc_multipart"],
-    "directUploads": [
-      { "documentId": "doc_direct", "uploadToken": "token-direct" }
-    ],
-    "multipartUploads": [
-      {
-        "documentId": "doc_multipart",
-        "multipartUploadId": "multipart-id",
-        "uploadToken": "token-multipart",
-        "parts": [
-          { "partNumber": 1, "etag": "\"etag-1\"" },
-          { "partNumber": 2, "etag": "\"etag-2\"" }
-        ]
-      }
-    ]
-  }'
+curl https://plangrep.com/api/open/v1/jobs/job_xyz789 \
+  -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-Reused content needs only its `documentId`. Direct and multipart content also need their registration tokens and transport results.
-
-Completion does not trust the client declaration. Plangrep streams each new R2 object through authoritative size and SHA-256 calculation, checks file magic/type, and checks its digest against the known-malware blocklist. The object stays quarantined unless all checks pass.
-
-Only then does Plangrep attach the verified physical content to the logical project or review file and enqueue ingestion.
-
-### Track processing
-
-The job transitions through `preflighting` and `processing`. Poll `GET /api/open/v1/jobs/{jobId}` until it reaches a terminal status. See [Poll job status](/guides/polling-and-webhooks).
+See [Poll job status](/guides/polling-and-webhooks).
 
 </Steps>
-
-<Tip>
-  Keep the local file mapped to its `documentId` until completion succeeds. Registration batches can mix reuse, direct PUT, multipart, and skipped results.
-</Tip>

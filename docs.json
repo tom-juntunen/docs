@@ -106,8 +106,7 @@
           {
             "group": "Uploads",
             "pages": [
-              "api-reference/uploads/register-uploads",
-              "api-reference/uploads/complete-uploads"
+              "api-reference/uploads/register-uploads"
             ]
           },
           {

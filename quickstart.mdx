@@ -4,7 +4,7 @@ sidebarTitle: "Quickstart"
 description: "Create a project, hash and register a file, upload it directly to signed storage, and retrieve normalized Plangrep results."
 ---
 
-This guide walks through the canonical Open API flow for one PDF: create a project and job, calculate the file's SHA-256, register it, follow the returned upload instruction, complete verification, and fetch the result.
+This guide walks through the canonical Open API flow for one PDF: create a project and job, register its metadata, PUT it to the returned signed URL, and fetch the automatically processed result.
 
 ## Prerequisites
 
@@ -48,16 +48,16 @@ Save the returned job ID. A new job has `status: "awaiting_uploads"`.
 
 </Step>
 
-<Step title="Hash and register the file">
+<Step title="Register the file">
 
-Calculate the exact byte length and SHA-256 before you send file bytes:
+Calculate the exact byte length and SHA-256 digest:
 
 ```bash
 FILE_SIZE=$(wc -c < drawings.pdf | tr -d ' ')
 FILE_SHA256=$(shasum -a 256 drawings.pdf | awk '{print $1}')
 ```
 
-Register all four required declarations:
+Register the file declaration:
 
 ```bash
 curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads \
@@ -66,11 +66,7 @@ curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads \
   -d "{\"files\":[{\"fileName\":\"drawings.pdf\",\"fileSize\":${FILE_SIZE},\"contentType\":\"application/pdf\",\"sha256\":\"${FILE_SHA256}\"}]}"
 ```
 
-Registration returns one item in `uploads`. Save its `documentId` and follow the returned branch:
-
-- `status: "reused"` means Plangrep already has matching verified content in your organization. Skip the byte upload.
-- `uploadMode: "direct_put"` returns one `uploadUrl`, exact `uploadHeaders`, and an `uploadToken`.
-- `uploadMode: "multipart"` returns signed part URLs. See [Hash-first, verified file uploads](/concepts/uploads).
+Registration returns one item in `uploads`. An accepted file has `uploadMode: "direct_put"`, one `uploadUrl`, and exact `uploadHeaders`.
 
 </Step>
 
@@ -81,40 +77,10 @@ For `direct_put`, PUT the raw file to `uploadUrl`. Include every header from `up
 ```bash
 curl -X PUT "UPLOAD_URL_FROM_REGISTRATION" \
   -H "content-type: application/pdf" \
-  -H "x-amz-checksum-sha256: BASE64_CHECKSUM_FROM_UPLOAD_HEADERS" \
   --data-binary @drawings.pdf
 ```
 
-The checksum header is signed into the URL. Do not replace its base64 value with the hexadecimal digest.
-
-If registration returned `status: "reused"`, do not make this PUT request.
-
-</Step>
-
-<Step title="Complete verification and start processing">
-
-For a direct PUT, return the document ID and upload token:
-
-```bash
-curl -X POST https://plangrep.com/api/open/v1/jobs/job_xyz789/uploads/complete \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: complete-first-job" \
-  -d '{
-    "documentIds": ["doc_abc123"],
-    "directUploads": [
-      { "documentId": "doc_abc123", "uploadToken": "UPLOAD_TOKEN" }
-    ]
-  }'
-```
-
-For reused content, send only its document ID:
-
-```json
-{ "documentIds": ["doc_abc123"] }
-```
-
-During completion, Plangrep streams the stored object and verifies its authoritative size, SHA-256, file magic/type, and known-malware hash status. Only verified content is attached to the logical file and sent to ingestion. The response has `202 Accepted` and the job transitions to `preflighting`.
+R2 confirms the stored object automatically. Plangrep then computes its canonical SHA-256, verifies its size and type in quarantine, and starts processing.
 
 </Step>
 
@@ -155,6 +121,6 @@ The result contains job and usage summaries, normalized documents, source-backed
 
 ## Next steps
 
-- Read [Hash-first, verified file uploads](/concepts/uploads) for browser hashing, zero-byte reuse, and multipart uploads.
+- Read [Verified file uploads](/concepts/uploads) for direct uploads, automatic processing, and server-owned content hashes.
 - Use [Poll job status](/guides/polling-and-webhooks) to track long-running jobs.
 - See [Reading results](/guides/reading-results) for result schemas and artifact downloads.
